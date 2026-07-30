@@ -3,7 +3,7 @@
 // Goal: improve motif recognition while keeping gameplay and hit logic intact.
 
 const JD = {};
-const JD_WEB_PORT_VERSION = "5/7 Kissa Fortune Root Fix";
+const JD_WEB_PORT_VERSION = "5/7 Kissa Fortune Runtime Fix";
 
 const STATE_TITLE = 0;
 const STATE_PLAY = 1;
@@ -1833,7 +1833,7 @@ function jdDrawFortuneMachine() {
   const p = 1 - jdClamp(timer / duration, 0, 1);
   const pickedP = JD.fortunePickedTimer > 0 ? jdClamp(JD.fortunePickedTimer / 0.35, 0, 1) : 0;
   const bodyPop = active ? Math.sin(Math.min(1, p * 1.8) * Math.PI) * 1.3 : pickedP * 1.0;
-  const wheelRot = active ? (JD.fortuneDuration - timer) * 8.4 : 0.0;
+  const wheelRot = active ? (JD.fortuneDuration - timer) * 900.0 : 0.0;
   const blink = active ? (0.84 + 0.16 * Math.sin(ElapsedTime * 12.0)) : 1.0;
 
   const bodyW = 156;
@@ -1846,12 +1846,12 @@ function jdDrawFortuneMachine() {
   jdFill("highlight", 28); rect(cx + 36, cy + 0, 5, bodyH - 48, 4);
 
   // more space between sign and roulette
-  const signY = cy + 60;
+  const signY = cy + 64;
   jdFill("redDeep", 242); rect(cx, signY, 118, 26, 10);
   jdFill("gold", 220 + 20 * blink); ellipse(cx - 46, signY, 6, 6); ellipse(cx + 46, signY, 6, 6);
   jdFill("paper", 250); font('Courier-Bold'); fontSize(10); text(jdT("fortune.title"), cx, signY + 1);
 
-  const wheelCy = cy - 14;
+  const wheelCy = cy - 22;
   jdFill("uiPanel", 255); ellipse(cx, wheelCy, 96, 96);
   jdFill("gold", 248); ellipse(cx, wheelCy, 82, 82);
   jdFill("cream", 248); ellipse(cx, wheelCy, 68, 68);
@@ -1874,8 +1874,11 @@ function jdDrawFortuneMachine() {
   }
   popMatrix();
 
-  jdFill("red", 250);
-  triangle(cx, wheelCy + 45, cx - 7, wheelCy + 35, cx + 7, wheelCy + 35);
+  // Codea Lite does not provide triangle, so use a simple red pin pointer.
+  jdStroke("red", 250); strokeWidth(4);
+  line(cx, wheelCy + 44, cx, wheelCy + 34);
+  noStroke();
+  jdFill("red", 250); ellipse(cx, wheelCy + 43, 7, 7);
   jdFill("woodDark", 255); ellipse(cx, wheelCy, 9, 9);
 
   const paperY = cy - 76;
