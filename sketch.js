@@ -1005,13 +1005,21 @@ function jdRegisterPlacedFood(f, target) {
     w: f.w,
     h: f.h,
     col: f.col,
+
     x: f.x,
     y: f.y,
+
+    // 飛行中に蓄積した角度を、設置後のコピーにも引き継ぐ
+    visualAngle: Number.isFinite(f.visualAngle)
+      ? f.visualAngle
+      : 0,
+
     alpha: 230,
     targetKind: target ? target.kind : "",
     placedAt: ElapsedTime
   });
 }
+
 
 function jdStartHitZoom(x, y, target) {
   let label = JD.food && JD.food.label ? JD.food.label : "GOOD!";
@@ -2201,13 +2209,39 @@ function jdDrawLauncher() {
 
 function jdDrawPlacedFoods() {
   for (const f of JD.placedFoods) {
-    const age = ElapsedTime - (f.placedAt || 0);
+    const age =
+      ElapsedTime -
+      (f.placedAt || 0);
+
     let sc = 1;
-    if (age < 0.32) sc = 1 + Math.sin((age / 0.32) * Math.PI) * 0.26;
-    jdDrawFood(f, f.x, f.y, f.alpha || 230, sc);
+
+    if (age < 0.32) {
+      sc =
+        1 +
+        Math.sin(
+          (age / 0.32) *
+          Math.PI
+        ) *
+        0.26;
+    }
+
+    // 古い設置データでも安全に描画できるよう補完
+    if (!Number.isFinite(f.visualAngle)) {
+      f.visualAngle = 0;
+    }
+
+    jdDrawFood(
+      f,
+      f.x,
+      f.y,
+      f.alpha || 230,
+      sc
+    );
   }
+
   jdDrawHitEffectWorld();
 }
+
 
 function jdDrawHitEffectWorld() {
   if (!JD.hitEffectTimer || JD.hitEffectTimer <= 0) return;
