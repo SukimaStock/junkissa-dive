@@ -3,7 +3,7 @@
 // Goal: improve motif recognition while keeping gameplay and hit logic intact.
 
 const JD = {};
-const JD_WEB_PORT_VERSION = "5/7 Motif Recognition Polish";
+const JD_WEB_PORT_VERSION = "5/7 Kissa Fortune Root Fix";
 
 const STATE_TITLE = 0;
 const STATE_PLAY = 1;
@@ -71,10 +71,7 @@ function touched(touch) {
       return;
     }
 
-    if (JD.gamePhase === PHASE_FORTUNE) {
-      if (touch.state === ENDED) jdCompleteFortuneSpin();
-      return;
-    }
+    if (JD.gamePhase === PHASE_FORTUNE) return;
 
     if (!jdCanAcceptAimTouch()) return;
 
@@ -385,15 +382,13 @@ function jdResetShift() {
   JD.dragScreenNow = null;
   JD.shiftStartTimer = 0.35;
 
+  JD.pendingFood = null;
   JD.fortuneSpinning = false;
   JD.fortuneTimer = 0;
   JD.fortuneDuration = 0;
   JD.fortuneSelected = null;
   JD.fortuneDisplayName = null;
   JD.fortunePickedTimer = 0;
-  JD.fortuneStartedAtMs = 0;
-  JD.fortuneEndAtMs = 0;
-  JD.fortuneTimeoutId = null;
 
   JD.hitEffectTimer = 0;
   JD.hitEffectDuration = 0;
@@ -436,7 +431,7 @@ function jdSetGamePhase(phase) {
 
 function jdExpectedGamePhase() {
   if (JD.state !== STATE_PLAY) return "-";
-  if (JD.fortuneSpinning) return PHASE_FORTUNE;
+  if (JD.gamePhase === PHASE_FORTUNE || JD.fortuneSpinning || JD.pendingFood) return PHASE_FORTUNE;
   if (JD.food && JD.food.resolved) return PHASE_RESULT;
   if (JD.food && JD.food.launched) return PHASE_FLYING;
   if (JD.dragging) return PHASE_AIMING;
@@ -478,50 +473,40 @@ function jdNowMs() {
 }
 
 function jdStartFortuneSpin(selectedFood) {
-  JD.fortuneSpinning = true;
-  JD.fortuneTimer = 0.75;
-  JD.fortuneDuration = 0.75;
-  JD.fortuneSelected = selectedFood;
-  JD.fortuneDisplayName = selectedFood ? selectedFood.name : "CHERRY";
-  JD.fortunePickedTimer = 0;
-  JD.fortuneStartedAtMs = jdNowMs();
-  JD.fortuneEndAtMs = JD.fortuneStartedAtMs + 950;
+  JD.pendingFood = selectedFood ? jdCloneFoodDef(selectedFood) : null;
+  JD.food = null;
+  JD.dragging = false;
+  JD.dragScreenStart = null;
+  JD.dragScreenNow = null;
 
-  if (JD.fortuneTimeoutId) {
-    clearTimeout(JD.fortuneTimeoutId);
-    JD.fortuneTimeoutId = null;
-  }
-  JD.fortuneTimeoutId = setTimeout(() => {
-    if (JD && JD.gamePhase === PHASE_FORTUNE) jdCompleteFortuneSpin();
-  }, 950);
+  JD.fortuneSpinning = true;
+  JD.fortuneTimer = 0.9;
+  JD.fortuneDuration = 0.9;
+  JD.fortuneSelected = JD.pendingFood;
+  JD.fortuneDisplayName = JD.pendingFood ? JD.pendingFood.name : "CHERRY";
+  JD.fortunePickedTimer = 0;
 
   jdSetGamePhase(PHASE_FORTUNE);
   jdSetCameraClose(false);
 }
 
 function jdCompleteFortuneSpin() {
-  const src = JD.fortuneSelected || JD.queue[Math.max(0, JD.throwIndex - 1)] || JD.queue[0];
+  const src = JD.pendingFood || JD.fortuneSelected || JD.queue[Math.max(0, JD.throwIndex - 1)] || null;
 
-  if (JD.fortuneTimeoutId) {
-    clearTimeout(JD.fortuneTimeoutId);
-    JD.fortuneTimeoutId = null;
-  }
-
-  JD.dragging = false;
   JD.fortuneSpinning = false;
   JD.fortuneTimer = 0;
   JD.fortunePickedTimer = 0.35;
-  JD.fortuneStartedAtMs = 0;
-  JD.fortuneEndAtMs = 0;
+  JD.fortuneSelected = src;
 
   if (!src) {
+    JD.pendingFood = null;
     jdSetGamePhase(PHASE_AIM);
     jdSetCameraClose(false);
     return;
   }
 
   JD.food = {
-    ...src,
+    ...jdCloneFoodDef(src),
     x: JD.launcher.x,
     y: JD.launcher.y,
     vx: 0,
@@ -536,40 +521,41 @@ function jdCompleteFortuneSpin() {
     placedAt: 0
   };
 
+  JD.pendingFood = null;
   jdSetGamePhase(PHASE_AIM);
   jdSetCameraClose(false);
 }
 
 function jdUpdateFortune(dt) {
-  const now = jdNowMs();
-
-  if (JD.gamePhase === PHASE_FORTUNE && JD.fortuneEndAtMs > 0 && now >= JD.fortuneEndAtMs) {
-    jdCompleteFortuneSpin();
-    return true;
-  }
-
-  if (JD.fortuneSpinning) {
-    if (!Number.isFinite(JD.fortuneTimer)) JD.fortuneTimer = 0.75;
-    JD.fortuneTimer -= dt;
-    if (JD.fortuneTimer > 0.16) {
-      const names = JD.fortuneNames;
-      const index = Math.floor(ElapsedTime * 18) % names.length;
-      JD.fortuneDisplayName = names[index];
-    } else if (JD.fortuneSelected) {
-      JD.fortuneDisplayName = JD.fortuneSelected.name;
-    }
-
-    if (JD.fortuneTimer <= 0) jdCompleteFortuneSpin();
-    return true;
-  }
-
-  if (JD.gamePhase === PHASE_FORTUNE && !JD.food) {
-    jdCompleteFortuneSpin();
-    return true;
-  }
-
   if (JD.fortunePickedTimer > 0) JD.fortunePickedTimer -= dt;
-  return false;
+  if (JD.gamePhase !== PHASE_FORTUNE) return false;
+
+  if (!JD.pendingFood && !JD.fortuneSelected) {
+    jdSetGamePhase(PHASE_AIM);
+    return false;
+  }
+
+  if (!JD.fortuneSpinning) {
+    jdCompleteFortuneSpin();
+    return true;
+  }
+
+  if (!Number.isFinite(JD.fortuneTimer)) JD.fortuneTimer = 0.9;
+  JD.fortuneTimer -= dt;
+
+  const names = JD.fortuneNames;
+  if (JD.fortuneTimer > 0.20) {
+    const spinRate = 20;
+    const index = Math.floor((JD.fortuneDuration - JD.fortuneTimer) * spinRate) % names.length;
+    JD.fortuneDisplayName = names[index];
+  } else if (JD.pendingFood) {
+    JD.fortuneDisplayName = JD.pendingFood.name;
+  }
+
+  if (JD.fortuneTimer <= 0) {
+    jdCompleteFortuneSpin();
+  }
+  return true;
 }
 
 function jdAppUpdate(dt) {
@@ -1842,32 +1828,30 @@ function jdDrawFortuneMachine() {
   const cx = JD.LOGICAL_W / 2;
   const cy = 328;
   const active = JD.fortuneSpinning;
-  const duration = JD.fortuneDuration || 0.75;
+  const duration = JD.fortuneDuration || 0.9;
   const timer = JD.fortuneTimer || 0;
   const p = 1 - jdClamp(timer / duration, 0, 1);
   const pickedP = JD.fortunePickedTimer > 0 ? jdClamp(JD.fortunePickedTimer / 0.35, 0, 1) : 0;
-  const bodyPop = active ? Math.sin(Math.min(1, p * 1.8) * Math.PI) * 1.6 : pickedP * 1.4;
-  const wheelRot = active ? ElapsedTime * 7.0 + p * 2.8 : 0.0;
-  const blink = active ? (0.8 + 0.2 * Math.sin(ElapsedTime * 12.0)) : 1.0;
+  const bodyPop = active ? Math.sin(Math.min(1, p * 1.8) * Math.PI) * 1.3 : pickedP * 1.0;
+  const wheelRot = active ? (JD.fortuneDuration - timer) * 8.4 : 0.0;
+  const blink = active ? (0.84 + 0.16 * Math.sin(ElapsedTime * 12.0)) : 1.0;
 
   const bodyW = 156;
-  const bodyH = 188 + bodyPop;
+  const bodyH = 196 + bodyPop;
 
-  // body
   jdFill("shadow", active ? 78 : 62); rect(cx + 4, cy - 8, bodyW + 8, bodyH + 8, 24);
   jdFill("woodDark", 210); rect(cx + 3, cy - 3, bodyW, bodyH, 22);
   jdFill("wood", 252); rect(cx, cy, bodyW - 8, bodyH - 8, 20);
-  jdFill("wallShade", 34); rect(cx - 36, cy + 2, 7, bodyH - 48, 4);
-  jdFill("highlight", 28); rect(cx + 36, cy + 2, 5, bodyH - 52, 4);
+  jdFill("wallShade", 34); rect(cx - 36, cy + 0, 7, bodyH - 44, 4);
+  jdFill("highlight", 28); rect(cx + 36, cy + 0, 5, bodyH - 48, 4);
 
-  // sign plate, inset with breathing room
-  const signY = cy + 54;
+  // more space between sign and roulette
+  const signY = cy + 60;
   jdFill("redDeep", 242); rect(cx, signY, 118, 26, 10);
   jdFill("gold", 220 + 20 * blink); ellipse(cx - 46, signY, 6, 6); ellipse(cx + 46, signY, 6, 6);
   jdFill("paper", 250); font('Courier-Bold'); fontSize(10); text(jdT("fortune.title"), cx, signY + 1);
 
-  // wheel exactly around body center
-  const wheelCy = cy + 2;
+  const wheelCy = cy - 14;
   jdFill("uiPanel", 255); ellipse(cx, wheelCy, 96, 96);
   jdFill("gold", 248); ellipse(cx, wheelCy, 82, 82);
   jdFill("cream", 248); ellipse(cx, wheelCy, 68, 68);
@@ -1882,7 +1866,7 @@ function jdDrawFortuneMachine() {
     line(0, 0, Math.cos(a) * 34, Math.sin(a) * 34);
   }
   noStroke();
-  jdFill("ink", 218); font('Courier-Bold'); fontSize(7.5);
+  jdFill("ink", 218); font('Courier-Bold'); fontSize(7.2);
   const labels = ["CHERRY", "SUGAR", "BERRY", "CHERRY", "SUGAR", "LUCK"];
   for (let i = 0; i < labels.length; i++) {
     const a = (i * 60 - 60) * Math.PI / 180;
@@ -1894,11 +1878,10 @@ function jdDrawFortuneMachine() {
   triangle(cx, wheelCy + 45, cx - 7, wheelCy + 35, cx + 7, wheelCy + 35);
   jdFill("woodDark", 255); ellipse(cx, wheelCy, 9, 9);
 
-  // bottom result window
-  const paperY = cy - 64;
+  const paperY = cy - 76;
   jdFill("paper", 252); rect(cx, paperY, 114, 38, 9);
   jdFill("wallShade", 28); rect(cx, paperY + 13, 96, 2, 1);
-  const showName = JD.fortuneDisplayName || "CHERRY";
+  const showName = JD.fortuneDisplayName || (JD.pendingFood ? JD.pendingFood.name : "CHERRY");
   jdFill("ink", 188); font('Courier'); fontSize(8.5);
   text(active ? jdT("fortune.luckySpin") : jdT("fortune.lucky"), cx, paperY + 8);
   jdFill(active ? "highlight" : "redDeep", active ? 255 : 220);
@@ -1907,7 +1890,7 @@ function jdDrawFortuneMachine() {
 
   if (!active) {
     jdFill("gold", 228); font('Courier-Bold'); fontSize(10.5);
-    text(jdT("fortune.chin"), cx, cy - 93);
+    text(jdT("fortune.chin"), cx, cy - 104);
   }
 }
 
