@@ -1,49 +1,41 @@
-# Junkissa Dive Web Port 1/7
+# 純喫茶ダイブ / Junkissa Dive — Web Port 2/7
 
-## Purpose
+## 今回の目的
 
-This is the first web-port package for `純喫茶ダイブ / Junkissa Dive`.
-The goal of this step is to make a GitHub Pages friendly HTML Canvas version that preserves the Codea prototype's core movement and scene flow.
+2/7 は **Web実機安定化版** です。
+1/7 のゲーム内容・物理挙動・得点・配置は大きく変えず、iPhone Safari / GitHub Pages 上で触る時の土台を固めています。
 
-## Files
+## ファイル構成
 
-- `index.html` — entry point
-- `style.css` — fullscreen canvas and touch-scroll prevention
-- `codea-lite.js` — Codea Lite compatibility layer supplied by the user
-- `sketch.js` — JavaScript port of the current Codea prototype
-- `WEB_QA_CHECKLIST_1of7.md` — first GitHub/phone test checklist
+- `index.html` — GitHub Pages 用エントリ
+- `style.css` — モバイルブラウザ向けの画面固定・スクロール抑止
+- `codea-lite.js` — Codea風 Canvas 互換レイヤー
+- `sketch.js` — ゲーム本体
+- `WEB_QA_CHECKLIST_2of7.md` — 実機確認リスト
+- `WEB_STABLE_NOTES_2of7.md` — 今回の変更メモ
 
-## Current scope
+## 起動方法
 
-Included:
+GitHub Pages にそのままアップロードして `index.html` を開きます。
+ローカル確認の場合は、簡易サーバーで開くのがおすすめです。
 
-- Title screen
-- SHIFT_START phase
-- KISSA FORTUNE item roulette
-- Right-side launcher
-- Drag/release shot
-- Coffee / cake / melon soda targets
-- Basic obstacle collisions
-- Melon anti-pass-through sweep
-- Cake SASARI sweep
-- Result effects
-- PERFECT CENTER zoom only for clean center hits
-- Receipt screen
-- One More Shift restart
-- Simple debug button
+```bash
+python3 -m http.server 8000
+```
 
-Not yet polished:
+## デバッグ
 
-- Poster-like final visual style
-- Sound
-- Final stage/balance/score tuning
-- Full Codea-debug log export
+通常は画面右上の `DBG` ボタンで切り替えます。
+初期状態からデバッグONにしたい場合は、URL末尾に `?debug=1` を付けます。
 
-## Upload
+```text
+https://example.github.io/junkissa-dive/?debug=1
+```
 
-Upload the folder contents to GitHub, or upload the ZIP contents into the target repository root.
-For GitHub Pages, `index.html` should be at the published root.
+## 2/7 の変更範囲
 
-## Notes
-
-This is not a direct Lua runtime. `sketch.js` is a JavaScript port that keeps Codea-style structure and names where practical.
+- モバイルブラウザのスクロール・長押し・ダブルタップ対策を強化
+- pointer入力を1本に制限し、マルチタッチによる暴発を抑制
+- ページ離脱・フォーカス喪失時にドラッグ状態をキャンセル
+- GitHub Pages / iPhone Safari 向けの確認メモを追加
+- ゲーム内容、配置、配点、当たり判定は原則維持

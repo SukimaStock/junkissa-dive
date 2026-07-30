@@ -1,8 +1,9 @@
-// Junkissa Dive Web Port 1/7
+// Junkissa Dive Web Port 2/7
 // Codea Lite target: setup(), draw(), touched(touch)
-// First goal: preserve the Codea prototype's movement and scene flow on web.
+// Goal: keep 1/7 gameplay intact while hardening mobile/browser input and layout.
 
 const JD = {};
+const JD_WEB_PORT_VERSION = "2/7 Web Stable Base";
 
 const STATE_TITLE = 0;
 const STATE_PLAY = 1;
@@ -19,6 +20,7 @@ function setup() {
   JD.LOGICAL_W = 360;
   JD.LOGICAL_H = 640;
   jdInitText();
+  jdReadWebOptions();
   jdResetAll();
 }
 
@@ -43,36 +45,87 @@ function draw() {
 }
 
 function touched(touch) {
-  if (!JD.scale) jdUpdateScale();
-  const p = jdToLogical(touch);
+  if (!jdAcceptPrimaryPointer(touch)) return;
 
-  if (JD.state === STATE_TITLE) {
-    if (touch.state === ENDED) jdStartPlay();
-    return;
-  }
+  try {
+    if (!JD.scale) jdUpdateScale();
+    const p = jdToLogical(touch);
 
-  if (JD.state === STATE_RECEIPT) {
-    if (touch.state === ENDED && jdReceiptReady()) {
-      if (p.x >= 70 && p.x <= 290 && p.y >= 70 && p.y <= 114) jdStartPlay();
+    if (JD.state === STATE_TITLE) {
+      if (touch.state === ENDED) jdStartPlay();
+      return;
     }
-    return;
+
+    if (JD.state === STATE_RECEIPT) {
+      if (touch.state === ENDED && jdReceiptReady()) {
+        if (p.x >= 70 && p.x <= 290 && p.y >= 70 && p.y <= 114) jdStartPlay();
+      }
+      return;
+    }
+
+    if (JD.state !== STATE_PLAY) return;
+
+    if (jdDebugButtonHit(p.x, p.y) && touch.state === ENDED) {
+      JD.debugMode = !JD.debugMode;
+      return;
+    }
+
+    if (!jdCanAcceptAimTouch()) return;
+
+    if (touch.state === BEGAN) {
+      jdBeginAimTouch(p);
+    } else if (touch.state === MOVING) {
+      jdUpdateAimTouch(p);
+    } else if (touch.state === ENDED || touch.state === CANCELLED) {
+      jdReleaseAimTouch(p, touch.state === CANCELLED);
+    }
+  } finally {
+    jdClearPrimaryPointerIfDone(touch);
   }
+}
 
-  if (JD.state !== STATE_PLAY) return;
+function jdReadWebOptions() {
+  JD.webPortVersion = JD_WEB_PORT_VERSION;
+  JD.webOptions = { debugDefault: false };
 
-  if (jdDebugButtonHit(p.x, p.y) && touch.state === ENDED) {
-    JD.debugMode = !JD.debugMode;
-    return;
-  }
+  if (typeof window === "undefined" || !window.location) return;
 
-  if (!jdCanAcceptAimTouch()) return;
+  const params = new URLSearchParams(window.location.search || "");
+  JD.webOptions.debugDefault = params.get("debug") === "1" || params.get("debug") === "true";
+}
+
+function jdAcceptPrimaryPointer(touch) {
+  const id = touch && touch.id !== undefined ? touch.id : "mouse";
 
   if (touch.state === BEGAN) {
-    jdBeginAimTouch(p);
-  } else if (touch.state === MOVING) {
-    jdUpdateAimTouch(p);
-  } else if (touch.state === ENDED || touch.state === CANCELLED) {
-    jdReleaseAimTouch(p, touch.state === CANCELLED);
+    if (JD.activePointerId !== null && JD.activePointerId !== undefined) return false;
+    JD.activePointerId = id;
+    return true;
+  }
+
+  if (JD.activePointerId !== null && JD.activePointerId !== undefined && JD.activePointerId !== id) {
+    return false;
+  }
+
+  return true;
+}
+
+function jdClearPrimaryPointerIfDone(touch) {
+  if (!touch) return;
+  if (touch.state === ENDED || touch.state === CANCELLED) JD.activePointerId = null;
+}
+
+function jdCancelActiveTouch() {
+  JD.activePointerId = null;
+
+  if (JD.dragging) {
+    JD.dragging = false;
+    JD.dragScreenStart = null;
+    JD.dragScreenNow = null;
+    if (JD.state === STATE_PLAY && JD.food && !JD.food.launched && !JD.food.resolved) {
+      jdSetGamePhase(PHASE_AIM);
+      jdSetCameraClose(false);
+    }
   }
 }
 
@@ -189,7 +242,8 @@ function jdResetAll() {
   JD.particles = [];
   JD.floatTexts = [];
   JD.placedFoods = [];
-  JD.debugMode = false;
+  JD.debugMode = JD.webOptions ? !!JD.webOptions.debugDefault : false;
+  JD.activePointerId = null;
   JD.lastTrail = null;
   JD.currentTrail = null;
   JD.lastTrailResult = "-";
@@ -260,6 +314,7 @@ function jdResetShift() {
 
   JD.food = null;
   JD.dragging = false;
+  JD.activePointerId = null;
   JD.dragScreenStart = null;
   JD.dragScreenNow = null;
   JD.shiftStartTimer = 0.35;
@@ -1525,6 +1580,7 @@ function jdDrawDebugScreen() {
   rectMode(CORNER); noStroke(); fill(28, 18, 14, 175); rect(16, 144, 328, 92);
   fill(255, 245, 224, 220); font('Courier-Bold'); fontSize(10); textAlign(LEFT);
   text(`SCENE PLAY  PHASE ${JD.gamePhase}`, 26, 216);
+  text(`${JD.webPortVersion || "WEB"}`, 26, 154);
   if (JD.food) {
     text(`FOOD ${JD.food.name}  vx ${Math.round(JD.food.vx || 0)}  vy ${Math.round(JD.food.vy || 0)}`, 26, 194);
     const best = jdBestTargetDebugInfo();
@@ -1615,3 +1671,10 @@ function jdShotSpeed(f) { return Math.hypot(f.vx || 0, f.vy || 0); }
 function jdClamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 function jdPowerName(r) { if (r < 0.33) return jdT("shot.yowame"); if (r < 0.62) return jdT("shot.futsu"); if (r < 0.86) return jdT("shot.tsuyome"); return jdT("shot.yarisugi"); }
 function jdAngleName(pull) { const a = Math.atan2(pull.y, Math.abs(pull.x)) * 180 / Math.PI; if (a < 22) return jdT("shot.low"); if (a < 48) return jdT("shot.naname"); return jdT("shot.high"); }
+
+
+// Web-only stability hooks. They are no-ops in the Codea mental model, but useful in browsers.
+if (typeof window !== "undefined") {
+  window.addEventListener("blur", jdCancelActiveTouch);
+  window.addEventListener("pagehide", jdCancelActiveTouch);
+}
