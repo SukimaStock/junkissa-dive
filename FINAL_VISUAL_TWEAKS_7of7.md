@@ -1,7 +1,7 @@
-# Final visual tweaks 7/7
+7of7b final fix
 
-Adjusted based on latest device feedback:
-- lowered coffee cup so it sits more firmly on the saucer
-- lowered cake so it sits more firmly on the plate
-- raised the melon soda liquid slightly within the glass
-- removed the small target labels under the menu items
+- coffee lowered more clearly onto saucer
+- cake lowered more clearly onto plate
+- melon soda liquid lifted more clearly inside the glass
+- BILL text removed from ticket
+- target labels remain hidden
