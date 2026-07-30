@@ -1787,46 +1787,69 @@ function jdDrawFortuneMachine() {
   if (!JD.fortuneSpinning && !(JD.fortunePickedTimer > 0)) return;
   rectMode(CENTER); ellipseMode(CENTER); textAlign(CENTER); noStroke();
   const cx = JD.LOGICAL_W / 2;
-  const cy = 330;
+  const cy = 334;
   const active = JD.fortuneSpinning;
   const duration = JD.fortuneDuration || 0.75;
   const timer = JD.fortuneTimer || 0;
   const p = 1 - jdClamp(timer / duration, 0, 1);
   const pickedP = JD.fortunePickedTimer > 0 ? jdClamp(JD.fortunePickedTimer / 0.35, 0, 1) : 0;
-  const boxPop = active ? Math.sin(Math.min(1, p * 2.2) * Math.PI) * 4 : pickedP * 3;
+  const pop = active ? Math.sin(Math.min(1, p * 2.0) * Math.PI) * 3.5 : pickedP * 2.2;
+  const wheelRot = active ? ElapsedTime * 4.5 + p * 2.4 : 0.0;
 
-  jdFill("shadow", active ? 110 : 78); rect(cx, cy - 4, 252, 218, 22);
-  jdFill("woodDark", 180); rect(cx + 4, cy - 6, 168, 184 + boxPop, 20);
-  jdFill("wood", 248); rect(cx, cy, 166, 182 + boxPop, 20);
-  jdFill("redDeep", 235); rect(cx, cy - 67, 136, 34, 13);
-  jdFill("paper", 250); rect(cx, cy + 66, 132, 24, 9);
-  jdFill("ink", 245); font('Courier-Bold'); fontSize(12); text(jdT("fortune.title"), cx, cy + 64);
+  // shadow / machine body
+  jdFill("shadow", active ? 92 : 70); rect(cx + 2, cy - 8, 214, 238, 28);
+  jdFill("woodDark", 175); rect(cx + 5, cy - 5, 164, 202 + pop, 24);
+  jdFill("wood", 252); rect(cx, cy, 160, 198 + pop, 24);
+  jdFill("wallShade", 46); rect(cx - 42, cy + 10, 8, 170, 6);
+  jdFill("highlight", 42); rect(cx + 42, cy + 12, 6, 166, 5);
 
-  jdFill("uiPanel", 255); ellipse(cx, cy + 10, 104, 104);
-  jdFill("gold", 255); ellipse(cx, cy + 10, 88, 88);
-  jdFill("cream", 245); ellipse(cx, cy + 10, 72, 72);
-  jdFill("woodDark", 255); ellipse(cx, cy + 10, 12, 12);
+  // top sign
+  jdFill("redDeep", 240); rect(cx, cy + 76, 128, 30, 12);
+  jdFill("gold", 235); ellipse(cx - 54, cy + 76, 6, 6); ellipse(cx + 54, cy + 76, 6, 6);
+  jdFill("paper", 250); font('Courier-Bold'); fontSize(11); text(jdT("fortune.title"), cx, cy + 73);
 
-  jdStroke("woodDark", 130); strokeWidth(2);
+  // glass window / dial
+  jdFill("uiPanel", 255); ellipse(cx, cy + 16, 110, 110);
+  jdFill("gold", 250); ellipse(cx, cy + 16, 94, 94);
+  jdFill("cream", 248); ellipse(cx, cy + 16, 78, 78);
+  jdFill("paper", 48); ellipse(cx - 8, cy + 26, 22, 56);
+
+  pushMatrix();
+  translate(cx, cy + 16);
+  rotate(wheelRot);
+  jdStroke("woodDark", 120); strokeWidth(1.8);
   for (let i = 0; i < 6; i++) {
     const a = (i * 60 - 90) * Math.PI / 180;
-    line(cx, cy + 10, cx + Math.cos(a) * 42, cy + 10 + Math.sin(a) * 42);
+    line(0, 0, Math.cos(a) * 39, Math.sin(a) * 39);
   }
-  noStroke(); jdFill("ink", 225); font('Courier-Bold'); fontSize(8);
+  noStroke();
+  jdFill("ink", 220); font('Courier-Bold'); fontSize(8);
   const labels = ["CHERRY", "SUGAR", "BERRY", "CHERRY", "SUGAR", "LUCK"];
   for (let i = 0; i < labels.length; i++) {
     const a = (i * 60 - 60) * Math.PI / 180;
-    text(labels[i], cx + Math.cos(a) * 28, cy + 10 + Math.sin(a) * 28);
+    text(labels[i], Math.cos(a) * 27, Math.sin(a) * 27 - 1);
   }
+  popMatrix();
 
-  const spinAngle = active ? ElapsedTime * 16 + (1 - p) * 2.8 : -Math.PI / 2;
-  jdStroke("red", 245); strokeWidth(4); line(cx, cy + 10, cx + Math.cos(spinAngle) * 38, cy + 10 + Math.sin(spinAngle) * 38);
-  noStroke(); jdFill("red", 255); ellipse(cx, cy + 10, 10, 10);
+  // fixed pointer at top of dial
+  jdFill("red", 250);
+  triangle(cx, cy + 61, cx - 8, cy + 48, cx + 8, cy + 48);
+  jdFill("woodDark", 255); ellipse(cx, cy + 16, 10, 10);
 
+  // lucky item paper window
+  jdFill("paper", 252); rect(cx, cy - 52, 122, 42, 10);
+  jdFill("wallShade", 32); rect(cx, cy - 36, 106, 2, 1);
   const showName = JD.fortuneDisplayName || "CHERRY";
-  jdFill("paper", 240); font('Courier'); fontSize(10); text(active ? jdT("fortune.luckySpin") : jdT("fortune.lucky"), cx, cy - 38);
-  jdFill("highlight", 255); font('Courier-Bold'); fontSize(active ? 18 : 20); text(showName, cx, cy - 58);
-  if (!active) { jdFill("gold", 235); fontSize(11); text(jdT("fortune.chin"), cx, cy - 88); }
+  jdFill("ink", 188); font('Courier'); fontSize(9);
+  text(active ? jdT("fortune.luckySpin") : jdT("fortune.lucky"), cx, cy - 41);
+  jdFill("redDeep", active ? 245 : 220); font('Courier-Bold'); fontSize(active ? 18 : 20);
+  text(showName, cx, cy - 58);
+
+  // lower charm / feedback
+  if (!active) {
+    jdFill("gold", 235); font('Courier-Bold'); fontSize(11);
+    text(jdT("fortune.chin"), cx, cy - 94);
+  }
 }
 
 function jdDrawReceipt() {
