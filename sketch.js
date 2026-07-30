@@ -1,9 +1,9 @@
-// Junkissa Dive Web Port 2/7
+// Junkissa Dive Web Port 3/7
 // Codea Lite target: setup(), draw(), touched(touch)
-// Goal: keep 1/7 gameplay intact while hardening mobile/browser input and layout.
+// Goal: keep gameplay intact while introducing the retro poster color direction.
 
 const JD = {};
-const JD_WEB_PORT_VERSION = "2/7 Web Stable Base";
+const JD_WEB_PORT_VERSION = "3/7 Poster Color Base";
 
 const STATE_TITLE = 0;
 const STATE_PLAY = 1;
@@ -20,12 +20,13 @@ function setup() {
   JD.LOGICAL_W = 360;
   JD.LOGICAL_H = 640;
   jdInitText();
+  jdInitVisualTheme();
   jdReadWebOptions();
   jdResetAll();
 }
 
 function draw() {
-  background(20, 16, 14);
+  background(34, 25, 20);
   jdUpdateScale();
 
   pushMatrix();
@@ -82,6 +83,61 @@ function touched(touch) {
   } finally {
     jdClearPrimaryPointerIfDone(touch);
   }
+}
+
+function jdInitVisualTheme() {
+  JD.visual = {
+    page: color(34, 25, 20),
+    posterBg: color(238, 220, 188),
+    posterBg2: color(229, 199, 158),
+    wall: color(238, 219, 184),
+    wallShade: color(205, 164, 116),
+    wallLine: color(149, 93, 58),
+    tableTop: color(49, 96, 72),
+    tableLip: color(32, 64, 51),
+    tableFront: color(38, 73, 58),
+    tableStripe: color(244, 225, 190),
+    wood: color(126, 73, 45),
+    woodDark: color(75, 42, 31),
+    cream: color(250, 239, 211),
+    paper: color(249, 242, 218),
+    ink: color(57, 42, 33),
+    coffee: color(67, 35, 23),
+    soda: color(93, 211, 140),
+    sodaLight: color(178, 246, 188),
+    cakeCream: color(255, 246, 231),
+    cakeSponge: color(244, 201, 114),
+    cakePink: color(242, 138, 153),
+    red: color(204, 54, 51),
+    redDeep: color(143, 41, 42),
+    shadow: color(25, 18, 14),
+    uiPanel: color(42, 31, 26),
+    uiText: color(255, 245, 220),
+    gold: color(238, 203, 122),
+    glass: color(232, 250, 235),
+    highlight: color(255, 251, 228)
+  };
+}
+
+function jdC(name) {
+  if (!JD.visual) jdInitVisualTheme();
+  return JD.visual[name] || color(255, 255, 255);
+}
+
+function jdFill(name, alpha = null) {
+  const c = jdC(name);
+  fill(c.r, c.g, c.b, alpha === null ? c.a : alpha);
+}
+
+function jdStroke(name, alpha = null) {
+  const c = jdC(name);
+  stroke(c.r, c.g, c.b, alpha === null ? c.a : alpha);
+}
+
+function jdPosterShadow(x, y, w, h, a = 48, r = 0) {
+  noStroke();
+  jdFill("shadow", a);
+  rect(x + 4, y - 4, w, h, r);
 }
 
 function jdReadWebOptions() {
@@ -1109,29 +1165,53 @@ function jdAppDraw() {
 
 function jdDrawTitle() {
   rectMode(CORNER);
+  ellipseMode(CENTER);
   noStroke();
-  fill(118, 76, 47);
-  rect(0, 0, JD.LOGICAL_W, JD.LOGICAL_H);
-  fill(92, 54, 34);
-  rect(0, 0, JD.LOGICAL_W, 180);
-  fill(160, 103, 59);
-  rect(0, 160, JD.LOGICAL_W, 34);
 
-  fill(255, 245, 225);
+  jdFill("posterBg");
+  rect(0, 0, JD.LOGICAL_W, JD.LOGICAL_H);
+
+  jdFill("posterBg2", 70);
+  rect(0, 0, JD.LOGICAL_W, 148);
+  jdFill("tableTop", 235);
+  rect(0, 0, JD.LOGICAL_W, 138);
+  jdFill("tableLip", 235);
+  rect(0, 134, JD.LOGICAL_W, 9);
+
+  jdFill("red", 230);
+  rect(0, 458, JD.LOGICAL_W, 10);
+  jdFill("wood", 85);
+  rect(0, 470, JD.LOGICAL_W, 4);
+
+  // poster registration dots
+  jdFill("redDeep", 175); ellipse(38, 532, 8, 8);
+  jdFill("redDeep", 175); ellipse(JD.LOGICAL_W - 38, 532, 8, 8);
+
+  jdDrawTinyCafePreview();
+
+  fill(60, 42, 31, 245);
   textAlign(CENTER);
   font('"Hiragino Mincho ProN", "Yu Mincho", serif');
   fontSize(31);
   text(jdT("title.jp"), JD.LOGICAL_W / 2, 414);
+
+  jdFill("redDeep", 230);
   font('Courier-Bold');
   fontSize(16);
   text(jdT("title.en"), JD.LOGICAL_W / 2, 382);
+
+  fill(84, 62, 48, 220);
   font('Courier');
-  fontSize(13);
+  fontSize(12);
   text(jdT("title.sub"), JD.LOGICAL_W / 2, 356);
-  jdDrawTinyCafePreview();
-  fill(255, 255, 255, 150 + Math.sin(ElapsedTime * 5) * 70);
+
+  const pulse = 150 + Math.sin(ElapsedTime * 4.6) * 48;
+  jdFill("uiPanel", 218);
+  rectMode(CENTER);
+  rect(JD.LOGICAL_W / 2, 104, 182, 40, 18);
+  jdFill("uiText", pulse);
   font('Courier-Bold');
-  fontSize(18);
+  fontSize(16);
   text(jdT("title.start"), JD.LOGICAL_W / 2, 104);
 }
 
@@ -1139,18 +1219,35 @@ function jdDrawTinyCafePreview() {
   rectMode(CENTER);
   ellipseMode(CENTER);
   noStroke();
-  const y = 245;
-  fill(88, 52, 34); rect(JD.LOGICAL_W / 2, y - 26, 250, 52);
-  fill(245, 235, 210); ellipse(145, y + 10, 38, 18);
-  fill(60, 32, 18); ellipse(145, y + 15, 35, 10);
-  fill(245, 236, 225); ellipse(210, y + 10, 52, 16);
-  fill(255, 245, 235); rect(210, y + 28, 38, 24);
-  fill(235, 55, 70); ellipse(218, y + 43, 8);
-  stroke(230, 250, 235); strokeWidth(2); noFill(); rect(270, y + 42, 36, 76);
-  noStroke(); fill(66, 220, 116, 170); rect(270, y + 34, 28, 58);
-  fill(255, 245, 220); ellipse(270, y + 82, 28, 18);
-  fill(235, 45, 55); ellipse(278, y + 94, 7);
-  fill(240, 55, 55); ellipse(82, y + 44, 15);
+  const y = 248;
+
+  jdPosterShadow(JD.LOGICAL_W / 2, y - 26, 252, 58, 38, 18);
+  jdFill("tableTop");
+  rect(JD.LOGICAL_W / 2, y - 26, 252, 58, 20);
+  jdFill("tableLip");
+  rect(JD.LOGICAL_W / 2, y - 53, 252, 6, 2);
+
+  // coffee
+  jdFill("cream"); ellipse(105, y + 3, 52, 16);
+  jdFill("highlight", 235); rect(105, y + 23, 36, 28, 9);
+  jdFill("coffee"); ellipse(105, y + 38, 34, 11);
+  jdFill("woodDark", 110); ellipse(130, y + 23, 17, 22);
+
+  // cake
+  jdFill("cream"); ellipse(180, y + 3, 66, 15);
+  jdFill("cakeSponge"); rect(180, y + 27, 46, 23, 5);
+  jdFill("cakeCream"); rect(180, y + 37, 46, 10, 5);
+  jdFill("cakePink"); rect(180, y + 27, 46, 7, 3);
+  jdFill("red"); ellipse(190, y + 51, 9, 9);
+
+  // melon soda
+  jdFill("glass", 105); rect(262, y + 42, 40, 82, 7);
+  jdFill("soda", 205); rect(262, y + 34, 30, 58, 6);
+  jdFill("sodaLight", 145); ellipse(262, y + 64, 30, 12);
+  jdFill("cream", 240); ellipse(262, y + 88, 28, 18);
+  jdFill("red"); ellipse(271, y + 100, 8, 8);
+
+  jdFill("red"); ellipse(72, y + 42, 15, 15);
 }
 
 function jdDrawPlay() {
@@ -1176,13 +1273,34 @@ function jdDrawWorld() {
   ellipseMode(CENTER);
   noStroke();
 
-  fill(125, 80, 50); rect(0, 0, JD.worldW, JD.LOGICAL_H);
-  fill(97, 59, 38, 55); rect(0, 372, JD.worldW, 3); rect(0, 302, JD.worldW, 2);
-  fill(92, 55, 35); rect(0, 0, JD.worldW, JD.tableY - 28);
-  fill(148, 94, 57); rect(0, JD.tableY - 14, JD.worldW, 28);
-  fill(68, 40, 27); rect(0, JD.tableY - 16, JD.worldW, 4); rect(0, JD.tableY + 12, JD.worldW, 5);
-  fill(70, 42, 28, 80);
-  for (let x = 40; x <= JD.worldW; x += 120) rect(x, 0, 3, JD.tableY - 30);
+  // Poster-like cafe wall
+  jdFill("wall");
+  rect(0, 0, JD.worldW, JD.LOGICAL_H);
+  jdFill("wallShade", 32);
+  rect(0, 372, JD.worldW, 112);
+  jdFill("redDeep", 150);
+  rect(0, 374, JD.worldW, 5);
+  jdFill("wallLine", 55);
+  rect(0, 304, JD.worldW, 2);
+  rect(0, 446, JD.worldW, 2);
+
+  // quiet poster grain / cafe panels
+  jdFill("highlight", 18);
+  for (let x = 30; x <= JD.worldW; x += 120) {
+    rect(x, JD.tableY + 84, 54, 126, 18);
+  }
+
+  // table front and top
+  jdFill("tableFront");
+  rect(0, 0, JD.worldW, JD.tableY - 30);
+  jdFill("tableTop");
+  rect(0, JD.tableY - 16, JD.worldW, 32);
+  jdFill("tableLip");
+  rect(0, JD.tableY - 18, JD.worldW, 5);
+  rect(0, JD.tableY + 11, JD.worldW, 6);
+
+  jdFill("tableStripe", 20);
+  for (let x = 40; x <= JD.worldW; x += 118) rect(x, 0, 4, JD.tableY - 32);
 
   jdDrawLastShotGhost();
   for (const t of JD.targets) {
@@ -1201,14 +1319,14 @@ function jdDrawWorld() {
     const dragWorld = jdScreenToWorldPoint(JD.dragScreenNow.x, JD.dragScreenNow.y);
     fx = dragWorld.x;
     fy = dragWorld.y;
-    stroke(255, 244, 210, 220); strokeWidth(4); line(JD.launcher.x, JD.launcher.y, fx, fy); noStroke();
+    jdStroke("highlight", 210); strokeWidth(4); line(JD.launcher.x, JD.launcher.y, fx, fy); noStroke();
     jdDrawTrajectory(pull);
   }
 
   if (JD.food) {
     if (!(JD.food.resolved && JD.food.hideAfterResolve)) jdDrawFood(JD.food, fx, fy, 255, 1);
     if (JD.food.resolved && JD.food.label) {
-      fill(255, 255, 255, 230);
+      jdFill("highlight", 230);
       font('Courier-Bold'); fontSize(23); textAlign(CENTER);
       text(JD.food.label, JD.food.x, JD.food.y + 34);
     }
@@ -1223,30 +1341,37 @@ function jdDrawTarget(t) {
   rectMode(CENTER);
   ellipseMode(CENTER);
   noStroke();
-  fill(35, 18, 12, 60); ellipse(t.x, JD.tableY + 3, t.w + 20, 13);
+  jdFill("shadow", 48);
+  ellipse(t.x + 4, JD.tableY + 1, t.w + 24, 13);
 
   if (t.kind === "coffee") {
-    fill(238, 225, 203); ellipse(t.x, JD.tableY + 8, 84, 16);
-    fill(248, 237, 213); rect(t.x, JD.tableY + 35, 62, 42);
-    fill(58, 31, 18); ellipse(t.x, JD.tableY + 57, 58, 18);
-    stroke(94, 67, 47); strokeWidth(2); noFill(); rect(t.x, JD.tableY + 35, 62, 42); ellipse(t.x + 38, JD.tableY + 35, 20, 28);
-    noStroke(); fill(255, 246, 222); font('Courier-Bold'); fontSize(9); textAlign(CENTER); text(jdT("target.coffee"), t.x, JD.tableY - 23);
+    jdFill("cream"); ellipse(t.x, JD.tableY + 8, 86, 16);
+    jdFill("highlight", 245); rect(t.x, JD.tableY + 35, 62, 42, 10);
+    jdFill("cream", 230); ellipse(t.x, JD.tableY + 55, 62, 15);
+    jdFill("coffee"); ellipse(t.x, JD.tableY + 58, 54, 15);
+    jdFill("woodDark", 88); ellipse(t.x + 39, JD.tableY + 35, 21, 27);
+    jdFill("cream"); ellipse(t.x + 39, JD.tableY + 35, 13, 18);
+    jdFill("ink", 210); font('Courier-Bold'); fontSize(9); textAlign(CENTER); text(jdT("target.coffee"), t.x, JD.tableY - 23);
   } else if (t.kind === "cake") {
-    fill(246, 239, 229); ellipse(t.x, JD.tableY + 7, 92, 16);
-    fill(255, 246, 235); rect(t.x, JD.tableY + 33, 62, 35);
-    fill(255, 151, 169); rect(t.x, JD.tableY + 46, 62, 8);
-    fill(252, 252, 248); rect(t.x, JD.tableY + 61, 62, 12);
-    fill(228, 48, 62); ellipse(t.x + 9, JD.tableY + 74, 13);
-    fill(255, 246, 222); font('Courier-Bold'); fontSize(9); textAlign(CENTER); text(jdT("target.cake"), t.x, JD.tableY - 23);
+    jdFill("cream"); ellipse(t.x, JD.tableY + 7, 96, 16);
+    jdFill("cakeSponge"); rect(t.x, JD.tableY + 32, 64, 33, 7);
+    jdFill("cakePink"); rect(t.x, JD.tableY + 44, 64, 8, 3);
+    jdFill("cakeCream"); rect(t.x, JD.tableY + 60, 64, 13, 6);
+    jdFill("highlight", 190); rect(t.x, JD.tableY + 68, 50, 6, 3);
+    jdFill("red"); ellipse(t.x + 9, JD.tableY + 76, 13, 13);
+    jdFill("highlight", 100); ellipse(t.x + 5, JD.tableY + 80, 4, 4);
+    jdFill("ink", 210); font('Courier-Bold'); fontSize(9); textAlign(CENTER); text(jdT("target.cake"), t.x, JD.tableY - 23);
   } else if (t.kind === "melon") {
-    stroke(230, 250, 235, 230); strokeWidth(3); noFill(); rect(t.x, JD.tableY + 76, 62, 132);
-    noStroke(); fill(64, 224, 116, 178); rect(t.x, JD.tableY + 64, 50, 102);
-    fill(142, 255, 176, 155); ellipse(t.x, JD.tableY + 116, 49, 16);
-    fill(245, 255, 230, 160); ellipse(t.x - 13, JD.tableY + 47, 5); ellipse(t.x + 13, JD.tableY + 68, 4); ellipse(t.x - 2, JD.tableY + 92, 3);
-    fill(255, 247, 220); ellipse(t.x, JD.tableY + 143, 43, 29);
-    fill(236, 47, 58); ellipse(t.x + 8, JD.tableY + 160, 10);
-    stroke(40, 88, 62, 230); strokeWidth(2); line(t.x + 8, JD.tableY + 164, t.x + 25, JD.tableY + 197); noStroke();
-    fill(255, 246, 222); font('Courier-Bold'); fontSize(9); textAlign(CENTER); text(jdT("target.melon"), t.x, JD.tableY - 23);
+    jdFill("glass", 92); rect(t.x, JD.tableY + 76, 64, 132, 10);
+    jdFill("soda", 205); rect(t.x, JD.tableY + 63, 50, 104, 8);
+    jdFill("sodaLight", 138); ellipse(t.x, JD.tableY + 116, 48, 15);
+    jdFill("highlight", 130); rect(t.x - 18, JD.tableY + 76, 6, 92, 3);
+    jdFill("cream", 245); ellipse(t.x, JD.tableY + 143, 43, 29);
+    jdFill("highlight", 140); ellipse(t.x - 10, JD.tableY + 149, 12, 7);
+    jdFill("red"); ellipse(t.x + 8, JD.tableY + 160, 10, 10);
+    jdStroke("redDeep", 210); strokeWidth(2); line(t.x + 8, JD.tableY + 164, t.x + 25, JD.tableY + 197); noStroke();
+    jdFill("glass", 120); rect(t.x, JD.tableY + 76, 64, 132, 10);
+    jdFill("ink", 210); font('Courier-Bold'); fontSize(9); textAlign(CENTER); text(jdT("target.melon"), t.x, JD.tableY - 23);
   }
 }
 
@@ -1255,23 +1380,27 @@ function jdDrawObstacle(o) {
   ellipseMode(CENTER);
   noStroke();
   if (o.kind === "spoon") {
-    stroke(222, 222, 212); strokeWidth(5); line(o.x - 32, o.y, o.x + 28, o.y + 3);
-    noStroke(); fill(222, 222, 212); ellipse(o.x + 36, o.y + 5, 24, 10);
+    jdStroke("highlight", 215); strokeWidth(5); line(o.x - 32, o.y, o.x + 28, o.y + 3);
+    noStroke(); jdFill("highlight", 215); ellipse(o.x + 36, o.y + 5, 24, 10);
+    jdFill("shadow", 36); ellipse(o.x + 5, o.y - 5, 76, 6);
   } else if (o.kind === "ticket") {
-    fill(105, 67, 43); rect(o.x, JD.tableY + 10, 36, 8);
-    fill(232, 212, 174); rect(o.x, o.y, o.w, o.h);
-    fill(118, 78, 52); font('Courier-Bold'); fontSize(8); textAlign(CENTER); text("BILL", o.x, o.y);
+    jdFill("woodDark", 90); rect(o.x, JD.tableY + 10, 38, 8, 2);
+    jdFill("paper"); rect(o.x, o.y, o.w, o.h, 3);
+    jdFill("red", 60); rect(o.x, o.y + 15, o.w - 5, 4, 2);
+    jdFill("ink", 200); font('Courier-Bold'); fontSize(8); textAlign(CENTER); text("BILL", o.x, o.y);
   } else if (o.kind === "coaster") {
-    fill(151, 96, 57); ellipse(o.x, o.y, o.r * 2, o.r * 0.9);
-    fill(112, 71, 43); ellipse(o.x, o.y + 2, o.r * 1.45, o.r * 0.48);
+    jdFill("wood"); ellipse(o.x, o.y, o.r * 2, o.r * 0.9);
+    jdFill("woodDark", 210); ellipse(o.x, o.y + 2, o.r * 1.45, o.r * 0.48);
+    jdFill("highlight", 38); ellipse(o.x - 3, o.y + 5, o.r * 1.1, o.r * 0.26);
   }
 }
 
 function jdDrawLauncher() {
   rectMode(CENTER); ellipseMode(CENTER); noStroke();
-  fill(59, 36, 28); ellipse(JD.launcher.x, JD.launcher.y, 58, 38);
-  fill(26, 17, 14); ellipse(JD.launcher.x, JD.launcher.y, 40, 26);
-  stroke(165, 245, 210); strokeWidth(4);
+  jdFill("shadow", 54); ellipse(JD.launcher.x + 3, JD.launcher.y - 5, 62, 27);
+  jdFill("woodDark"); ellipse(JD.launcher.x, JD.launcher.y, 58, 38);
+  jdFill("uiPanel"); ellipse(JD.launcher.x, JD.launcher.y, 40, 26);
+  jdStroke("sodaLight", 225); strokeWidth(4);
   line(JD.launcher.x + 12, JD.launcher.y + 8, JD.launcher.x - 4, JD.launcher.y - 8);
   line(JD.launcher.x - 4, JD.launcher.y - 8, JD.launcher.x - 15, JD.launcher.y - 8);
   line(JD.launcher.x + 12, JD.launcher.y - 8, JD.launcher.x - 4, JD.launcher.y + 8);
@@ -1399,8 +1528,9 @@ function jdUpdateFloatTexts(_dt) { JD.floatTexts.length = 0; }
 
 function jdDrawPlayUI() {
   rectMode(CORNER); noStroke();
-  fill(35, 22, 18, 180); rect(18, JD.LOGICAL_H - 86, JD.LOGICAL_W - 36, 66);
-  fill(255, 243, 220); font('Courier-Bold'); fontSize(14); textAlign(CENTER);
+  jdFill("uiPanel", 214); rect(18, JD.LOGICAL_H - 86, JD.LOGICAL_W - 36, 66, 16);
+  jdFill("redDeep", 190); rect(30, JD.LOGICAL_H - 35, JD.LOGICAL_W - 60, 3, 2);
+  jdFill("uiText", 245); font('Courier-Bold'); fontSize(14); textAlign(CENTER);
   text(`${jdT("ui.shift")}     ${jdT("ui.sales")} ${JD.totalSales} ${jdT("ui.yen")}`, JD.LOGICAL_W / 2, JD.LOGICAL_H - 42);
   font('Courier'); fontSize(12);
   let rest = JD.queue.length - JD.throwIndex + 1;
@@ -1412,11 +1542,11 @@ function jdDrawPlayUI() {
   text(`${jdT("ui.rest")} ${rest} / ${jdT("ui.item")} ${itemName}`, JD.LOGICAL_W / 2, JD.LOGICAL_H - 64);
 
   if (JD.gamePhase === PHASE_SHIFT_START) {
-    fill(255, 242, 215, 220); font('Courier-Bold'); fontSize(13); text("SHIFT START", JD.LOGICAL_W / 2, 92);
+    jdFill("ink", 225); font('Courier-Bold'); fontSize(13); text("SHIFT START", JD.LOGICAL_W / 2, 92);
   } else if (JD.fortuneSpinning) {
-    fill(255, 242, 215, 220); font('Courier-Bold'); fontSize(13); text(jdT("ui.fortuneSpin"), JD.LOGICAL_W / 2, 92);
+    jdFill("ink", 225); font('Courier-Bold'); fontSize(13); text(jdT("ui.fortuneSpin"), JD.LOGICAL_W / 2, 92);
   } else if (JD.food && !JD.food.launched && !JD.food.resolved) {
-    fill(255, 242, 215, 220); font('Courier-Bold'); fontSize(13);
+    jdFill("ink", 225); font('Courier-Bold'); fontSize(13);
     text(JD.dragging ? jdT("ui.dragging") : jdT("ui.pull"), JD.LOGICAL_W / 2, 92);
   }
 
@@ -1443,46 +1573,51 @@ function jdDrawFortuneMachine() {
   const pickedP = JD.fortunePickedTimer > 0 ? jdClamp(JD.fortunePickedTimer / 0.35, 0, 1) : 0;
   const boxPop = active ? Math.sin(Math.min(1, p * 2.2) * Math.PI) * 4 : pickedP * 3;
 
-  fill(18, 14, 12, active ? 118 : 80); rect(cx, cy, 250, 216);
-  fill(24, 15, 12, 170); rect(cx + 3, cy - 4, 166, 182 + boxPop);
-  fill(132, 78, 45, 245); rect(cx, cy, 166, 182 + boxPop);
-  fill(94, 52, 34, 240); rect(cx, cy - 67, 136, 34);
-  fill(246, 224, 172, 245); rect(cx, cy + 66, 132, 24);
-  fill(80, 42, 29, 250); font('Courier-Bold'); fontSize(12); text(jdT("fortune.title"), cx, cy + 64);
-  fill(42, 24, 20, 255); ellipse(cx, cy + 10, 102, 102);
-  fill(226, 205, 158, 255); ellipse(cx, cy + 10, 86, 86);
-  fill(88, 50, 35, 255); ellipse(cx, cy + 10, 12, 12);
+  jdFill("shadow", active ? 110 : 78); rect(cx, cy - 4, 252, 218, 22);
+  jdFill("woodDark", 180); rect(cx + 4, cy - 6, 168, 184 + boxPop, 20);
+  jdFill("wood", 248); rect(cx, cy, 166, 182 + boxPop, 20);
+  jdFill("redDeep", 235); rect(cx, cy - 67, 136, 34, 13);
+  jdFill("paper", 250); rect(cx, cy + 66, 132, 24, 9);
+  jdFill("ink", 245); font('Courier-Bold'); fontSize(12); text(jdT("fortune.title"), cx, cy + 64);
 
-  stroke(96, 56, 40, 150); strokeWidth(2);
+  jdFill("uiPanel", 255); ellipse(cx, cy + 10, 104, 104);
+  jdFill("gold", 255); ellipse(cx, cy + 10, 88, 88);
+  jdFill("cream", 245); ellipse(cx, cy + 10, 72, 72);
+  jdFill("woodDark", 255); ellipse(cx, cy + 10, 12, 12);
+
+  jdStroke("woodDark", 130); strokeWidth(2);
   for (let i = 0; i < 6; i++) {
     const a = (i * 60 - 90) * Math.PI / 180;
     line(cx, cy + 10, cx + Math.cos(a) * 42, cy + 10 + Math.sin(a) * 42);
   }
-  noStroke(); fill(58, 34, 26, 230); font('Courier-Bold'); fontSize(8);
+  noStroke(); jdFill("ink", 225); font('Courier-Bold'); fontSize(8);
   const labels = ["CHERRY", "SUGAR", "BERRY", "CHERRY", "SUGAR", "LUCK"];
   for (let i = 0; i < labels.length; i++) {
-    const a = ((i) * 60 - 60) * Math.PI / 180;
+    const a = (i * 60 - 60) * Math.PI / 180;
     text(labels[i], cx + Math.cos(a) * 28, cy + 10 + Math.sin(a) * 28);
   }
 
   const spinAngle = active ? ElapsedTime * 16 + (1 - p) * 2.8 : -Math.PI / 2;
-  stroke(190, 38, 42, 245); strokeWidth(4); line(cx, cy + 10, cx + Math.cos(spinAngle) * 38, cy + 10 + Math.sin(spinAngle) * 38);
-  noStroke(); fill(235, 48, 58, 255); ellipse(cx, cy + 10, 10);
+  jdStroke("red", 245); strokeWidth(4); line(cx, cy + 10, cx + Math.cos(spinAngle) * 38, cy + 10 + Math.sin(spinAngle) * 38);
+  noStroke(); jdFill("red", 255); ellipse(cx, cy + 10, 10, 10);
 
   const showName = JD.fortuneDisplayName || "CHERRY";
-  fill(255, 248, 226, 230); font('Courier'); fontSize(10); text(active ? jdT("fortune.luckySpin") : jdT("fortune.lucky"), cx, cy - 38);
-  fill(255, 255, 245, 255); font('Courier-Bold'); fontSize(active ? 18 : 20); text(showName, cx, cy - 58);
-  if (!active) { fill(255, 230, 140, 220); fontSize(11); text(jdT("fortune.chin"), cx, cy - 88); }
+  jdFill("paper", 240); font('Courier'); fontSize(10); text(active ? jdT("fortune.luckySpin") : jdT("fortune.lucky"), cx, cy - 38);
+  jdFill("highlight", 255); font('Courier-Bold'); fontSize(active ? 18 : 20); text(showName, cx, cy - 58);
+  if (!active) { jdFill("gold", 235); fontSize(11); text(jdT("fortune.chin"), cx, cy - 88); }
 }
 
 function jdDrawReceipt() {
   rectMode(CORNER); ellipseMode(CENTER); noStroke();
-  fill(38, 27, 23); rect(0, 0, JD.LOGICAL_W, JD.LOGICAL_H);
+  jdFill("posterBg"); rect(0, 0, JD.LOGICAL_W, JD.LOGICAL_H);
+  jdFill("tableFront"); rect(0, 0, JD.LOGICAL_W, 116);
   const paperX = 28, paperY = 54, paperW = JD.LOGICAL_W - 56, paperH = 540;
-  fill(246, 242, 228); rect(paperX, paperY, paperW, paperH);
-  fill(220, 214, 198, 70); rect(paperX + paperW - 5, paperY, 5, paperH); rect(paperX, paperY, paperW, 4);
+  jdFill("shadow", 55); rect(paperX + 4, paperY - 4, paperW, paperH, 4);
+  jdFill("paper"); rect(paperX, paperY, paperW, paperH, 4);
+  jdFill("wallShade", 54); rect(paperX + paperW - 5, paperY, 5, paperH, 2); rect(paperX, paperY + paperH - 4, paperW, 4, 2);
+  jdFill("redDeep", 180); rect(paperX, paperY + paperH - 35, paperW, 5, 0);
 
-  textAlign(LEFT); fill(36, 36, 34); font('Courier'); fontSize(11);
+  textAlign(LEFT); jdFill("ink"); font('Courier'); fontSize(11);
   const x = paperX + 22;
   let y = paperY + paperH - 42;
   const lineH = 17;
@@ -1494,8 +1629,8 @@ function jdDrawReceipt() {
 
   if (jdReceiptReady()) {
     const bx = JD.LOGICAL_W / 2, by = 92, bw = 220, bh = 44;
-    rectMode(CENTER); fill(168, 74, 50); rect(bx, by, bw, bh);
-    textAlign(CENTER); fill(255, 248, 232); font('Courier-Bold'); fontSize(14); text(jdT("receipt.oneMore"), bx, by + 1);
+    rectMode(CENTER); jdFill("redDeep", 240); rect(bx, by, bw, bh, 16);
+    textAlign(CENTER); jdFill("uiText"); font('Courier-Bold'); fontSize(14); text(jdT("receipt.oneMore"), bx, by + 1);
   }
 }
 

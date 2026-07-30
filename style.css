@@ -12,7 +12,7 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background: #17110f;
+  background: #221914;
   overscroll-behavior: none;
   touch-action: none;
 }
@@ -38,7 +38,7 @@ canvas {
   width: 100vw;
   height: 100vh;
   height: 100svh;
-  background: #17110f;
+  background: #221914;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
   image-rendering: auto;
