@@ -22,70 +22,149 @@ function setup() {
   jdInitText();
   jdInitVisualTheme();
   jdReadWebOptions();
+  jdInstallRuntimeErrorHandlers();
   jdResetAll();
 }
 
+
 function draw() {
-  background(34, 25, 20);
-  jdUpdateScale();
+  let pushed = false;
 
-  pushMatrix();
-  translate(JD.offsetX, JD.offsetY);
-  scale(JD.scale);
+  try {
+    background(34, 25, 20);
+    jdUpdateScale();
 
-  if (JD.shake > 0) {
-    const s = 3;
-    translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
-    JD.shake = Math.max(0, JD.shake - DeltaTime);
+    pushMatrix();
+    pushed = true;
+
+    translate(JD.offsetX, JD.offsetY);
+    scale(JD.scale);
+
+    if (JD.shake > 0) {
+      const s = 3;
+      translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
+      JD.shake = Math.max(0, JD.shake - DeltaTime);
+    }
+
+    jdAppUpdate(DeltaTime);
+    jdAppDraw();
+
+    popMatrix();
+    pushed = false;
+  } catch (error) {
+    if (pushed) {
+      try {
+        popMatrix();
+      } catch (_popError) {
+      }
+    }
+
+    jdShowRuntimeError(error, "draw");
+  }
+}
+
+function jdInstallRuntimeErrorHandlers() {
+  if (JD.runtimeErrorHandlersInstalled) return;
+  JD.runtimeErrorHandlersInstalled = true;
+
+  if (typeof window === "undefined") return;
+
+  window.addEventListener("error", function(event) {
+    const message = event && event.error ? event.error : event.message;
+    jdShowRuntimeError(message, "window.error");
+  });
+
+  window.addEventListener("unhandledrejection", function(event) {
+    const reason = event && event.reason ? event.reason : "Unhandled Promise rejection";
+    jdShowRuntimeError(reason, "promise");
+  });
+}
+
+function jdShowRuntimeError(error, where) {
+  const raw = error && error.stack ? error.stack : String(error);
+  const message = "[" + where + "]\n" + raw;
+
+  JD.runtimeErrorMessage = message;
+
+  try {
+    console.error(message);
+  } catch (_consoleError) {
   }
 
-  jdAppUpdate(DeltaTime);
-  jdAppDraw();
+  if (typeof document === "undefined") return;
 
-  popMatrix();
+  let box = document.getElementById("jd-runtime-error");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "jd-runtime-error";
+    box.style.position = "fixed";
+    box.style.left = "10px";
+    box.style.right = "10px";
+    box.style.bottom = "10px";
+    box.style.zIndex = "999999";
+    box.style.maxHeight = "42vh";
+    box.style.overflow = "auto";
+    box.style.padding = "10px";
+    box.style.borderRadius = "8px";
+    box.style.background = "rgba(80, 0, 0, 0.92)";
+    box.style.color = "#fff4dc";
+    box.style.font = "12px monospace";
+    box.style.whiteSpace = "pre-wrap";
+    box.style.boxShadow = "0 4px 18px rgba(0,0,0,0.45)";
+    document.body.appendChild(box);
+  }
+
+  box.textContent = "JUNKISSA ERROR\n" + message;
 }
+
+
 
 function touched(touch) {
   if (!jdAcceptPrimaryPointer(touch)) return;
 
   try {
-    if (!JD.scale) jdUpdateScale();
-    const p = jdToLogical(touch);
+    try {
+      if (!JD.scale) jdUpdateScale();
+      const p = jdToLogical(touch);
 
-    if (JD.state === STATE_TITLE) {
-      if (touch.state === ENDED) jdStartPlay();
-      return;
-    }
-
-    if (JD.state === STATE_RECEIPT) {
-      if (touch.state === ENDED && jdReceiptReady()) {
-        if (p.x >= 70 && p.x <= 290 && p.y >= 70 && p.y <= 114) jdStartPlay();
+      if (JD.state === STATE_TITLE) {
+        if (touch.state === ENDED) jdStartPlay();
+        return;
       }
-      return;
+
+      if (JD.state === STATE_RECEIPT) {
+        if (touch.state === ENDED && jdReceiptReady()) {
+          if (p.x >= 70 && p.x <= 290 && p.y >= 70 && p.y <= 114) jdStartPlay();
+        }
+        return;
+      }
+
+      if (JD.state !== STATE_PLAY) return;
+
+      if (jdDebugButtonHit(p.x, p.y) && touch.state === ENDED) {
+        JD.debugMode = !JD.debugMode;
+        return;
+      }
+
+      if (JD.gamePhase === PHASE_FORTUNE) return;
+
+      if (!jdCanAcceptAimTouch()) return;
+
+      if (touch.state === BEGAN) {
+        jdBeginAimTouch(p);
+      } else if (touch.state === MOVING) {
+        jdUpdateAimTouch(p);
+      } else if (touch.state === ENDED || touch.state === CANCELLED) {
+        jdReleaseAimTouch(p, touch.state === CANCELLED);
+      }
+    } finally {
+      jdClearPrimaryPointerIfDone(touch);
     }
-
-    if (JD.state !== STATE_PLAY) return;
-
-    if (jdDebugButtonHit(p.x, p.y) && touch.state === ENDED) {
-      JD.debugMode = !JD.debugMode;
-      return;
-    }
-
-    if (JD.gamePhase === PHASE_FORTUNE) return;
-
-    if (!jdCanAcceptAimTouch()) return;
-
-    if (touch.state === BEGAN) {
-      jdBeginAimTouch(p);
-    } else if (touch.state === MOVING) {
-      jdUpdateAimTouch(p);
-    } else if (touch.state === ENDED || touch.state === CANCELLED) {
-      jdReleaseAimTouch(p, touch.state === CANCELLED);
-    }
-  } finally {
-    jdClearPrimaryPointerIfDone(touch);
+  } catch (error) {
+    jdShowRuntimeError(error, "touched");
   }
 }
+
 
 function jdInitVisualTheme() {
   JD.visual = {
@@ -1839,63 +1918,101 @@ function jdDrawFortuneMachine() {
   const bodyW = 156;
   const bodyH = 196 + bodyPop;
 
-  jdFill("shadow", active ? 78 : 62); rect(cx + 4, cy - 8, bodyW + 8, bodyH + 8, 24);
-  jdFill("woodDark", 210); rect(cx + 3, cy - 3, bodyW, bodyH, 22);
-  jdFill("wood", 252); rect(cx, cy, bodyW - 8, bodyH - 8, 20);
-  jdFill("wallShade", 34); rect(cx - 36, cy + 0, 7, bodyH - 44, 4);
-  jdFill("highlight", 28); rect(cx + 36, cy + 0, 5, bodyH - 48, 4);
+  jdFill("shadow", active ? 78 : 62);
+  rect(cx + 4, cy - 8, bodyW + 8, bodyH + 8, 24);
 
-  // more space between sign and roulette
+  jdFill("woodDark", 210);
+  rect(cx + 3, cy - 3, bodyW, bodyH, 22);
+
+  jdFill("wood", 252);
+  rect(cx, cy, bodyW - 8, bodyH - 8, 20);
+
+  jdFill("wallShade", 34);
+  rect(cx - 36, cy + 0, 7, bodyH - 44, 4);
+
+  jdFill("highlight", 28);
+  rect(cx + 36, cy + 0, 5, bodyH - 48, 4);
+
   const signY = cy + 64;
-  jdFill("redDeep", 242); rect(cx, signY, 118, 26, 10);
-  jdFill("gold", 220 + 20 * blink); ellipse(cx - 46, signY, 6, 6); ellipse(cx + 46, signY, 6, 6);
-  jdFill("paper", 250); font('Courier-Bold'); fontSize(10); text(jdT("fortune.title"), cx, signY + 1);
+  jdFill("redDeep", 242);
+  rect(cx, signY, 118, 26, 10);
 
-  const wheelCy = cy - 22;
-  jdFill("uiPanel", 255); ellipse(cx, wheelCy, 96, 96);
-  jdFill("gold", 248); ellipse(cx, wheelCy, 82, 82);
-  jdFill("cream", 248); ellipse(cx, wheelCy, 68, 68);
-  jdFill("paper", 36); ellipse(cx - 7, wheelCy + 9, 17, 44);
+  jdFill("gold", 220 + 20 * blink);
+  ellipse(cx - 46, signY, 6, 6);
+  ellipse(cx + 46, signY, 6, 6);
+
+  jdFill("paper", 250);
+  font("Courier-Bold");
+  fontSize(10);
+  text(jdT("fortune.title"), cx, signY + 1);
+
+  // ラッキーアイテム表示と被らないよう、ルーレットを上へ移動
+  const wheelCy = cy - 4;
+
+  jdFill("uiPanel", 255);
+  ellipse(cx, wheelCy, 96, 96);
+
+  jdFill("gold", 248);
+  ellipse(cx, wheelCy, 82, 82);
+
+  jdFill("cream", 248);
+  ellipse(cx, wheelCy, 68, 68);
+
+  jdFill("paper", 36);
+  ellipse(cx - 7, wheelCy + 9, 17, 44);
 
   pushMatrix();
   translate(cx, wheelCy);
   rotate(wheelRot);
-  jdStroke("woodDark", 112); strokeWidth(1.8);
+
+  jdStroke("woodDark", 112);
+  strokeWidth(1.8);
+
   for (let i = 0; i < 6; i++) {
     const a = (i * 60 - 90) * Math.PI / 180;
     line(0, 0, Math.cos(a) * 34, Math.sin(a) * 34);
   }
+
   noStroke();
-  jdFill("ink", 218); font('Courier-Bold'); fontSize(7.2);
+  jdFill("ink", 218);
+  font("Courier-Bold");
+  fontSize(7.2);
+
   const labels = ["CHERRY", "SUGAR", "BERRY", "CHERRY", "SUGAR", "LUCK"];
   for (let i = 0; i < labels.length; i++) {
     const a = (i * 60 - 60) * Math.PI / 180;
     text(labels[i], Math.cos(a) * 22, Math.sin(a) * 22 - 1);
   }
+
   popMatrix();
 
-  // Codea Lite does not provide triangle, so use a simple red pin pointer.
-  jdStroke("red", 250); strokeWidth(4);
+  jdStroke("red", 250);
+  strokeWidth(4);
   line(cx, wheelCy + 44, cx, wheelCy + 34);
+
   noStroke();
-  jdFill("red", 250); ellipse(cx, wheelCy + 43, 7, 7);
-  jdFill("woodDark", 255); ellipse(cx, wheelCy, 9, 9);
+  jdFill("red", 250);
+  ellipse(cx, wheelCy + 43, 7, 7);
 
-  const paperY = cy - 76;
-  jdFill("paper", 252); rect(cx, paperY, 114, 38, 9);
-  jdFill("wallShade", 28); rect(cx, paperY + 13, 96, 2, 1);
+  jdFill("woodDark", 255);
+  ellipse(cx, wheelCy, 9, 9);
+
+  // LUCKY ITEM / CHIN! は削除し、アイテム名だけを主役にする
+  const paperY = cy - 94;
+  jdFill("paper", 252);
+  rect(cx, paperY, 118, 40, 10);
+
+  jdFill("wallShade", 22);
+  rect(cx, paperY + 13, 98, 2, 1);
+
   const showName = JD.fortuneDisplayName || (JD.pendingFood ? JD.pendingFood.name : "CHERRY");
-  jdFill("ink", 188); font('Courier'); fontSize(8.5);
-  text(active ? jdT("fortune.luckySpin") : jdT("fortune.lucky"), cx, paperY + 8);
-  jdFill(active ? "highlight" : "redDeep", active ? 255 : 220);
-  font('Courier-Bold'); fontSize(active ? 15 : 17);
-  text(showName, cx, paperY - 7);
 
-  if (!active) {
-    jdFill("gold", 228); font('Courier-Bold'); fontSize(10.5);
-    text(jdT("fortune.chin"), cx, cy - 104);
-  }
+  jdFill(active ? "redDeep" : "redDeep", active ? 245 : 230);
+  font("Courier-Bold");
+  fontSize(active ? 22 : 23);
+  text(showName, cx, paperY - 1);
 }
+
 
 function jdDrawReceipt() {
   rectMode(CORNER); ellipseMode(CENTER); noStroke();
