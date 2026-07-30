@@ -574,7 +574,10 @@ function jdCompleteFortuneSpin() {
 
   JD.fortuneSpinning = false;
   JD.fortuneTimer = 0;
-  JD.fortunePickedTimer = 0.35;
+
+  // 確定アイテムを少し長めに見せる
+  JD.fortunePickedTimer = 0.9;
+
   JD.fortuneSelected = src;
 
   if (!src) {
@@ -604,6 +607,7 @@ function jdCompleteFortuneSpin() {
   jdSetGamePhase(PHASE_AIM);
   jdSetCameraClose(false);
 }
+
 
 function jdUpdateFortune(dt) {
   if (JD.fortunePickedTimer > 0) JD.fortunePickedTimer -= dt;
@@ -1248,8 +1252,15 @@ function jdReleaseAimTouch(p, cancelled) {
 }
 
 function jdCanAcceptAimTouch() {
-  return JD.state === STATE_PLAY && JD.food && !JD.food.launched && !JD.food.resolved && !JD.fortuneSpinning && (JD.gamePhase === PHASE_AIM || JD.gamePhase === PHASE_AIMING);
+  return JD.state === STATE_PLAY
+    && JD.food
+    && !JD.food.launched
+    && !JD.food.resolved
+    && !JD.fortuneSpinning
+    && !(JD.fortunePickedTimer > 0)
+    && (JD.gamePhase === PHASE_AIM || JD.gamePhase === PHASE_AIMING);
 }
+
 
 function jdGetScreenPull() {
   if (!JD.dragScreenStart || !JD.dragScreenNow) return { x: 0, y: 0 };
@@ -1910,7 +1921,7 @@ function jdDrawFortuneMachine() {
   const duration = JD.fortuneDuration || 0.9;
   const timer = JD.fortuneTimer || 0;
   const p = 1 - jdClamp(timer / duration, 0, 1);
-  const pickedP = JD.fortunePickedTimer > 0 ? jdClamp(JD.fortunePickedTimer / 0.35, 0, 1) : 0;
+  const pickedP = JD.fortunePickedTimer > 0 ? jdClamp(JD.fortunePickedTimer / 0.9, 0, 1) : 0;
   const bodyPop = active ? Math.sin(Math.min(1, p * 1.8) * Math.PI) * 1.3 : pickedP * 1.0;
   const wheelRot = active ? (JD.fortuneDuration - timer) * 900.0 : 0.0;
   const blink = active ? (0.84 + 0.16 * Math.sin(ElapsedTime * 12.0)) : 1.0;
@@ -1946,7 +1957,6 @@ function jdDrawFortuneMachine() {
   fontSize(10);
   text(jdT("fortune.title"), cx, signY + 1);
 
-  // ラッキーアイテム表示と被らないよう、ルーレットを上へ移動
   const wheelCy = cy - 4;
 
   jdFill("uiPanel", 255);
@@ -1997,21 +2007,25 @@ function jdDrawFortuneMachine() {
   jdFill("woodDark", 255);
   ellipse(cx, wheelCy, 9, 9);
 
-  // LUCKY ITEM / CHIN! は削除し、アイテム名だけを主役にする
-  const paperY = cy - 94;
-  jdFill("paper", 252);
-  rect(cx, paperY, 118, 40, 10);
+  // 回転中はアイテム名を出さない。確定後だけ表示する。
+  if (!active) {
+    const paperY = cy - 94;
 
-  jdFill("wallShade", 22);
-  rect(cx, paperY + 13, 98, 2, 1);
+    jdFill("paper", 252);
+    rect(cx, paperY, 118, 40, 10);
 
-  const showName = JD.fortuneDisplayName || (JD.pendingFood ? JD.pendingFood.name : "CHERRY");
+    jdFill("wallShade", 22);
+    rect(cx, paperY + 13, 98, 2, 1);
 
-  jdFill(active ? "redDeep" : "redDeep", active ? 245 : 230);
-  font("Courier-Bold");
-  fontSize(active ? 22 : 23);
-  text(showName, cx, paperY - 1);
+    const showName = JD.fortuneDisplayName || (JD.food ? JD.food.name : "CHERRY");
+
+    jdFill("redDeep", 230);
+    font("Courier-Bold");
+    fontSize(23);
+    text(showName, cx, paperY - 1);
+  }
 }
+
 
 
 function jdDrawReceipt() {
