@@ -1685,10 +1685,80 @@ function jdDrawWorld() {
 
   if (JD.dragging && JD.food && !JD.food.launched && !JD.food.resolved) {
     const pull = jdGetScreenPull();
-    const dragWorld = jdScreenToWorldPoint(JD.dragScreenNow.x, JD.dragScreenNow.y);
+    const dragWorld = jdScreenToWorldPoint(
+      JD.dragScreenNow.x,
+      JD.dragScreenNow.y
+    );
+
     fx = dragWorld.x;
     fy = dragWorld.y;
-    jdStroke("highlight", 210); strokeWidth(4); line(JD.launcher.x, JD.launcher.y, fx, fy); noStroke();
+
+    const anchorX =
+      JD.launcher.x + 20;
+
+    const upperAnchorY =
+      JD.launcher.y + 18;
+
+    const lowerAnchorY =
+      JD.launcher.y - 18;
+
+    // 二本の赤茶色のゴム紐
+    jdStroke("redDeep", 245);
+    strokeWidth(5);
+
+    line(
+      anchorX,
+      upperAnchorY,
+      fx + 3,
+      fy + 5
+    );
+
+    line(
+      anchorX,
+      lowerAnchorY,
+      fx + 3,
+      fy - 5
+    );
+
+    // ゴム表面の細いハイライト
+    jdStroke("red", 145);
+    strokeWidth(1.5);
+
+    line(
+      anchorX,
+      upperAnchorY + 1,
+      fx + 3,
+      fy + 6
+    );
+
+    line(
+      anchorX,
+      lowerAnchorY + 1,
+      fx + 3,
+      fy - 4
+    );
+
+    noStroke();
+
+    // 引っ張った食材の後ろに小さな受け布
+    jdFill("woodDark", 205);
+    rect(
+      fx + 5,
+      fy,
+      13,
+      24,
+      5
+    );
+
+    jdFill("wood", 135);
+    rect(
+      fx + 3,
+      fy,
+      6,
+      18,
+      3
+    );
+
     jdDrawTrajectory(pull);
   }
 
@@ -2188,17 +2258,196 @@ function jdDrawObstacle(o) {
 }
 
 function jdDrawLauncher() {
-  rectMode(CENTER); ellipseMode(CENTER); noStroke();
-  jdFill("shadow", 54); ellipse(JD.launcher.x + 3, JD.launcher.y - 5, 62, 27);
-  jdFill("woodDark"); ellipse(JD.launcher.x, JD.launcher.y, 58, 38);
-  jdFill("uiPanel"); ellipse(JD.launcher.x, JD.launcher.y, 40, 26);
-  jdStroke("sodaLight", 225); strokeWidth(4);
-  line(JD.launcher.x + 12, JD.launcher.y + 8, JD.launcher.x - 4, JD.launcher.y - 8);
-  line(JD.launcher.x - 4, JD.launcher.y - 8, JD.launcher.x - 15, JD.launcher.y - 8);
-  line(JD.launcher.x + 12, JD.launcher.y - 8, JD.launcher.x - 4, JD.launcher.y + 8);
-  line(JD.launcher.x - 4, JD.launcher.y + 8, JD.launcher.x - 15, JD.launcher.y + 8);
+  const x = JD.launcher.x;
+  const y = JD.launcher.y;
+
+  const ready =
+    JD.food &&
+    !JD.food.launched &&
+    !JD.food.resolved &&
+    !JD.dragging &&
+    !(JD.fortunePickedTimer > 0);
+
+  const pulse =
+    0.5 +
+    0.5 * Math.sin(ElapsedTime * 3.2);
+
+  rectMode(CENTER);
+  ellipseMode(CENTER);
   noStroke();
+
+  // 卓上に落ちる影
+  jdFill("shadow", 48);
+  ellipse(x + 5, y - 16, 78, 22);
+
+  // 木製の台座
+  jdFill("woodDark", 255);
+  ellipse(x, y - 7, 72, 36);
+
+  jdFill("wood", 255);
+  ellipse(x - 2, y - 3, 66, 31);
+
+  // 木目
+  jdStroke("woodDark", 105);
+  strokeWidth(2);
+  line(x - 25, y - 1, x + 21, y - 7);
+  line(x - 17, y + 5, x + 16, y + 1);
+  noStroke();
+
+  // 食材を受ける小さな白い皿
+  jdFill("shadow", 32);
+  ellipse(x + 2, y - 1, 34, 14);
+
+  jdFill("plate", 250);
+  ellipse(x, y + 2, 32, 14);
+
+  jdFill("highlight", 90);
+  ellipse(x - 3, y + 4, 19, 6);
+
+  // 上下の真鍮クリップ
+  jdFill("woodDark", 225);
+  rect(x + 20, y + 15, 9, 24, 4);
+  rect(x + 20, y - 15, 9, 24, 4);
+
+  jdFill("gold", 255);
+  ellipse(x + 20, y + 18, 13, 13);
+  ellipse(x + 20, y - 18, 13, 13);
+
+  jdFill("highlight", 125);
+  ellipse(x + 17, y + 20, 4, 4);
+  ellipse(x + 17, y - 16, 4, 4);
+
+  // 待機中のゴム紐
+  // ドラッグ中は、後段で食材位置まで伸ばして描画する
+  if (!JD.dragging) {
+    jdStroke("redDeep", 235);
+    strokeWidth(4);
+
+    line(
+      x + 20,
+      y + 18,
+      x + 5,
+      y + 6
+    );
+
+    line(
+      x + 20,
+      y - 18,
+      x + 5,
+      y - 6
+    );
+
+    jdStroke("red", 92);
+    strokeWidth(1.5);
+
+    line(
+      x + 20,
+      y + 19,
+      x + 5,
+      y + 7
+    );
+
+    line(
+      x + 20,
+      y - 17,
+      x + 5,
+      y - 5
+    );
+
+    noStroke();
+  }
+
+  // 操作可能な時だけ、後方へ控えめな引っ張りガイド
+  if (ready) {
+    const guideAlpha =
+      52 +
+      pulse * 74;
+
+    jdFill(
+      "creamWarm",
+      guideAlpha * 0.34
+    );
+
+    rect(
+      x + 66,
+      y,
+      76,
+      32,
+      10
+    );
+
+    // 点線
+    jdFill(
+      "highlight",
+      guideAlpha
+    );
+
+    for (let i = 0; i < 4; i++) {
+      const dotX =
+        x + 35 + i * 11;
+
+      ellipse(
+        dotX,
+        y,
+        3.5 + pulse * 1.2
+      );
+    }
+
+    // 小さな「>」で右へ引くことを示す
+    jdStroke(
+      "redDeep",
+      guideAlpha + 40
+    );
+
+    strokeWidth(2.5);
+
+    line(
+      x + 73,
+      y + 7,
+      x + 82,
+      y
+    );
+
+    line(
+      x + 82,
+      y,
+      x + 73,
+      y - 7
+    );
+
+    noStroke();
+
+    // 伝票風の小さな表示
+    jdFill(
+      "paper",
+      155 + pulse * 45
+    );
+
+    rect(
+      x + 60,
+      y - 23,
+      43,
+      16,
+      3
+    );
+
+    jdFill(
+      "ink",
+      175 + pulse * 55
+    );
+
+    font("Courier-Bold");
+    fontSize(8);
+    textAlign(CENTER);
+
+    text(
+      "PULL",
+      x + 60,
+      y - 25
+    );
+  }
 }
+
 
 
 function jdDrawPlacedFoods() {
