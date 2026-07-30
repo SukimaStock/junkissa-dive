@@ -1925,19 +1925,13 @@ function jdDrawFood(
 
   translate(x, y);
 
-  // 飛行中に蓄積した角度を、着地・成功後も維持する
-  // 当たり判定には影響せず、見た目だけ回転する
+  // 飛行中に蓄積した角度を、状態に関係なく描画へ反映する
+  // 発射前の食材は visualAngle が未設定なので 0 度のまま
   const visualAngle = Number.isFinite(f.visualAngle)
     ? f.visualAngle
     : 0;
 
-  if (
-    f.launched ||
-    f.resolved ||
-    f.hideAfterResolve
-  ) {
-    rotate(visualAngle);
-  }
+  rotate(visualAngle);
 
   scale(scaleValue);
 
