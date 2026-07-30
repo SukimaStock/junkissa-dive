@@ -474,8 +474,18 @@ function jdStartFortuneSpin(selectedFood) {
 }
 
 function jdCompleteFortuneSpin() {
-  const src = JD.fortuneSelected;
-  if (!src) return;
+  const src = JD.fortuneSelected || JD.queue[Math.max(0, JD.throwIndex - 1)] || JD.queue[0];
+
+  JD.dragging = false;
+  JD.fortuneSpinning = false;
+  JD.fortuneTimer = 0;
+  JD.fortunePickedTimer = 0.35;
+
+  if (!src) {
+    jdSetGamePhase(PHASE_AIM);
+    jdSetCameraClose(false);
+    return;
+  }
 
   JD.food = {
     ...src,
@@ -493,10 +503,6 @@ function jdCompleteFortuneSpin() {
     placedAt: 0
   };
 
-  JD.dragging = false;
-  JD.fortuneSpinning = false;
-  JD.fortuneTimer = 0;
-  JD.fortunePickedTimer = 0.35;
   jdSetGamePhase(PHASE_AIM);
   jdSetCameraClose(false);
 }
@@ -1786,6 +1792,7 @@ function jdDrawShotMeter() {
 function jdDrawFortuneMachine() {
   if (!JD.fortuneSpinning && !(JD.fortunePickedTimer > 0)) return;
   rectMode(CENTER); ellipseMode(CENTER); textAlign(CENTER); noStroke();
+
   const cx = JD.LOGICAL_W / 2;
   const cy = 334;
   const active = JD.fortuneSpinning;
@@ -1793,62 +1800,66 @@ function jdDrawFortuneMachine() {
   const timer = JD.fortuneTimer || 0;
   const p = 1 - jdClamp(timer / duration, 0, 1);
   const pickedP = JD.fortunePickedTimer > 0 ? jdClamp(JD.fortunePickedTimer / 0.35, 0, 1) : 0;
-  const pop = active ? Math.sin(Math.min(1, p * 2.0) * Math.PI) * 3.5 : pickedP * 2.2;
-  const wheelRot = active ? ElapsedTime * 4.5 + p * 2.4 : 0.0;
+  const bodyPop = active ? Math.sin(Math.min(1, p * 2.0) * Math.PI) * 2.0 : pickedP * 1.6;
+  const wheelRot = active ? ElapsedTime * 7.2 + p * 3.0 : 0.0;
+  const blink = active ? (0.75 + 0.25 * Math.sin(ElapsedTime * 14.0)) : 1.0;
 
-  // shadow / machine body
-  jdFill("shadow", active ? 92 : 70); rect(cx + 2, cy - 8, 214, 238, 28);
-  jdFill("woodDark", 175); rect(cx + 5, cy - 5, 164, 202 + pop, 24);
-  jdFill("wood", 252); rect(cx, cy, 160, 198 + pop, 24);
-  jdFill("wallShade", 46); rect(cx - 42, cy + 10, 8, 170, 6);
-  jdFill("highlight", 42); rect(cx + 42, cy + 12, 6, 166, 5);
+  // body
+  jdFill("shadow", active ? 84 : 66); rect(cx + 2, cy - 8, 208, 232, 26);
+  jdFill("woodDark", 170); rect(cx + 4, cy - 4, 160, 196 + bodyPop, 22);
+  jdFill("wood", 252); rect(cx, cy, 156, 192 + bodyPop, 22);
+  jdFill("wallShade", 32); rect(cx - 38, cy + 4, 8, 154, 5);
+  jdFill("highlight", 34); rect(cx + 38, cy + 4, 6, 154, 5);
 
-  // top sign
-  jdFill("redDeep", 240); rect(cx, cy + 76, 128, 30, 12);
-  jdFill("gold", 235); ellipse(cx - 54, cy + 76, 6, 6); ellipse(cx + 54, cy + 76, 6, 6);
-  jdFill("paper", 250); font('Courier-Bold'); fontSize(11); text(jdT("fortune.title"), cx, cy + 73);
+  // sign plate (moved upward to avoid overlap)
+  const signY = cy + 82;
+  jdFill("redDeep", 242); rect(cx, signY, 122, 28, 11);
+  jdFill("gold", 225 + 20 * blink); ellipse(cx - 48, signY, 6, 6); ellipse(cx + 48, signY, 6, 6);
+  jdFill("paper", 250); font('Courier-Bold'); fontSize(10.5); text(jdT("fortune.title"), cx, signY + 2);
 
-  // glass window / dial
-  jdFill("uiPanel", 255); ellipse(cx, cy + 16, 110, 110);
-  jdFill("gold", 250); ellipse(cx, cy + 16, 94, 94);
-  jdFill("cream", 248); ellipse(cx, cy + 16, 78, 78);
-  jdFill("paper", 48); ellipse(cx - 8, cy + 26, 22, 56);
+  // dial frame (slightly smaller and straighter)
+  const wheelCy = cy + 22;
+  jdFill("uiPanel", 255); ellipse(cx, wheelCy, 100, 100);
+  jdFill("gold", 248); ellipse(cx, wheelCy, 86, 86);
+  jdFill("cream", 248); ellipse(cx, wheelCy, 72, 72);
+  jdFill("paper", 40); ellipse(cx - 7, wheelCy + 10, 18, 48);
 
   pushMatrix();
-  translate(cx, cy + 16);
+  translate(cx, wheelCy);
   rotate(wheelRot);
   jdStroke("woodDark", 120); strokeWidth(1.8);
   for (let i = 0; i < 6; i++) {
     const a = (i * 60 - 90) * Math.PI / 180;
-    line(0, 0, Math.cos(a) * 39, Math.sin(a) * 39);
+    line(0, 0, Math.cos(a) * 36, Math.sin(a) * 36);
   }
   noStroke();
-  jdFill("ink", 220); font('Courier-Bold'); fontSize(8);
+  jdFill("ink", 218); font('Courier-Bold'); fontSize(7.5);
   const labels = ["CHERRY", "SUGAR", "BERRY", "CHERRY", "SUGAR", "LUCK"];
   for (let i = 0; i < labels.length; i++) {
     const a = (i * 60 - 60) * Math.PI / 180;
-    text(labels[i], Math.cos(a) * 27, Math.sin(a) * 27 - 1);
+    text(labels[i], Math.cos(a) * 24, Math.sin(a) * 24 - 1);
   }
   popMatrix();
 
-  // fixed pointer at top of dial
+  // pointer fixed above dial, not overlapping sign
   jdFill("red", 250);
-  triangle(cx, cy + 61, cx - 8, cy + 48, cx + 8, cy + 48);
-  jdFill("woodDark", 255); ellipse(cx, cy + 16, 10, 10);
+  triangle(cx, wheelCy + 47, cx - 7, wheelCy + 36, cx + 7, wheelCy + 36);
+  jdFill("woodDark", 255); ellipse(cx, wheelCy, 9, 9);
 
-  // lucky item paper window
-  jdFill("paper", 252); rect(cx, cy - 52, 122, 42, 10);
-  jdFill("wallShade", 32); rect(cx, cy - 36, 106, 2, 1);
+  // lucky item window
+  const paperY = cy - 58;
+  jdFill("paper", 252); rect(cx, paperY, 118, 40, 9);
+  jdFill("wallShade", 28); rect(cx, paperY + 14, 102, 2, 1);
   const showName = JD.fortuneDisplayName || "CHERRY";
-  jdFill("ink", 188); font('Courier'); fontSize(9);
-  text(active ? jdT("fortune.luckySpin") : jdT("fortune.lucky"), cx, cy - 41);
-  jdFill("redDeep", active ? 245 : 220); font('Courier-Bold'); fontSize(active ? 18 : 20);
-  text(showName, cx, cy - 58);
+  jdFill("ink", 188); font('Courier'); fontSize(8.5);
+  text(active ? jdT("fortune.luckySpin") : jdT("fortune.lucky"), cx, paperY + 9);
+  jdFill(active ? "highlight" : "redDeep", active ? 255 : 220);
+  font('Courier-Bold'); fontSize(active ? 16 : 18);
+  text(showName, cx, paperY - 7);
 
-  // lower charm / feedback
   if (!active) {
-    jdFill("gold", 235); font('Courier-Bold'); fontSize(11);
-    text(jdT("fortune.chin"), cx, cy - 94);
+    jdFill("gold", 228); font('Courier-Bold'); fontSize(10.5);
+    text(jdT("fortune.chin"), cx, cy - 95);
   }
 }
 
