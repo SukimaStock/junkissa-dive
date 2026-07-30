@@ -42,3 +42,8 @@ Web Port **5/7 Motif Recognition Polish**.
 ## 5/7 Motif Recognition Polish
 
 This pass improves visual readability of individual cafe motifs while keeping gameplay unchanged. See `MOTIF_RECOGNITION_5of7.md` and `WEB_QA_CHECKLIST_5of7.md`.
+
+
+## 8/10 Balance prep
+
+This package keeps the 7of7b build intact and adds balance/design notes for the next tuning phase.
