@@ -1913,21 +1913,39 @@ function jdDrawShotMeter() {
 
 function jdDrawFortuneMachine() {
   if (!JD.fortuneSpinning && !(JD.fortunePickedTimer > 0)) return;
-  rectMode(CENTER); ellipseMode(CENTER); textAlign(CENTER); noStroke();
+
+  rectMode(CENTER);
+  ellipseMode(CENTER);
+  textAlign(CENTER);
+  noStroke();
 
   const cx = JD.LOGICAL_W / 2;
   const cy = 328;
+
   const active = JD.fortuneSpinning;
   const duration = JD.fortuneDuration || 0.9;
   const timer = JD.fortuneTimer || 0;
-  const p = 1 - jdClamp(timer / duration, 0, 1);
-  const pickedP = JD.fortunePickedTimer > 0 ? jdClamp(JD.fortunePickedTimer / 0.9, 0, 1) : 0;
-  const bodyPop = active ? Math.sin(Math.min(1, p * 1.8) * Math.PI) * 1.3 : pickedP * 1.0;
-  const wheelRot = active ? (JD.fortuneDuration - timer) * 900.0 : 0.0;
-  const blink = active ? (0.84 + 0.16 * Math.sin(ElapsedTime * 12.0)) : 1.0;
 
+  const p = 1 - jdClamp(timer / duration, 0, 1);
+  const pickedP = JD.fortunePickedTimer > 0
+    ? jdClamp(JD.fortunePickedTimer / 0.9, 0, 1)
+    : 0;
+
+  const bodyPop = active
+    ? Math.sin(Math.min(1, p * 1.8) * Math.PI) * 1.3
+    : pickedP;
+
+  const wheelRot = active
+    ? (JD.fortuneDuration - timer) * 900
+    : 0;
+
+  const blink = active
+    ? 0.84 + 0.16 * Math.sin(ElapsedTime * 12)
+    : 1;
+
+  // 木製本体
   const bodyW = 156;
-  const bodyH = 196 + bodyPop;
+  const bodyH = 226 + bodyPop;
 
   jdFill("shadow", active ? 78 : 62);
   rect(cx + 4, cy - 8, bodyW + 8, bodyH + 8, 24);
@@ -1939,12 +1957,14 @@ function jdDrawFortuneMachine() {
   rect(cx, cy, bodyW - 8, bodyH - 8, 20);
 
   jdFill("wallShade", 34);
-  rect(cx - 36, cy + 0, 7, bodyH - 44, 4);
+  rect(cx - 36, cy, 7, bodyH - 44, 4);
 
   jdFill("highlight", 28);
-  rect(cx + 36, cy + 0, 5, bodyH - 48, 4);
+  rect(cx + 36, cy, 5, bodyH - 48, 4);
 
-  const signY = cy + 64;
+  // KISSA FORTUNE札
+  const signY = cy + 72;
+
   jdFill("redDeep", 242);
   rect(cx, signY, 118, 26, 10);
 
@@ -1957,6 +1977,7 @@ function jdDrawFortuneMachine() {
   fontSize(10);
   text(jdT("fortune.title"), cx, signY + 1);
 
+  // ルーレット
   const wheelCy = cy - 4;
 
   jdFill("uiPanel", 255);
@@ -1980,7 +2001,13 @@ function jdDrawFortuneMachine() {
 
   for (let i = 0; i < 6; i++) {
     const a = (i * 60 - 90) * Math.PI / 180;
-    line(0, 0, Math.cos(a) * 34, Math.sin(a) * 34);
+
+    line(
+      0,
+      0,
+      Math.cos(a) * 34,
+      Math.sin(a) * 34
+    );
   }
 
   noStroke();
@@ -1988,14 +2015,28 @@ function jdDrawFortuneMachine() {
   font("Courier-Bold");
   fontSize(7.2);
 
-  const labels = ["CHERRY", "SUGAR", "BERRY", "CHERRY", "SUGAR", "LUCK"];
+  const labels = [
+    "CHERRY",
+    "SUGAR",
+    "BERRY",
+    "CHERRY",
+    "SUGAR",
+    "LUCK"
+  ];
+
   for (let i = 0; i < labels.length; i++) {
     const a = (i * 60 - 60) * Math.PI / 180;
-    text(labels[i], Math.cos(a) * 22, Math.sin(a) * 22 - 1);
+
+    text(
+      labels[i],
+      Math.cos(a) * 22,
+      Math.sin(a) * 22 - 1
+    );
   }
 
   popMatrix();
 
+  // 固定ポインタ
   jdStroke("red", 250);
   strokeWidth(4);
   line(cx, wheelCy + 44, cx, wheelCy + 34);
@@ -2007,24 +2048,44 @@ function jdDrawFortuneMachine() {
   jdFill("woodDark", 255);
   ellipse(cx, wheelCy, 9, 9);
 
-  // 回転中はアイテム名を出さない。確定後だけ表示する。
-  if (!active) {
-    const paperY = cy - 94;
+  // 回転中は結果を表示しない
+  if (active) return;
 
-    jdFill("paper", 252);
-    rect(cx, paperY, 118, 40, 10);
+  const showName =
+    JD.fortuneDisplayName ||
+    (JD.food ? JD.food.name : "CHERRY");
 
-    jdFill("wallShade", 22);
-    rect(cx, paperY + 13, 98, 2, 1);
+  const nameLength = showName.length;
 
-    const showName = JD.fortuneDisplayName || (JD.food ? JD.food.name : "CHERRY");
+  // 文字数に応じて枠幅を調整
+  const paperW = jdClamp(
+    44 + nameLength * 8.2,
+    94,
+    bodyW - 18
+  );
 
-    jdFill("redDeep", 230);
-    font("Courier-Bold");
-    fontSize(23);
-    text(showName, cx, paperY - 1);
+  const paperH = 32;
+
+  // 木製本体内に収めつつ、ルーレットの少し下に配置
+  const paperY = cy - 72;
+
+  let nameSize = 17;
+
+  if (nameLength >= 10) {
+    nameSize = 14;
+  } else if (nameLength >= 8) {
+    nameSize = 15;
   }
+
+  jdFill("paper", 252);
+  rect(cx, paperY, paperW, paperH, 9);
+
+  jdFill("redDeep", 230);
+  font("Courier-Bold");
+  fontSize(nameSize);
+  text(showName, cx, paperY - 1);
 }
+
 
 
 
