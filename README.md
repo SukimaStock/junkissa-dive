@@ -1,6 +1,6 @@
 # 純喫茶ダイブ / Junkissa Dive
 
-Web Port **4/7 Menu Visual Polish**.
+Web Port **5/7 Motif Recognition Polish**.
 
 ## 目的
 
@@ -37,3 +37,8 @@ Web Port **4/7 Menu Visual Polish**.
 4. コーヒーが地味すぎず、でも落ち着いて見えるか
 5. 食材が小さくても判別できるか
 6. 見た目が変わっても、当たり判定の印象が大きくズレていないか
+
+
+## 5/7 Motif Recognition Polish
+
+This pass improves visual readability of individual cafe motifs while keeping gameplay unchanged. See `MOTIF_RECOGNITION_5of7.md` and `WEB_QA_CHECKLIST_5of7.md`.

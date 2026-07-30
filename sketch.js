@@ -1,9 +1,9 @@
-// Junkissa Dive Web Port 4/7
+// Junkissa Dive Web Port 5/7
 // Codea Lite target: setup(), draw(), touched(touch)
-// Goal: keep gameplay intact while polishing cafe menu objects into poster-like shapes.
+// Goal: improve motif recognition while keeping gameplay and hit logic intact.
 
 const JD = {};
-const JD_WEB_PORT_VERSION = "4/7 Menu Visual Polish";
+const JD_WEB_PORT_VERSION = "5/7 Motif Recognition Polish";
 
 const STATE_TITLE = 0;
 const STATE_PLAY = 1;
@@ -1360,70 +1360,69 @@ function jdDrawPlate(x, y, w, h, alpha = 235) {
 }
 
 function jdDrawCoffeeTarget(t) {
-  // saucer
-  jdDrawPlate(t.x, JD.tableY + 7, 92, 20, 245);
-  jdFill("soda", 80);
-  ellipse(t.x, JD.tableY + 7, 58, 10);
+  // Low saucer, then a softer cafe cup. Keep it cup-like, not vase-like.
+  jdDrawPlate(t.x, JD.tableY + 7, 94, 19, 245);
+  jdFill("soda", 56);
+  ellipse(t.x, JD.tableY + 7, 58, 9);
   jdFill("plate", 238);
-  ellipse(t.x, JD.tableY + 8, 74, 13);
+  ellipse(t.x, JD.tableY + 8, 74, 12);
 
-  // cup body: soft color surfaces instead of outlines
+  // cup body: lower, wider, with a flatter bottom
   jdFill("creamWarm", 255);
-  rect(t.x, JD.tableY + 35, 61, 42, 11);
-  jdFill("highlight", 82);
-  rect(t.x - 17, JD.tableY + 36, 9, 34, 5);
-  jdFill("plate", 80);
-  rect(t.x, JD.tableY + 18, 55, 11, 5);
+  rect(t.x, JD.tableY + 34, 62, 35, 10);
+  jdFill("highlight", 78);
+  rect(t.x - 18, JD.tableY + 36, 8, 27, 5);
+  jdFill("plate", 72);
+  rect(t.x, JD.tableY + 18, 51, 8, 4);
 
-  // handle made from two soft ellipses
+  // handle: thinner and lighter
   jdFill("creamWarm", 238);
-  ellipse(t.x + 38, JD.tableY + 36, 22, 30);
+  ellipse(t.x + 37, JD.tableY + 35, 20, 27);
   jdFill("wall", 255);
-  ellipse(t.x + 38, JD.tableY + 36, 12, 20);
+  ellipse(t.x + 37, JD.tableY + 35, 11, 18);
 
-  // coffee surface
+  // rim and coffee surface: wider, shallower ellipse
   jdFill("creamWarm", 255);
-  ellipse(t.x, JD.tableY + 58, 61, 18);
+  ellipse(t.x, JD.tableY + 57, 66, 18);
   jdFill("coffee", 255);
-  ellipse(t.x, JD.tableY + 59, 51, 13);
-  jdFill("coffeeLight", 42);
-  ellipse(t.x - 7, JD.tableY + 61, 24, 5);
+  ellipse(t.x, JD.tableY + 58, 54, 12);
+  jdFill("coffeeLight", 38);
+  ellipse(t.x - 8, JD.tableY + 60, 24, 4);
 
   jdDrawTargetLabel(jdT("target.coffee"), t.x, JD.tableY - 23);
 }
 
 function jdDrawCakeTarget(t) {
-  jdDrawPlate(t.x, JD.tableY + 7, 100, 20, 242);
+  jdDrawPlate(t.x, JD.tableY + 7, 102, 20, 242);
 
-  // cake body
+  // shortcake body: calm cross-section, no top strawberry
   jdFill("cakeSponge", 255);
-  rect(t.x, JD.tableY + 31, 66, 32, 5);
+  rect(t.x, JD.tableY + 30, 68, 30, 5);
   jdFill("cakeCream", 255);
-  rect(t.x, JD.tableY + 46, 66, 9, 4);
-  jdFill("cakePink", 235);
-  rect(t.x, JD.tableY + 42, 66, 6, 3);
+  rect(t.x, JD.tableY + 45, 68, 8, 4);
+  jdFill("cakePink", 220);
+  rect(t.x, JD.tableY + 41, 68, 6, 3);
   jdFill("cakeSponge", 245);
-  rect(t.x, JD.tableY + 58, 66, 16, 5);
+  rect(t.x, JD.tableY + 57, 68, 16, 5);
   jdFill("cakeCream", 255);
-  rect(t.x, JD.tableY + 70, 64, 11, 5);
+  rect(t.x, JD.tableY + 69, 66, 10, 5);
 
-  // cream dollops
-  for (const dx of [-20, 0, 20]) {
+  // cream dollops only; the top strawberry was visually noisy
+  for (const dx of [-22, 0, 22]) {
     jdFill("cakeCream", 250);
-    ellipse(t.x + dx, JD.tableY + 76, 17, 15);
-    jdFill("highlight", 90);
-    ellipse(t.x + dx - 4, JD.tableY + 79, 5, 4);
+    ellipse(t.x + dx, JD.tableY + 76, 16, 13);
+    jdFill("highlight", 82);
+    ellipse(t.x + dx - 4, JD.tableY + 79, 5, 3.5);
   }
 
-  // strawberry on top
-  jdDrawSmallStrawberry(t.x + 9, JD.tableY + 84, 1.0);
-
-  // strawberry slices in the side
-  for (const dx of [-20, 18]) {
-    jdFill("cakePink", 210);
-    ellipse(t.x + dx, JD.tableY + 32, 24, 20);
-    jdFill("wall", 210);
-    ellipse(t.x + dx, JD.tableY + 32, 13, 12);
+  // strawberry slices in the side, clearer and quieter
+  for (const dx of [-21, 17]) {
+    jdFill("cakePink", 215);
+    ellipse(t.x + dx, JD.tableY + 32, 23, 19);
+    jdFill("wall", 215);
+    ellipse(t.x + dx, JD.tableY + 32, 12, 11);
+    jdFill("cakePink", 95);
+    rect(t.x + dx, JD.tableY + 27, 2, 8, 1);
   }
 
   jdDrawTargetLabel(jdT("target.cake"), t.x, JD.tableY - 23);
@@ -1434,77 +1433,90 @@ function jdDrawSmallStrawberry(x, y, sc = 1) {
   translate(x, y);
   scale(sc);
   noStroke();
+
+  // strawberry silhouette: two shoulders + tapered bottom
   jdFill("red", 255);
-  ellipse(0, 0, 16, 20);
-  jdFill("redDeep", 160);
-  ellipse(0, -5, 12, 8);
-  jdFill("highlight", 180);
-  ellipse(-4, 5, 4, 5);
-  jdFill("highlight", 180);
-  ellipse(2, 1, 2.5, 3);
-  ellipse(5, 6, 2.5, 3);
-  jdFill("tableTop", 210);
-  ellipse(-3, 10, 5, 3);
-  ellipse(3, 10, 5, 3);
+  ellipse(-4, 4, 13, 14);
+  ellipse(4, 4, 13, 14);
+  ellipse(0, -3, 17, 19);
+  jdFill("redDeep", 95);
+  ellipse(0, -8, 10, 8);
+
+  // leaves
+  jdFill("tableTop", 230);
+  ellipse(-5, 12, 7, 3.5);
+  ellipse(0, 13, 7, 3.5);
+  ellipse(5, 12, 7, 3.5);
+
+  // small seeds
+  jdFill("cream", 190);
+  ellipse(-4, 4, 2, 2.7);
+  ellipse(3, 5, 2, 2.7);
+  ellipse(-2, -1, 2, 2.7);
+  ellipse(5, -3, 2, 2.7);
+  ellipse(0, -7, 2, 2.5);
+
+  jdFill("highlight", 120);
+  ellipse(-5, 7, 3, 3);
   popMatrix();
 }
 
 function jdDrawMelonTarget(t) {
   // foot and stem
-  jdFill("shadow", 36);
-  ellipse(t.x + 8, JD.tableY + 1, 74, 14);
-  jdFill("glass", 150);
-  ellipse(t.x, JD.tableY + 5, 58, 15);
-  jdFill("glass", 120);
-  rect(t.x, JD.tableY + 26, 14, 43, 6);
-  jdFill("glass", 170);
-  ellipse(t.x, JD.tableY + 31, 36, 12);
+  jdFill("shadow", 34);
+  ellipse(t.x + 8, JD.tableY + 1, 72, 13);
+  jdFill("glass", 145);
+  ellipse(t.x, JD.tableY + 5, 56, 14);
+  jdFill("glass", 112);
+  rect(t.x, JD.tableY + 25, 13, 40, 6);
+  jdFill("glass", 160);
+  ellipse(t.x, JD.tableY + 30, 34, 11);
 
   // glass outer silhouette
-  jdFill("glass", 74);
+  jdFill("glass", 72);
   rect(t.x, JD.tableY + 80, 66, 126, 15);
-  jdFill("glassEdge", 95);
+  jdFill("glassEdge", 100);
   rect(t.x - 29, JD.tableY + 80, 5, 118, 3);
   jdFill("glassEdge", 115);
   rect(t.x + 29, JD.tableY + 80, 5, 118, 3);
   jdFill("glassEdge", 145);
   ellipse(t.x, JD.tableY + 143, 62, 19);
 
-  // soda body and surface
-  jdFill("soda", 210);
-  rect(t.x, JD.tableY + 65, 50, 100, 10);
-  jdFill("sodaDeep", 70);
-  rect(t.x + 11, JD.tableY + 60, 20, 92, 8);
-  jdFill("sodaLight", 160);
-  ellipse(t.x, JD.tableY + 116, 49, 16);
-  jdFill("highlight", 70);
-  ellipse(t.x - 12, JD.tableY + 110, 18, 8);
+  // straw first: it should look inserted into the drink, behind ice cream
+  jdStroke("redDeep", 210);
+  strokeWidth(2.2);
+  line(t.x + 7, JD.tableY + 72, t.x + 33, JD.tableY + 204);
+  noStroke();
 
-  // ice cubes
-  jdDrawIceCube(t.x - 12, JD.tableY + 92, 19, -18, 110);
-  jdDrawIceCube(t.x + 13, JD.tableY + 70, 23, 13, 92);
-  jdDrawIceCube(t.x - 4, JD.tableY + 48, 20, 6, 72);
+  // soda body: tightened so the liquid sits clearly inside the glass
+  jdFill("soda", 210);
+  rect(t.x, JD.tableY + 64, 44, 94, 9);
+  jdFill("sodaDeep", 64);
+  rect(t.x + 10, JD.tableY + 60, 17, 84, 7);
+  jdFill("sodaLight", 150);
+  ellipse(t.x, JD.tableY + 112, 43, 13);
+  jdFill("highlight", 68);
+  ellipse(t.x - 10, JD.tableY + 106, 15, 7);
+
+  // ice cubes, simplified and contained
+  jdDrawIceCube(t.x - 12, JD.tableY + 91, 17, -18, 105);
+  jdDrawIceCube(t.x + 10, JD.tableY + 70, 20, 12, 88);
+  jdDrawIceCube(t.x - 4, JD.tableY + 49, 17, 6, 66);
 
   // bubbles
-  jdFill("highlight", 190);
-  ellipse(t.x - 18, JD.tableY + 54, 4, 4);
-  ellipse(t.x + 18, JD.tableY + 81, 3, 3);
-  ellipse(t.x + 8, JD.tableY + 99, 5, 5);
-  ellipse(t.x - 4, JD.tableY + 117, 3, 3);
-  ellipse(t.x + 20, JD.tableY + 121, 4, 4);
+  jdFill("highlight", 185);
+  ellipse(t.x - 17, JD.tableY + 54, 3.5, 3.5);
+  ellipse(t.x + 16, JD.tableY + 80, 3, 3);
+  ellipse(t.x + 7, JD.tableY + 98, 4, 4);
+  ellipse(t.x - 4, JD.tableY + 116, 3, 3);
 
-  // ice cream and cherry
+  // ice cream only; cherry garnish removed
   jdFill("creamWarm", 252);
-  ellipse(t.x, JD.tableY + 146, 48, 36);
+  ellipse(t.x, JD.tableY + 146, 48, 35);
   jdFill("highlight", 130);
-  ellipse(t.x - 10, JD.tableY + 154, 18, 10);
-  jdDrawCherryGarnish(t.x + 13, JD.tableY + 163, 1.0);
-
-  // straw
-  jdStroke("redDeep", 220);
-  strokeWidth(2.2);
-  line(t.x + 16, JD.tableY + 166, t.x + 33, JD.tableY + 204);
-  noStroke();
+  ellipse(t.x - 10, JD.tableY + 154, 18, 9);
+  jdFill("plate", 80);
+  ellipse(t.x + 8, JD.tableY + 139, 24, 10);
 
   jdDrawTargetLabel(jdT("target.melon"), t.x, JD.tableY - 23);
 }
@@ -1563,41 +1575,56 @@ function jdDrawFood(f, x, y, alpha = 255, scaleValue = 1) {
   noStroke();
 
   if (f.shape === "circle") {
+    // cherry: smaller fruit feeling, not tomato
     jdFill("red", alpha);
-    ellipse(0, 0, f.r * 2, f.r * 2);
-    jdFill("redDeep", alpha * 0.30);
-    ellipse(2, -3, f.r * 1.35, f.r * 0.9);
-    jdFill("highlight", Math.floor(alpha * 0.42));
-    ellipse(-3, 4, 6, 5);
-    jdStroke("tableTop", Math.floor(alpha * 0.86));
-    strokeWidth(2);
-    line(2, 8, 7, 18);
+    ellipse(-1, -1, f.r * 1.85, f.r * 1.75);
+    jdFill("redDeep", alpha * 0.22);
+    ellipse(2, -5, f.r * 1.05, f.r * 0.60);
+    jdFill("highlight", Math.floor(alpha * 0.44));
+    ellipse(-4, 4, 4.2, 4.0);
+
+    // small top dimple and longer stem
+    jdFill("redDeep", Math.floor(alpha * 0.50));
+    ellipse(1, 7, 4, 2.2);
+    jdStroke("tableTop", Math.floor(alpha * 0.92));
+    strokeWidth(1.7);
+    line(2, 8, 10, 21);
     noStroke();
 
   } else if (f.shape === "rect") {
+    // sugar cube: face + top highlight, no confusing diagonal line
     jdFill("cream", alpha);
-    rect(0, 0, f.w, f.h, 4);
-    jdFill("highlight", Math.floor(alpha * 0.55));
-    rect(-3, 3, f.w * 0.45, f.h * 0.32, 3);
-    jdStroke("wallShade", Math.floor(alpha * 0.55));
-    strokeWidth(1.4);
-    line(-f.w * 0.35, -f.h * 0.25, f.w * 0.25, f.h * 0.34);
-    noStroke();
+    rect(0, 0, f.w, f.h, 3.5);
+    jdFill("highlight", Math.floor(alpha * 0.50));
+    rect(-3.5, 4, f.w * 0.44, f.h * 0.30, 2.5);
+    jdFill("wallShade", Math.floor(alpha * 0.22));
+    rect(3.5, -3.5, f.w * 0.30, f.h * 0.35, 2.5);
+    jdFill("creamWarm", Math.floor(alpha * 0.55));
+    ellipse(-4, -4, 2.5, 2.5);
 
   } else if (f.shape === "oval") {
+    // strawberry: clearer shoulders, leaves, and seeds
     jdFill("red", alpha);
-    ellipse(0, 0, f.w, f.h);
-    jdFill("redDeep", alpha * 0.28);
-    ellipse(2, -5, f.w * 0.64, f.h * 0.42);
-    jdFill("highlight", Math.floor(alpha * 0.45));
-    ellipse(-4, 5, 5, 6);
-    jdFill("cream", Math.floor(alpha * 0.75));
-    ellipse(-5, 0, 2.5, 3);
-    ellipse(2, 4, 2.5, 3);
-    ellipse(5, -2, 2.5, 3);
-    jdFill("tableTop", Math.floor(alpha * 0.85));
-    ellipse(-4, 11, 6, 3);
-    ellipse(3, 11, 6, 3);
+    ellipse(-4, 4, f.w * 0.50, f.h * 0.46);
+    ellipse(4, 4, f.w * 0.50, f.h * 0.46);
+    ellipse(0, -4, f.w * 0.72, f.h * 0.70);
+    jdFill("redDeep", alpha * 0.20);
+    ellipse(1, -8, f.w * 0.44, f.h * 0.30);
+
+    jdFill("tableTop", Math.floor(alpha * 0.90));
+    ellipse(-5, 10, 6, 3);
+    ellipse(0, 11, 6, 3);
+    ellipse(5, 10, 6, 3);
+
+    jdFill("cream", Math.floor(alpha * 0.78));
+    ellipse(-5, 4, 2.2, 2.8);
+    ellipse(2, 5, 2.2, 2.8);
+    ellipse(-2, -1, 2.2, 2.8);
+    ellipse(5, -3, 2.2, 2.8);
+    ellipse(0, -8, 2.0, 2.5);
+
+    jdFill("highlight", Math.floor(alpha * 0.38));
+    ellipse(-5, 7, 4, 4);
   }
   popMatrix();
 }
@@ -1617,9 +1644,12 @@ function jdDrawObstacle(o) {
     jdFill("red", 60); rect(o.x, o.y + 15, o.w - 5, 4, 2);
     jdFill("ink", 200); font('Courier-Bold'); fontSize(8); textAlign(CENTER); text("BILL", o.x, o.y);
   } else if (o.kind === "coaster") {
-    jdFill("wood"); ellipse(o.x, o.y, o.r * 2, o.r * 0.9);
-    jdFill("woodDark", 210); ellipse(o.x, o.y + 2, o.r * 1.45, o.r * 0.48);
-    jdFill("highlight", 38); ellipse(o.x - 3, o.y + 5, o.r * 1.1, o.r * 0.26);
+    // small wooden coaster between melon soda and cake
+    jdFill("shadow", 32); ellipse(o.x + 4, o.y - 3, o.r * 2.3, o.r * 0.58);
+    jdFill("wood", 230); ellipse(o.x, o.y, o.r * 2.05, o.r * 0.62);
+    jdFill("woodDark", 120); ellipse(o.x, o.y + 1, o.r * 1.42, o.r * 0.34);
+    jdFill("highlight", 44); ellipse(o.x - 4, o.y + 3, o.r * 1.1, o.r * 0.18);
+    jdFill("redDeep", 70); ellipse(o.x + 1, o.y + 1, o.r * 0.64, o.r * 0.16);
   }
 }
 
