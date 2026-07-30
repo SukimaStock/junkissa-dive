@@ -678,6 +678,19 @@ function jdUpdatePlay(dt) {
   f.vy -= JD.gravity * (f.gravityScale || 1) * dt;
   f.x += f.vx * dt;
   f.y += f.vy * dt;
+
+  // 移動速度に応じて見た目の回転角を蓄積する
+  // 着地後も visualAngle を消さない
+  const spinSpeed = Math.hypot(f.vx, f.vy);
+  const spinDirection = f.vx <= 0 ? 1 : -1;
+
+  if (!Number.isFinite(f.visualAngle)) {
+    f.visualAngle = 0;
+  }
+
+  f.visualAngle =
+    (f.visualAngle + spinDirection * spinSpeed * dt * 0.18) % 360;
+
   f.vx *= f.airDrag || 0.998;
   f.vy *= f.airDrag || 0.998;
 
@@ -1904,16 +1917,18 @@ function jdDrawFood(
 
   translate(x, y);
 
-  // 飛行中のみ、移動位置に合わせて回転
+  // 飛行中に蓄積した角度を、着地・成功後も維持する
   // 当たり判定には影響せず、見た目だけ回転する
-  if (
-    f.launched &&
-    !f.resolved
-  ) {
-    const spinAngle =
-      (f.x * 0.55 + f.y * 0.18) % 360;
+  const visualAngle = Number.isFinite(f.visualAngle)
+    ? f.visualAngle
+    : 0;
 
-    rotate(spinAngle);
+  if (
+    f.launched ||
+    f.resolved ||
+    f.hideAfterResolve
+  ) {
+    rotate(visualAngle);
   }
 
   scale(scaleValue);
