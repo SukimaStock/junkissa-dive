@@ -1343,11 +1343,9 @@ function jdDrawWorld() {
 }
 
 function jdDrawTargetLabel(label, x, y) {
-  jdFill("ink", 190);
-  font('Courier-Bold');
-  fontSize(7);
-  textAlign(CENTER);
-  text(label, x, y);
+  // Final polish: hide target labels under the items.
+  // The silhouettes are now readable enough on their own.
+  return;
 }
 
 function jdDrawPlate(x, y, w, h, alpha = 235) {
@@ -1367,25 +1365,25 @@ function jdDrawCoffeeTarget(t) {
   jdFill("plate", 238);
   ellipse(t.x, JD.tableY + 8, 74, 12);
 
-  // cup body: simpler silhouette to avoid the pot / vase feeling
+  // cup body lowered slightly so it sits firmly on the saucer
   jdFill("creamWarm", 255);
-  rect(t.x, JD.tableY + 39, 60, 36, 11);
+  rect(t.x, JD.tableY + 35, 60, 36, 11);
   jdFill("highlight", 68);
-  rect(t.x - 18, JD.tableY + 39, 7, 24, 4);
+  rect(t.x - 18, JD.tableY + 35, 7, 24, 4);
 
   // handle: lighter and a touch smaller
   jdFill("creamWarm", 235);
-  ellipse(t.x + 35, JD.tableY + 38, 18, 25);
+  ellipse(t.x + 35, JD.tableY + 34, 18, 25);
   jdFill("wall", 255);
-  ellipse(t.x + 35, JD.tableY + 38, 9, 16);
+  ellipse(t.x + 35, JD.tableY + 34, 9, 16);
 
   // lip and coffee surface: sit directly on the body, with no pinched neck
   jdFill("creamWarm", 255);
-  ellipse(t.x, JD.tableY + 53, 66, 15);
+  ellipse(t.x, JD.tableY + 49, 66, 15);
   jdFill("coffee", 255);
-  ellipse(t.x, JD.tableY + 53, 54, 10.5);
+  ellipse(t.x, JD.tableY + 49, 54, 10.5);
   jdFill("coffeeLight", 34);
-  ellipse(t.x - 8, JD.tableY + 54, 22, 3.5);
+  ellipse(t.x - 8, JD.tableY + 50, 22, 3.5);
 
   jdDrawTargetLabel(jdT("target.coffee"), t.x, JD.tableY - 23);
 }
@@ -1393,24 +1391,24 @@ function jdDrawCoffeeTarget(t) {
 function jdDrawCakeTarget(t) {
   jdDrawPlate(t.x, JD.tableY + 7, 102, 20, 242);
 
-  // shortcake body: rely on calm color layers rather than detailed strawberry slices
+  // shortcake body lowered slightly so it feels more grounded on the plate
   jdFill("cakeSponge", 250);
-  rect(t.x, JD.tableY + 29, 68, 28, 5);
+  rect(t.x, JD.tableY + 25, 68, 28, 5);
   jdFill("cakeCream", 255);
-  rect(t.x, JD.tableY + 43, 68, 8, 4);
+  rect(t.x, JD.tableY + 39, 68, 8, 4);
   jdFill("cakePink", 215);
-  rect(t.x, JD.tableY + 38, 68, 7, 3);
+  rect(t.x, JD.tableY + 34, 68, 7, 3);
   jdFill("cakeSponge", 245);
-  rect(t.x, JD.tableY + 54, 68, 15, 5);
+  rect(t.x, JD.tableY + 50, 68, 15, 5);
   jdFill("cakeCream", 255);
-  rect(t.x, JD.tableY + 66, 68, 9, 5);
+  rect(t.x, JD.tableY + 62, 68, 9, 5);
 
   // cream dollops only
   for (const dx of [-22, 0, 22]) {
     jdFill("cakeCream", 250);
-    ellipse(t.x + dx, JD.tableY + 76, 16, 13);
+    ellipse(t.x + dx, JD.tableY + 72, 16, 13);
     jdFill("highlight", 82);
-    ellipse(t.x + dx - 4, JD.tableY + 79, 5, 3.5);
+    ellipse(t.x + dx - 4, JD.tableY + 75, 5, 3.5);
   }
 
   jdDrawTargetLabel(jdT("target.cake"), t.x, JD.tableY - 23);
@@ -1474,27 +1472,27 @@ function jdDrawMelonTarget(t) {
   line(t.x + 5, JD.tableY + 86, t.x + 30, JD.tableY + 204);
   noStroke();
 
-  // soda body: fully contained inside the glass
+  // soda body: lifted slightly so the fill sits better in the glass
   jdFill("soda", 210);
-  rect(t.x, JD.tableY + 62, 42, 92, 9);
+  rect(t.x, JD.tableY + 66, 42, 92, 9);
   jdFill("sodaDeep", 60);
-  rect(t.x + 9, JD.tableY + 58, 16, 82, 7);
+  rect(t.x + 9, JD.tableY + 62, 16, 82, 7);
   jdFill("sodaLight", 150);
-  ellipse(t.x, JD.tableY + 108, 41, 12);
+  ellipse(t.x, JD.tableY + 112, 41, 12);
   jdFill("highlight", 68);
-  ellipse(t.x - 10, JD.tableY + 102, 14, 6);
+  ellipse(t.x - 10, JD.tableY + 106, 14, 6);
 
   // ice cubes, simplified and contained
-  jdDrawIceCube(t.x - 12, JD.tableY + 90, 16, -18, 105);
-  jdDrawIceCube(t.x + 9, JD.tableY + 71, 18, 12, 88);
-  jdDrawIceCube(t.x - 3, JD.tableY + 52, 16, 6, 66);
+  jdDrawIceCube(t.x - 12, JD.tableY + 94, 16, -18, 105);
+  jdDrawIceCube(t.x + 9, JD.tableY + 75, 18, 12, 88);
+  jdDrawIceCube(t.x - 3, JD.tableY + 56, 16, 6, 66);
 
   // bubbles
   jdFill("highlight", 185);
-  ellipse(t.x - 16, JD.tableY + 55, 3.5, 3.5);
-  ellipse(t.x + 15, JD.tableY + 79, 3, 3);
-  ellipse(t.x + 6, JD.tableY + 95, 4, 4);
-  ellipse(t.x - 4, JD.tableY + 112, 3, 3);
+  ellipse(t.x - 16, JD.tableY + 59, 3.5, 3.5);
+  ellipse(t.x + 15, JD.tableY + 83, 3, 3);
+  ellipse(t.x + 6, JD.tableY + 99, 4, 4);
+  ellipse(t.x - 4, JD.tableY + 116, 3, 3);
 
   // ice cream: resting on the soda, not floating above it
   jdFill("creamWarm", 252);
