@@ -751,36 +751,68 @@ function jdTargetDebugInfo(f, t) {
 
   if (t.kind === "coffee") {
     const cx = t.x;
-    const cy = JD.tableY + 58;
+
+    // 見た目のコーヒー液面に合わせて下へ移動
+    const cy = JD.tableY + 43;
+
     const rx = 30 + pad.x * 0.25 + r * 0.75;
-    const ry = 11 + pad.y * 0.20 + r * 0.55;
+    const ry = 10 + pad.y * 0.20 + r * 0.55;
+
     const dx = f.x - cx;
     const dy = f.y - cy;
-    inZone = (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1;
+
+    inZone =
+      (dx * dx) / (rx * rx) +
+      (dy * dy) / (ry * ry) <= 1;
+
   } else if (t.kind === "cake") {
     const left = t.x - 44 - pad.x * 0.25;
     const right = t.x + 44 + pad.x * 0.25;
-    const bottom = JD.tableY + 18;
-    const top = JD.tableY + 82 + pad.y * 0.15;
-    inZone = f.x + r * 0.80 > left && f.x - r * 0.80 < right && f.y + r * 0.90 > bottom && f.y - r * 0.35 < top;
+
+    // 下げたケーキ本体の高さに合わせる
+    const bottom = JD.tableY + 7;
+    const top = JD.tableY + 74 + pad.y * 0.15;
+
+    inZone =
+      f.x + r * 0.80 > left &&
+      f.x - r * 0.80 < right &&
+      f.y + r * 0.90 > bottom &&
+      f.y - r * 0.35 < top;
+
   } else if (t.kind === "melon") {
     const left = t.x - 25 - pad.x * 0.12;
     const right = t.x + 25 + pad.x * 0.12;
     const bottom = JD.tableY + 24;
     const top = JD.tableY + 146 + pad.y * 0.12;
-    inZone = f.x + r * 0.55 > left && f.x - r * 0.55 < right && f.y + r * 0.55 > bottom && f.y - r * 0.55 < top;
+
+    inZone =
+      f.x + r * 0.55 > left &&
+      f.x - r * 0.55 < right &&
+      f.y + r * 0.55 > bottom &&
+      f.y - r * 0.55 < top;
   }
 
   let entryOK = false;
   let reason = "ZONE OUT";
+
   if (inZone) {
     const entry = jdEntryDebugReason(f, t.kind);
     entryOK = entry.ok;
     reason = entry.reason;
   }
 
-  return { target: t, inZone, entryOK, ok: inZone && entryOK, reason, speed: jdShotSpeed(f), vx: f.vx, vy: f.vy };
+  return {
+    target: t,
+    inZone,
+    entryOK,
+    ok: inZone && entryOK,
+    reason,
+    speed: jdShotSpeed(f),
+    vx: f.vx,
+    vy: f.vy
+  };
 }
+
 
 function jdEntryDebugReason(f, targetKind) {
   const vx = f.vx || 0;
@@ -891,22 +923,65 @@ function jdResolve(t, missType) {
 function jdSnapFood(t) {
   const f = JD.food;
   if (!f) return;
+
   if (t.kind === "coffee") {
-    f.x = jdClamp(f.x, t.x - 22, t.x + 22);
-    f.y = jdClamp(f.y, JD.tableY + 53, JD.tableY + 64);
+    f.x = jdClamp(
+      f.x,
+      t.x - 22,
+      t.x + 22
+    );
+
+    // コーヒー液面付近へ配置
+    f.y = jdClamp(
+      f.y,
+      JD.tableY + 39,
+      JD.tableY + 48
+    );
+
   } else if (t.kind === "cake") {
     if (JD.pendingCakeSasari) {
-      f.x = jdClamp(f.x, t.x - 32, t.x + 32);
-      f.y = jdClamp(f.y, JD.tableY + 60, JD.tableY + 74);
+      f.x = jdClamp(
+        f.x,
+        t.x - 32,
+        t.x + 32
+      );
+
+      f.y = jdClamp(
+        f.y,
+        JD.tableY + 51,
+        JD.tableY + 65
+      );
+
     } else {
-      f.x = jdClamp(f.x, t.x - 36, t.x + 36);
-      f.y = jdClamp(f.y, JD.tableY + 68, JD.tableY + 88);
+      f.x = jdClamp(
+        f.x,
+        t.x - 36,
+        t.x + 36
+      );
+
+      // 下げたケーキ上面に自然に乗せる
+      f.y = jdClamp(
+        f.y,
+        JD.tableY + 57,
+        JD.tableY + 73
+      );
     }
+
   } else if (t.kind === "melon") {
-    f.x = jdClamp(f.x, t.x - 18, t.x + 18);
-    f.y = jdClamp(f.y, JD.tableY + 46, JD.tableY + 126);
+    f.x = jdClamp(
+      f.x,
+      t.x - 18,
+      t.x + 18
+    );
+
+    f.y = jdClamp(
+      f.y,
+      JD.tableY + 46,
+      JD.tableY + 126
+    );
   }
 }
+
 
 function jdRegisterPlacedFood(f, target) {
   JD.placedFoods.push({
@@ -959,12 +1034,38 @@ function jdStartHitZoom(x, y, target) {
 
 function jdShouldPerfectCenterHit(target, x, y, label) {
   if (!target || label === "SASARI!") return false;
+
   const dx = Math.abs(x - target.x);
-  if (target.kind === "coffee") return dx <= 6 && Math.abs(y - (JD.tableY + 58)) <= 5;
-  if (target.kind === "cake") return dx <= 8 && Math.abs(y - (JD.tableY + 78)) <= 8;
-  if (target.kind === "melon") return dx <= 6 && y >= JD.tableY + 72 && y <= JD.tableY + 124;
+
+  if (target.kind === "coffee") {
+    return (
+      dx <= 6 &&
+      Math.abs(
+        y - (JD.tableY + 43)
+      ) <= 5
+    );
+  }
+
+  if (target.kind === "cake") {
+    return (
+      dx <= 8 &&
+      Math.abs(
+        y - (JD.tableY + 68)
+      ) <= 7
+    );
+  }
+
+  if (target.kind === "melon") {
+    return (
+      dx <= 6 &&
+      y >= JD.tableY + 72 &&
+      y <= JD.tableY + 124
+    );
+  }
+
   return false;
 }
+
 
 function jdPerfectZoomLevel(target) {
   if (!target) return 1.48;
@@ -977,23 +1078,108 @@ function jdPerfectZoomLevel(target) {
 function jdCheckTargetBodies() {
   const f = JD.food;
   if (!f || f.resolved) return;
+
   const r = jdFoodRadius(f);
+
   for (const t of JD.targets) {
     if (t.kind === "coffee") {
-      jdCollideRect(t.x - 39, JD.tableY + 14, 8, 42, r, 0.52, "COFFEE_WALL_L");
-      jdCollideRect(t.x + 31, JD.tableY + 14, 8, 42, r, 0.52, "COFFEE_WALL_R");
-      jdCollideRect(t.x - 31, JD.tableY + 12, 62, 8, r, 0.40, "COFFEE_BOTTOM");
-      jdCollideRect(t.x - 44, JD.tableY + 2, 88, 10, r, 0.38, "COFFEE_SAUCER");
+      // 下げたカップ形状に合わせて壁・底も下へ
+      jdCollideRect(
+        t.x - 39,
+        JD.tableY + 7,
+        8,
+        38,
+        r,
+        0.52,
+        "COFFEE_WALL_L"
+      );
+
+      jdCollideRect(
+        t.x + 31,
+        JD.tableY + 7,
+        8,
+        38,
+        r,
+        0.52,
+        "COFFEE_WALL_R"
+      );
+
+      jdCollideRect(
+        t.x - 31,
+        JD.tableY + 7,
+        62,
+        7,
+        r,
+        0.40,
+        "COFFEE_BOTTOM"
+      );
+
+      jdCollideRect(
+        t.x - 44,
+        JD.tableY + 1,
+        88,
+        9,
+        r,
+        0.38,
+        "COFFEE_SAUCER"
+      );
+
     } else if (t.kind === "cake") {
-      jdCollideRect(t.x - 54, JD.tableY + 18, 10, 44, r, 0.48, "CAKE_SIDE_L");
-      jdCollideRect(t.x + 44, JD.tableY + 18, 10, 44, r, 0.48, "CAKE_SIDE_R");
+      // ケーキの側面全体に合うよう、高さと位置を再調整
+      jdCollideRect(
+        t.x - 54,
+        JD.tableY + 7,
+        10,
+        62,
+        r,
+        0.48,
+        "CAKE_SIDE_L"
+      );
+
+      jdCollideRect(
+        t.x + 44,
+        JD.tableY + 7,
+        10,
+        62,
+        r,
+        0.48,
+        "CAKE_SIDE_R"
+      );
+
     } else if (t.kind === "melon") {
-      jdCollideRect(t.x - 35, JD.tableY + 18, 7, 120, r, 0.46, "MELON_WALL_L");
-      jdCollideRect(t.x + 28, JD.tableY + 18, 7, 120, r, 0.46, "MELON_WALL_R");
-      jdCollideRect(t.x - 30, JD.tableY + 8, 60, 10, r, 0.32, "MELON_BOTTOM");
+      jdCollideRect(
+        t.x - 35,
+        JD.tableY + 18,
+        7,
+        120,
+        r,
+        0.46,
+        "MELON_WALL_L"
+      );
+
+      jdCollideRect(
+        t.x + 28,
+        JD.tableY + 18,
+        7,
+        120,
+        r,
+        0.46,
+        "MELON_WALL_R"
+      );
+
+      jdCollideRect(
+        t.x - 30,
+        JD.tableY + 8,
+        60,
+        10,
+        r,
+        0.32,
+        "MELON_BOTTOM"
+      );
     }
   }
 }
+
 
 function jdCheckObstacles() {
   const f = JD.food;
@@ -1104,21 +1290,50 @@ function jdCheckStuckBounce(dt) {
 
 function jdCheckSweptCake(prevX, prevY, nowX, nowY) {
   const f = JD.food;
+
   if (!f || f.resolved || nowY >= prevY) return false;
-  const t = JD.targets.find((target) => target.kind === "cake");
+
+  const t = JD.targets.find(
+    target => target.kind === "cake"
+  );
+
   if (!t) return false;
-  const catchY = JD.tableY + 82;
-  const crossed = prevY >= catchY && nowY <= catchY;
+
+  // 下げたケーキ上面に合わせる
+  const catchY = JD.tableY + 74;
+
+  const crossed =
+    prevY >= catchY &&
+    nowY <= catchY;
+
   if (!crossed) return false;
-  const q = (prevY - catchY) / Math.max(0.0001, prevY - nowY);
-  const hitX = prevX + (nowX - prevX) * q;
-  if (hitX < t.x - 44 || hitX > t.x + 44) return false;
+
+  const q =
+    (prevY - catchY) /
+    Math.max(0.0001, prevY - nowY);
+
+  const hitX =
+    prevX +
+    (nowX - prevX) * q;
+
+  if (
+    hitX < t.x - 44 ||
+    hitX > t.x + 44
+  ) {
+    return false;
+  }
+
   f.x = hitX;
   f.y = catchY;
-  JD.pendingCakeSasari = jdShouldCakeSasari(f);
+
+  JD.pendingCakeSasari =
+    jdShouldCakeSasari(f);
+
   jdResolve(t, null);
+
   return true;
 }
+
 
 function jdShouldCakeSasari(f) {
   const speed = jdShotSpeed(f);
@@ -1678,67 +1893,259 @@ function jdDrawTarget(t) {
   }
 }
 
-function jdDrawFood(f, x, y, alpha = 255, scaleValue = 1) {
+function jdDrawFood(
+  f,
+  x,
+  y,
+  alpha = 255,
+  scaleValue = 1
+) {
   pushMatrix();
+
   translate(x, y);
+
+  // 飛行中のみ、移動位置に合わせて回転
+  // 当たり判定には影響せず、見た目だけ回転する
+  if (
+    f.launched &&
+    !f.resolved
+  ) {
+    const spinAngle =
+      (f.x * 0.55 + f.y * 0.18) % 360;
+
+    rotate(spinAngle);
+  }
+
   scale(scaleValue);
+
   rectMode(CENTER);
   ellipseMode(CENTER);
   noStroke();
 
   if (f.shape === "circle") {
-    // cherry: smaller fruit feeling, not tomato
+    // チェリー
     jdFill("red", alpha);
-    ellipse(-1, -1, f.r * 1.85, f.r * 1.75);
-    jdFill("redDeep", alpha * 0.22);
-    ellipse(2, -5, f.r * 1.05, f.r * 0.60);
-    jdFill("highlight", Math.floor(alpha * 0.44));
-    ellipse(-4, 4, 4.2, 4.0);
+    ellipse(
+      -1,
+      -1,
+      f.r * 1.85,
+      f.r * 1.75
+    );
 
-    // small top dimple and longer stem
-    jdFill("redDeep", Math.floor(alpha * 0.50));
-    ellipse(1, 7, 4, 2.2);
-    jdStroke("tableTop", Math.floor(alpha * 0.92));
+    jdFill(
+      "redDeep",
+      alpha * 0.22
+    );
+
+    ellipse(
+      2,
+      -5,
+      f.r * 1.05,
+      f.r * 0.60
+    );
+
+    jdFill(
+      "highlight",
+      Math.floor(alpha * 0.44)
+    );
+
+    ellipse(
+      -4,
+      4,
+      4.2,
+      4
+    );
+
+    jdFill(
+      "redDeep",
+      Math.floor(alpha * 0.50)
+    );
+
+    ellipse(
+      1,
+      7,
+      4,
+      2.2
+    );
+
+    jdStroke(
+      "tableTop",
+      Math.floor(alpha * 0.92)
+    );
+
     strokeWidth(1.7);
-    line(2, 8, 10, 21);
+
+    line(
+      2,
+      8,
+      10,
+      21
+    );
+
     noStroke();
 
   } else if (f.shape === "rect") {
-    // sugar cube: face + top highlight, no confusing diagonal line
+    // 角砂糖
     jdFill("cream", alpha);
-    rect(0, 0, f.w, f.h, 3.5);
-    jdFill("highlight", Math.floor(alpha * 0.50));
-    rect(-3.5, 4, f.w * 0.44, f.h * 0.30, 2.5);
-    jdFill("wallShade", Math.floor(alpha * 0.22));
-    rect(3.5, -3.5, f.w * 0.30, f.h * 0.35, 2.5);
-    jdFill("creamWarm", Math.floor(alpha * 0.55));
-    ellipse(-4, -4, 2.5, 2.5);
+
+    rect(
+      0,
+      0,
+      f.w,
+      f.h,
+      3.5
+    );
+
+    jdFill(
+      "highlight",
+      Math.floor(alpha * 0.50)
+    );
+
+    rect(
+      -3.5,
+      4,
+      f.w * 0.44,
+      f.h * 0.30,
+      2.5
+    );
+
+    jdFill(
+      "wallShade",
+      Math.floor(alpha * 0.22)
+    );
+
+    rect(
+      3.5,
+      -3.5,
+      f.w * 0.30,
+      f.h * 0.35,
+      2.5
+    );
+
+    jdFill(
+      "creamWarm",
+      Math.floor(alpha * 0.55)
+    );
+
+    ellipse(
+      -4,
+      -4,
+      2.5,
+      2.5
+    );
 
   } else if (f.shape === "oval") {
-    // strawberry: slightly smaller and simpler, with fewer seeds
+    // いちご
     jdFill("red", alpha);
-    ellipse(-3.5, 3, f.w * 0.42, f.h * 0.40);
-    ellipse(3.5, 3, f.w * 0.42, f.h * 0.40);
-    ellipse(0, -3, f.w * 0.62, f.h * 0.60);
-    jdFill("redDeep", alpha * 0.18);
-    ellipse(1, -7, f.w * 0.36, f.h * 0.24);
 
-    jdFill("tableTop", Math.floor(alpha * 0.88));
-    ellipse(-4.5, 8.5, 5.5, 2.8);
-    ellipse(0, 9.5, 5.5, 2.8);
-    ellipse(4.5, 8.5, 5.5, 2.8);
+    ellipse(
+      -3.5,
+      3,
+      f.w * 0.42,
+      f.h * 0.40
+    );
 
-    jdFill("cream", Math.floor(alpha * 0.76));
-    ellipse(-4, 3.5, 2.0, 2.5);
-    ellipse(2.5, 4.0, 2.0, 2.5);
-    ellipse(-1.5, -1.0, 2.0, 2.5);
-    ellipse(3.5, -2.5, 2.0, 2.5);
+    ellipse(
+      3.5,
+      3,
+      f.w * 0.42,
+      f.h * 0.40
+    );
 
-    jdFill("highlight", Math.floor(alpha * 0.34));
-    ellipse(-4, 5.5, 3.5, 3.5);
+    ellipse(
+      0,
+      -3,
+      f.w * 0.62,
+      f.h * 0.60
+    );
+
+    jdFill(
+      "redDeep",
+      alpha * 0.18
+    );
+
+    ellipse(
+      1,
+      -7,
+      f.w * 0.36,
+      f.h * 0.24
+    );
+
+    jdFill(
+      "tableTop",
+      Math.floor(alpha * 0.88)
+    );
+
+    ellipse(
+      -4.5,
+      8.5,
+      5.5,
+      2.8
+    );
+
+    ellipse(
+      0,
+      9.5,
+      5.5,
+      2.8
+    );
+
+    ellipse(
+      4.5,
+      8.5,
+      5.5,
+      2.8
+    );
+
+    jdFill(
+      "cream",
+      Math.floor(alpha * 0.76)
+    );
+
+    ellipse(
+      -4,
+      3.5,
+      2,
+      2.5
+    );
+
+    ellipse(
+      2.5,
+      4,
+      2,
+      2.5
+    );
+
+    ellipse(
+      -1.5,
+      -1,
+      2,
+      2.5
+    );
+
+    ellipse(
+      3.5,
+      -2.5,
+      2,
+      2.5
+    );
+
+    jdFill(
+      "highlight",
+      Math.floor(alpha * 0.34)
+    );
+
+    ellipse(
+      -4,
+      5.5,
+      3.5,
+      3.5
+    );
   }
+
   popMatrix();
 }
+
 
 
 function jdDrawObstacle(o) {
