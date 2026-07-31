@@ -2483,34 +2483,117 @@ function jdDrawWorld() {
   ellipseMode(CENTER);
   noStroke();
 
+  // 端末比率やズームアウト量が変わっても、
+  // 背景とテーブルの端が画面内へ出ないよう左右に延長する
+  const visualLeft = -360;
+  const visualRight = JD.worldW + 360;
+  const visualWidth =
+    visualRight -
+    visualLeft;
+
   // Poster-like cafe wall
   jdFill("wall");
-  rect(0, 0, JD.worldW, JD.LOGICAL_H);
+  rect(
+    visualLeft,
+    0,
+    visualWidth,
+    JD.LOGICAL_H
+  );
+
   jdFill("wallShade", 32);
-  rect(0, 372, JD.worldW, 112);
+  rect(
+    visualLeft,
+    372,
+    visualWidth,
+    112
+  );
+
   jdFill("redDeep", 150);
-  rect(0, 374, JD.worldW, 5);
+  rect(
+    visualLeft,
+    374,
+    visualWidth,
+    5
+  );
+
   jdFill("wallLine", 55);
-  rect(0, 304, JD.worldW, 2);
-  rect(0, 446, JD.worldW, 2);
+  rect(
+    visualLeft,
+    304,
+    visualWidth,
+    2
+  );
+
+  rect(
+    visualLeft,
+    446,
+    visualWidth,
+    2
+  );
 
   // quiet poster grain / cafe panels
   jdFill("highlight", 18);
-  for (let x = 30; x <= JD.worldW; x += 120) {
-    rect(x, JD.tableY + 84, 54, 126, 18);
+
+  for (
+    let x = visualLeft + 30;
+    x <= visualRight;
+    x += 120
+  ) {
+    rect(
+      x,
+      JD.tableY + 84,
+      54,
+      126,
+      18
+    );
   }
 
   // table front and top
   jdFill("tableFront");
-  rect(0, 0, JD.worldW, JD.tableY - 30);
+  rect(
+    visualLeft,
+    0,
+    visualWidth,
+    JD.tableY - 30
+  );
+
   jdFill("tableTop");
-  rect(0, JD.tableY - 16, JD.worldW, 32);
+  rect(
+    visualLeft,
+    JD.tableY - 16,
+    visualWidth,
+    32
+  );
+
   jdFill("tableLip");
-  rect(0, JD.tableY - 18, JD.worldW, 5);
-  rect(0, JD.tableY + 11, JD.worldW, 6);
+  rect(
+    visualLeft,
+    JD.tableY - 18,
+    visualWidth,
+    5
+  );
+
+  rect(
+    visualLeft,
+    JD.tableY + 11,
+    visualWidth,
+    6
+  );
 
   jdFill("tableStripe", 20);
-  for (let x = 40; x <= JD.worldW; x += 118) rect(x, 0, 4, JD.tableY - 32);
+
+  for (
+    let x = visualLeft + 40;
+    x <= visualRight;
+    x += 118
+  ) {
+    rect(
+      x,
+      0,
+      4,
+      JD.tableY - 32
+    );
+  }
 
   jdDrawLastShotGhost();
   for (const t of JD.targets) {
@@ -4779,15 +4862,13 @@ function jdSetCameraOverview() {
     1
   );
 
-  // 引っ張り量40％で全景に到達。
-  // それ以降はカメラを変えず、攻略に必要な視界を維持する。
+  // 引っ張り量40％で全景へ到達
   const overviewRatio = jdClamp(
     powerRatio / 0.40,
     0,
     1
   );
 
-  // 最初は素早く反応し、全景付近で滑らかに止まる
   const t =
     overviewRatio *
     overviewRatio *
@@ -4800,9 +4881,9 @@ function jdSetCameraOverview() {
     startZoom +
     (endZoom - startZoom) * t;
 
-  // 発射台を画面右寄りの同じ位置に固定する。
-  // ズーム中も発射台が逃げず、指との距離がそのまま見える。
-  const launcherScreenX = 270;
+  // 発射台を右寄りに固定し、
+  // 左端のメロンソーダにも余白を確保する
+  const launcherScreenX = 300;
 
   JD.cam.tx =
     JD.launcher.x -
@@ -4811,13 +4892,13 @@ function jdSetCameraOverview() {
       JD.camScreenX
     ) / zoom;
 
-  // 縦方向だけ、全景構図へ少しずつ移動
   JD.cam.ty =
     252 +
     (285 - 252) * t;
 
   JD.cam.tz = zoom;
 }
+
 
 
 
