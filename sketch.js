@@ -1621,14 +1621,30 @@ function jdDrawTinyCafePreview() {
 
 function jdDrawPlay() {
   jdUpdateCamera(DeltaTime);
+
   rectMode(CORNER);
   ellipseMode(CENTER);
   noStroke();
-  fill(20, 16, 14); rect(0, 0, JD.LOGICAL_W, JD.LOGICAL_H);
+
+  // カメラ外周が一瞬見えても黒くならないよう、
+  // 喫茶店の夜に馴染む暗い茶色で埋める
+  fill(31, 23, 20);
+  rect(
+    0,
+    0,
+    JD.LOGICAL_W,
+    JD.LOGICAL_H
+  );
 
   pushMatrix();
   jdApplyCamera();
+
+  // ズームアウト時に見える、拡張された店内全景
+  jdDrawCafeWideBackdrop();
+
+  // 既存のゲーム空間
   jdDrawWorld();
+
   popMatrix();
 
   jdDrawPlayUI();
@@ -1636,6 +1652,1022 @@ function jdDrawPlay() {
   jdDrawDebugScreen();
   jdDrawFortuneMachine();
 }
+
+function jdDrawCafeWideBackdrop() {
+  rectMode(CORNER);
+  ellipseMode(CENTER);
+  noStroke();
+
+  const left = -180;
+  const width = JD.worldW + 360;
+
+  // ==================================================
+  // 店全体の基礎背景
+  // ==================================================
+
+  // 下側：カウンター下と床
+  jdFill("tableFront", 255);
+  rect(
+    left,
+    -520,
+    width,
+    JD.tableY + 40
+  );
+
+  // 上側：高い店内壁
+  jdFill("wall", 255);
+  rect(
+    left,
+    JD.tableY,
+    width,
+    960
+  );
+
+  // 壁上部は少し暗くして奥行きを出す
+  jdFill("wallShade", 38);
+  rect(
+    left,
+    640,
+    width,
+    470
+  );
+
+  // 壁の腰見切り
+  jdFill("redDeep", 135);
+  rect(
+    left,
+    540,
+    width,
+    6
+  );
+
+  jdFill("wallLine", 45);
+  rect(
+    left,
+    531,
+    width,
+    2
+  );
+
+  // ==================================================
+  // 上側：夜の窓
+  // ==================================================
+
+  const windowX = 88;
+  const windowY = 690;
+  const windowW = 300;
+  const windowH = 250;
+
+  // 窓の影
+  jdFill("shadow", 70);
+  rect(
+    windowX + 8,
+    windowY - 8,
+    windowW,
+    windowH,
+    8
+  );
+
+  // 木枠
+  jdFill("woodDark", 255);
+  rect(
+    windowX,
+    windowY,
+    windowW,
+    windowH,
+    7
+  );
+
+  // 夜空
+  fill(30, 38, 55, 255);
+  rect(
+    windowX + 14,
+    windowY + 14,
+    windowW - 28,
+    windowH - 28,
+    3
+  );
+
+  // 遠くの夜のグラデーション代わり
+  fill(48, 53, 67, 190);
+  rect(
+    windowX + 14,
+    windowY + 14,
+    windowW - 28,
+    78
+  );
+
+  fill(61, 58, 65, 120);
+  rect(
+    windowX + 14,
+    windowY + 92,
+    windowW - 28,
+    45
+  );
+
+  // 向かいの建物
+  fill(25, 27, 34, 245);
+  rect(
+    windowX + 22,
+    windowY + 23,
+    92,
+    104
+  );
+
+  rect(
+    windowX + 122,
+    windowY + 23,
+    72,
+    133
+  );
+
+  rect(
+    windowX + 202,
+    windowY + 23,
+    64,
+    86
+  );
+
+  // 建物の明かり
+  fill(232, 193, 112, 165);
+
+  rect(
+    windowX + 35,
+    windowY + 88,
+    16,
+    22,
+    2
+  );
+
+  rect(
+    windowX + 70,
+    windowY + 52,
+    18,
+    25,
+    2
+  );
+
+  rect(
+    windowX + 139,
+    windowY + 107,
+    16,
+    23,
+    2
+  );
+
+  rect(
+    windowX + 168,
+    windowY + 65,
+    15,
+    21,
+    2
+  );
+
+  rect(
+    windowX + 220,
+    windowY + 68,
+    17,
+    24,
+    2
+  );
+
+  // 街灯
+  fill(29, 28, 29, 245);
+  rect(
+    windowX + 239,
+    windowY + 28,
+    5,
+    92
+  );
+
+  fill(238, 198, 116, 72);
+  ellipse(
+    windowX + 241,
+    windowY + 126,
+    56,
+    38
+  );
+
+  fill(245, 218, 155, 220);
+  ellipse(
+    windowX + 241,
+    windowY + 128,
+    14,
+    10
+  );
+
+  // 雨上がりの路面反射
+  fill(230, 181, 104, 38);
+  rect(
+    windowX + 214,
+    windowY + 18,
+    54,
+    6,
+    3
+  );
+
+  fill(172, 204, 190, 28);
+  rect(
+    windowX + 48,
+    windowY + 18,
+    72,
+    4,
+    2
+  );
+
+  // 窓の縦横桟
+  jdFill("wood", 255);
+  rect(
+    windowX + windowW / 2 - 5,
+    windowY + 8,
+    10,
+    windowH - 16
+  );
+
+  rect(
+    windowX + 8,
+    windowY + 121,
+    windowW - 16,
+    10
+  );
+
+  // ガラスの薄い反射
+  jdFill("highlight", 30);
+  rect(
+    windowX + 30,
+    windowY + 147,
+    5,
+    70,
+    3
+  );
+
+  rect(
+    windowX + 177,
+    windowY + 152,
+    4,
+    58,
+    3
+  );
+
+  // 小さな喫茶看板
+  jdFill("redDeep", 215);
+  rect(
+    windowX + 250,
+    windowY + 148,
+    27,
+    63,
+    4
+  );
+
+  jdFill("creamWarm", 225);
+  font("Courier-Bold");
+  fontSize(10);
+  textAlign(CENTER);
+
+  text(
+    "KISSA",
+    windowX + 263,
+    windowY + 179
+  );
+
+  // ==================================================
+  // 上側中央：古い壁時計
+  // ==================================================
+
+  const clockX = 510;
+  const clockY = 795;
+
+  jdFill("shadow", 54);
+  ellipse(
+    clockX + 6,
+    clockY - 6,
+    96,
+    96
+  );
+
+  jdFill("woodDark", 255);
+  ellipse(
+    clockX,
+    clockY,
+    92,
+    92
+  );
+
+  jdFill("creamWarm", 255);
+  ellipse(
+    clockX,
+    clockY,
+    74,
+    74
+  );
+
+  jdStroke("ink", 190);
+  strokeWidth(3);
+
+  // 時計の針
+  line(
+    clockX,
+    clockY,
+    clockX - 4,
+    clockY + 25
+  );
+
+  line(
+    clockX,
+    clockY,
+    clockX + 20,
+    clockY + 8
+  );
+
+  strokeWidth(2);
+
+  // 12・3・6・9時の印
+  line(
+    clockX,
+    clockY + 31,
+    clockX,
+    clockY + 25
+  );
+
+  line(
+    clockX + 31,
+    clockY,
+    clockX + 25,
+    clockY
+  );
+
+  line(
+    clockX,
+    clockY - 31,
+    clockX,
+    clockY - 25
+  );
+
+  line(
+    clockX - 31,
+    clockY,
+    clockX - 25,
+    clockY
+  );
+
+  noStroke();
+
+  jdFill("redDeep", 220);
+  ellipse(
+    clockX,
+    clockY,
+    7
+  );
+
+  // ==================================================
+  // 右上：メニューボード
+  // ==================================================
+
+  const menuX = 650;
+  const menuY = 690;
+  const menuW = 245;
+  const menuH = 220;
+
+  jdFill("shadow", 58);
+  rect(
+    menuX + 7,
+    menuY - 7,
+    menuW,
+    menuH,
+    8
+  );
+
+  jdFill("woodDark", 255);
+  rect(
+    menuX,
+    menuY,
+    menuW,
+    menuH,
+    7
+  );
+
+  fill(44, 55, 48, 255);
+  rect(
+    menuX + 12,
+    menuY + 12,
+    menuW - 24,
+    menuH - 24,
+    3
+  );
+
+  textAlign(CENTER);
+
+  jdFill("creamWarm", 220);
+  font("Courier-Bold");
+  fontSize(18);
+
+  text(
+    "TODAY'S MENU",
+    menuX + menuW / 2,
+    menuY + 176
+  );
+
+  jdFill("creamWarm", 165);
+  font("Courier");
+  fontSize(12);
+
+  text(
+    "COFFEE ........ 500",
+    menuX + menuW / 2,
+    menuY + 138
+  );
+
+  text(
+    "MELON SODA .... 600",
+    menuX + menuW / 2,
+    menuY + 108
+  );
+
+  text(
+    "CAKE .......... 650",
+    menuX + menuW / 2,
+    menuY + 78
+  );
+
+  jdFill("red", 190);
+  font("Courier-Bold");
+  fontSize(11);
+
+  text(
+    "SPECIAL : DIVE",
+    menuX + menuW / 2,
+    menuY + 42
+  );
+
+  // ==================================================
+  // 天井とペンダントライト
+  // ==================================================
+
+  jdFill("woodDark", 255);
+  rect(
+    left,
+    1015,
+    width,
+    34
+  );
+
+  jdFill("wood", 110);
+  rect(
+    left,
+    1011,
+    width,
+    5
+  );
+
+  const lightXs = [
+    245,
+    600,
+    855
+  ];
+
+  for (
+    const lx of lightXs
+  ) {
+    jdStroke("woodDark", 210);
+    strokeWidth(4);
+
+    line(
+      lx,
+      1018,
+      lx,
+      930
+    );
+
+    noStroke();
+
+    // 柔らかな光
+    fill(255, 220, 151, 20);
+    ellipse(
+      lx,
+      853,
+      190,
+      160
+    );
+
+    fill(255, 225, 163, 25);
+    ellipse(
+      lx,
+      875,
+      120,
+      105
+    );
+
+    jdFill("redDeep", 245);
+    ellipse(
+      lx,
+      920,
+      69,
+      31
+    );
+
+    jdFill("woodDark", 230);
+    rect(
+      lx - 6,
+      919,
+      12,
+      19,
+      4
+    );
+
+    jdFill("creamWarm", 230);
+    ellipse(
+      lx,
+      906,
+      26,
+      13
+    );
+  }
+
+  // ==================================================
+  // 右側：発射装置の備品棚
+  // ==================================================
+
+  const shelfX = 820;
+  const shelfY = 430;
+  const shelfW = 125;
+  const shelfH = 120;
+
+  jdFill("shadow", 48);
+  rect(
+    shelfX + 5,
+    shelfY - 5,
+    shelfW,
+    shelfH,
+    6
+  );
+
+  jdFill("woodDark", 235);
+  rect(
+    shelfX,
+    shelfY,
+    shelfW,
+    shelfH,
+    5
+  );
+
+  jdFill("wood", 225);
+  rect(
+    shelfX + 8,
+    shelfY + 8,
+    shelfW - 16,
+    shelfH - 16,
+    3
+  );
+
+  jdFill("woodDark", 180);
+  rect(
+    shelfX + 7,
+    shelfY + 55,
+    shelfW - 14,
+    7
+  );
+
+  // シロップ瓶
+  const bottleXs = [
+    shelfX + 25,
+    shelfX + 55,
+    shelfX + 86
+  ];
+
+  const bottleCols = [
+    "red",
+    "sodaDeep",
+    "coffeeLight"
+  ];
+
+  for (
+    let i = 0;
+    i < bottleXs.length;
+    i++
+  ) {
+    const bx =
+      bottleXs[i];
+
+    jdFill(
+      bottleCols[i],
+      210
+    );
+
+    rect(
+      bx - 9,
+      shelfY + 19,
+      18,
+      38,
+      5
+    );
+
+    jdFill("creamWarm", 210);
+    rect(
+      bx - 5,
+      shelfY + 56,
+      10,
+      10,
+      2
+    );
+
+    jdFill("paper", 185);
+    rect(
+      bx - 7,
+      shelfY + 28,
+      14,
+      9,
+      2
+    );
+  }
+
+  // 伝票差し
+  jdFill("paper", 225);
+  rect(
+    shelfX + 18,
+    shelfY + 76,
+    42,
+    29,
+    2
+  );
+
+  jdFill("redDeep", 140);
+  rect(
+    shelfX + 23,
+    shelfY + 91,
+    32,
+    3,
+    1
+  );
+
+  // 布巾
+  jdFill("creamWarm", 180);
+  rect(
+    shelfX + 73,
+    shelfY + 71,
+    34,
+    31,
+    3
+  );
+
+  jdStroke("redDeep", 80);
+  strokeWidth(2);
+
+  line(
+    shelfX + 79,
+    shelfY + 76,
+    shelfX + 79,
+    shelfY + 97
+  );
+
+  line(
+    shelfX + 90,
+    shelfY + 76,
+    shelfX + 90,
+    shelfY + 97
+  );
+
+  noStroke();
+
+  // 注意書き
+  jdFill("paper", 218);
+  rect(
+    785,
+    584,
+    145,
+    48,
+    3
+  );
+
+  jdFill("redDeep", 195);
+  font("Courier-Bold");
+  fontSize(10);
+  textAlign(CENTER);
+
+  text(
+    "HANDLE WITH CARE",
+    857,
+    611
+  );
+
+  jdFill("ink", 155);
+  font("Courier");
+  fontSize(8);
+
+  text(
+    "DO NOT THROW FOOD",
+    857,
+    594
+  );
+
+  // ==================================================
+  // 下側：カウンター収納
+  // ==================================================
+
+  const cabinetTop = 118;
+  const cabinetBottom = -250;
+  const cabinetH =
+    cabinetTop -
+    cabinetBottom;
+
+  jdFill("tableFront", 255);
+  rect(
+    left,
+    cabinetBottom,
+    width,
+    cabinetH
+  );
+
+  // カウンター前面上部の縁
+  jdFill("tableLip", 255);
+  rect(
+    left,
+    cabinetTop - 12,
+    width,
+    13
+  );
+
+  jdFill("tableStripe", 48);
+  rect(
+    left,
+    cabinetTop - 18,
+    width,
+    4
+  );
+
+  // 収納扉
+  for (
+    let x = -95;
+    x < JD.worldW + 90;
+    x += 165
+  ) {
+    jdFill("tableLip", 110);
+    rect(
+      x + 8,
+      cabinetBottom + 22,
+      141,
+      cabinetH - 54,
+      7
+    );
+
+    jdFill("tableTop", 165);
+    rect(
+      x + 15,
+      cabinetBottom + 29,
+      127,
+      cabinetH - 68,
+      5
+    );
+
+    // 内側の飾り枠
+    noFill();
+    jdStroke("tableStripe", 36);
+    strokeWidth(3);
+
+    rect(
+      x + 28,
+      cabinetBottom + 47,
+      101,
+      cabinetH - 104,
+      4
+    );
+
+    noStroke();
+
+    // 真鍮の取っ手
+    jdFill("gold", 190);
+    ellipse(
+      x + 78,
+      cabinetBottom + cabinetH - 63,
+      16,
+      8
+    );
+  }
+
+  // ==================================================
+  // 足元の床
+  // ==================================================
+
+  const floorTop =
+    cabinetBottom;
+
+  fill(46, 37, 34, 255);
+  rect(
+    left,
+    -520,
+    width,
+    floorTop + 520
+  );
+
+  // 市松模様の床
+  const tile = 72;
+
+  for (
+    let row = 0;
+    row < 4;
+    row++
+  ) {
+    for (
+      let col = -3;
+      col < 18;
+      col++
+    ) {
+      const tx =
+        col * tile;
+
+      const ty =
+        -520 +
+        row * tile;
+
+      if (
+        (row + col) % 2 === 0
+      ) {
+        fill(67, 55, 49, 255);
+      } else {
+        fill(39, 46, 43, 255);
+      }
+
+      rect(
+        tx,
+        ty,
+        tile,
+        tile
+      );
+    }
+  }
+
+  // タイル目地
+  stroke(
+    236,
+    218,
+    184,
+    24
+  );
+
+  strokeWidth(2);
+
+  for (
+    let x = -216;
+    x <= JD.worldW + 216;
+    x += tile
+  ) {
+    line(
+      x,
+      -520,
+      x,
+      floorTop
+    );
+  }
+
+  for (
+    let y = -520;
+    y <= floorTop;
+    y += tile
+  ) {
+    line(
+      left,
+      y,
+      left + width,
+      y
+    );
+  }
+
+  noStroke();
+
+  // ==================================================
+  // 下側の小物
+  // ==================================================
+
+  // 紙袋
+  jdFill("shadow", 40);
+  rect(
+    114,
+    -300,
+    104,
+    127,
+    7
+  );
+
+  jdFill("posterBg2", 230);
+  rect(
+    106,
+    -292,
+    104,
+    127,
+    6
+  );
+
+  jdFill("woodDark", 120);
+  rect(
+    126,
+    -171,
+    64,
+    7,
+    3
+  );
+
+  jdFill("redDeep", 175);
+  font("Courier-Bold");
+  fontSize(11);
+  textAlign(CENTER);
+
+  text(
+    "YUMANIWA",
+    158,
+    -232
+  );
+
+  // 牛乳箱
+  jdFill("shadow", 44);
+  rect(
+    730,
+    -320,
+    126,
+    111,
+    5
+  );
+
+  jdFill("wood", 235);
+  rect(
+    722,
+    -312,
+    126,
+    111,
+    5
+  );
+
+  noFill();
+  jdStroke("woodDark", 170);
+  strokeWidth(5);
+
+  rect(
+    735,
+    -299,
+    100,
+    85,
+    2
+  );
+
+  noStroke();
+
+  jdFill("creamWarm", 215);
+  font("Courier-Bold");
+  fontSize(14);
+  textAlign(CENTER);
+
+  text(
+    "MILK",
+    785,
+    -260
+  );
+
+  // 丸椅子の脚
+  jdStroke("woodDark", 235);
+  strokeWidth(9);
+
+  line(
+    466,
+    -40,
+    425,
+    -298
+  );
+
+  line(
+    522,
+    -40,
+    560,
+    -298
+  );
+
+  jdStroke("gold", 115);
+  strokeWidth(4);
+
+  line(
+    438,
+    -224,
+    548,
+    -224
+  );
+
+  noStroke();
+
+  jdFill("redDeep", 245);
+  ellipse(
+    494,
+    -21,
+    142,
+    36
+  );
+
+  jdFill("woodDark", 215);
+  ellipse(
+    494,
+    -17,
+    118,
+    24
+  );
+}
+
+
 
 function jdDrawWorld() {
   rectMode(CORNER);
