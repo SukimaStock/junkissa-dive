@@ -3211,34 +3211,566 @@ function jdDrawFortuneMachine() {
 
 
 function jdDrawReceipt() {
-  rectMode(CORNER); ellipseMode(CENTER); noStroke();
-  jdFill("posterBg"); rect(0, 0, JD.LOGICAL_W, JD.LOGICAL_H);
-  jdFill("tableFront"); rect(0, 0, JD.LOGICAL_W, 116);
-  const paperX = 28, paperY = 54, paperW = JD.LOGICAL_W - 56, paperH = 540;
-  jdFill("shadow", 55); rect(paperX + 4, paperY - 4, paperW, paperH, 4);
-  jdFill("paper"); rect(paperX, paperY, paperW, paperH, 4);
-  jdFill("wallShade", 54); rect(paperX + paperW - 5, paperY, 5, paperH, 2); rect(paperX, paperY + paperH - 4, paperW, 4, 2);
-  jdFill("redDeep", 180); rect(paperX, paperY + paperH - 35, paperW, 5, 0);
+  rectMode(CORNER);
+  ellipseMode(CENTER);
+  noStroke();
 
-  textAlign(LEFT); jdFill("ink"); font('Courier'); fontSize(11);
-  const x = paperX + 22;
-  let y = paperY + paperH - 42;
-  const lineH = 17;
-  const showCount = Math.floor(JD.receiptTimer / 0.08);
-  for (let i = 0; i < JD.receiptLines.length; i++) {
-    if (i < showCount) text(JD.receiptLines[i], x, y);
-    y -= lineH;
+  const cx = JD.LOGICAL_W / 2;
+
+  // 背景：閉店後の喫茶店カウンター
+  jdFill("posterBg");
+  rect(0, 0, JD.LOGICAL_W, JD.LOGICAL_H);
+
+  jdFill("tableFront");
+  rect(0, 0, JD.LOGICAL_W, 122);
+
+  jdFill("tableTop");
+  rect(0, 112, JD.LOGICAL_W, 18);
+
+  jdFill("tableLip");
+  rect(0, 110, JD.LOGICAL_W, 5);
+
+  // レシート本体
+  const paperX = 25;
+  const paperY = 48;
+  const paperW = JD.LOGICAL_W - 50;
+  const paperH = 552;
+  const paperTop = paperY + paperH;
+
+  jdFill("shadow", 58);
+  rect(
+    paperX + 5,
+    paperY - 5,
+    paperW,
+    paperH,
+    5
+  );
+
+  jdFill("paper");
+  rect(
+    paperX,
+    paperY,
+    paperW,
+    paperH,
+    5
+  );
+
+  // 紙端の薄い陰
+  jdFill("wallShade", 42);
+  rect(
+    paperX + paperW - 5,
+    paperY + 5,
+    5,
+    paperH - 10,
+    2
+  );
+
+  jdFill("wallShade", 30);
+  rect(
+    paperX + 5,
+    paperY,
+    paperW - 10,
+    4,
+    2
+  );
+
+  // レシート上部の赤線
+  jdFill("redDeep", 185);
+  rect(
+    paperX,
+    paperTop - 35,
+    paperW,
+    5
+  );
+
+  textAlign(CENTER);
+
+  // 店名
+  jdFill("ink", 245);
+  font("Courier-Bold");
+  fontSize(17);
+
+  text(
+    jdT(
+      "receipt.shop",
+      "JUNKISSA YUMANIWA"
+    ),
+    cx,
+    paperTop - 57
+  );
+
+  font("Courier");
+  fontSize(9);
+
+  text(
+    "MONDAY SHIFT / CLOSING RECEIPT",
+    cx,
+    paperTop - 75
+  );
+
+  jdFill("ink", 175);
+  fontSize(8);
+
+  const receiptNo =
+    String(
+      Math.max(
+        1,
+        JD.results.length
+      )
+    ).padStart(3, "0");
+
+  text(
+    `DIVE RECEIPT No.${receiptNo}`,
+    cx,
+    paperTop - 90
+  );
+
+  // 上部の区切り線
+  jdFill("ink", 70);
+
+  for (
+    let x = paperX + 20;
+    x < paperX + paperW - 20;
+    x += 9
+  ) {
+    rect(
+      x,
+      paperTop - 105,
+      5,
+      1
+    );
   }
 
-  if (jdReceiptReady()) {
-    const bx = JD.LOGICAL_W / 2, by = 92, bw = 220, bh = 44;
-    rectMode(CENTER); jdFill("redDeep", 240); rect(bx, by, bw, bh, 16);
-    textAlign(CENTER); jdFill("uiText"); font('Courier-Bold'); fontSize(14); text(jdT("receipt.oneMore"), bx, by + 1);
+  // 印字アニメーション
+  const resultDelay = 0.22;
+  const resultInterval = 0.27;
+
+  const resultStartY =
+    paperTop - 126;
+
+  const resultGap = 43;
+
+  for (
+    let i = 0;
+    i < JD.results.length;
+    i++
+  ) {
+    const appearAt =
+      resultDelay +
+      i * resultInterval;
+
+    if (
+      JD.receiptTimer <
+      appearAt
+    ) {
+      continue;
+    }
+
+    const r =
+      JD.results[i];
+
+    const y =
+      resultStartY -
+      i * resultGap;
+
+    let status = "[OK]";
+
+    if (
+      r.type === "FLOOR"
+    ) {
+      status = "[DROP]";
+    } else if (
+      r.type === "OUT"
+    ) {
+      status = "[OUT]";
+    }
+
+    // 投擲番号と結果記号
+    textAlign(LEFT);
+    font("Courier-Bold");
+    fontSize(9);
+
+    if (
+      status === "[OK]"
+    ) {
+      jdFill("redDeep", 220);
+    } else {
+      jdFill("ink", 180);
+    }
+
+    text(
+      `${String(i + 1).padStart(2, "0")} ${status}`,
+      paperX + 18,
+      y
+    );
+
+    // 食材と対象
+    jdFill("ink", 235);
+    font("Courier-Bold");
+    fontSize(10);
+
+    const item =
+      r.item || "-";
+
+    const target =
+      r.targetLabel ||
+      r.target ||
+      "-";
+
+    text(
+      `${item} / ${target}`,
+      paperX + 82,
+      y
+    );
+
+    // 金額
+    textAlign(RIGHT);
+    fontSize(10);
+
+    text(
+      `${r.price || 0} Y`,
+      paperX + paperW - 18,
+      y
+    );
+
+    // メニュー名
+    textAlign(LEFT);
+    jdFill("ink", 172);
+    font("Courier");
+    fontSize(9);
+
+    text(
+      r.name ||
+      "KIMAGURE MENU",
+      paperX + 42,
+      y - 17
+    );
+
+    // 注文ごとの細い罫線
+    jdFill("ink", 28);
+    rect(
+      paperX + 18,
+      y - 27,
+      paperW - 36,
+      1
+    );
+  }
+
+  const resultEnd =
+    resultDelay +
+    JD.results.length *
+    resultInterval;
+
+  const totalAt =
+    resultEnd + 0.18;
+
+  const rankAt =
+    totalAt + 0.38;
+
+  const memoAt =
+    rankAt + 0.38;
+
+  const readyAt =
+    memoAt + 0.42;
+
+  // 合計欄
+  if (
+    JD.receiptTimer >=
+    totalAt
+  ) {
+    const totalY = 258;
+
+    jdFill("ink", 70);
+
+    for (
+      let x = paperX + 20;
+      x < paperX + paperW - 20;
+      x += 9
+    ) {
+      rect(
+        x,
+        totalY + 34,
+        5,
+        1
+      );
+    }
+
+    textAlign(CENTER);
+
+    jdFill("ink", 205);
+    font("Courier-Bold");
+    fontSize(10);
+
+    text(
+      jdT(
+        "receipt.total",
+        "TOTAL"
+      ),
+      cx,
+      totalY + 16
+    );
+
+    const totalText =
+      String(
+        JD.totalSales
+      ).replace(
+        /\B(?=(\d{3})+(?!\d))/g,
+        ","
+      );
+
+    jdFill("redDeep", 245);
+    fontSize(27);
+
+    text(
+      `${totalText} YEN`,
+      cx,
+      totalY - 9
+    );
+  }
+
+  // ランクを検印風に表示
+  if (
+    JD.receiptTimer >=
+    rankAt
+  ) {
+    const rankX = cx;
+    const rankY = 198;
+    const rankW = 222;
+    const rankH = 43;
+
+    rectMode(CENTER);
+
+    noFill();
+    jdStroke("redDeep", 215);
+    strokeWidth(3);
+
+    rect(
+      rankX,
+      rankY,
+      rankW,
+      rankH,
+      4
+    );
+
+    jdStroke("red", 90);
+    strokeWidth(1);
+
+    rect(
+      rankX,
+      rankY,
+      rankW - 8,
+      rankH - 8,
+      2
+    );
+
+    noStroke();
+
+    jdFill("redDeep", 230);
+    font("Courier-Bold");
+    fontSize(8);
+    textAlign(CENTER);
+
+    text(
+      jdT(
+        "receipt.rank",
+        "RANK"
+      ),
+      rankX,
+      rankY + 11
+    );
+
+    fontSize(15);
+
+    text(
+      jdRankName(),
+      rankX,
+      rankY - 7
+    );
+
+    rectMode(CORNER);
+  }
+
+  // 店長の手書きメモ
+  if (
+    JD.receiptTimer >=
+    memoAt
+  ) {
+    const memoX =
+      paperX + 24;
+
+    const memoY = 151;
+
+    textAlign(LEFT);
+
+    jdFill("ink", 205);
+    font("Courier-Bold");
+    fontSize(9);
+
+    text(
+      "TENCHO MEMO",
+      memoX,
+      memoY + 14
+    );
+
+    jdFill("redDeep", 130);
+    rect(
+      memoX,
+      memoY + 5,
+      88,
+      2
+    );
+
+    jdFill("ink", 190);
+    font("Courier");
+    fontSize(10);
+
+    text(
+      jdManagerCommentShort(),
+      memoX,
+      memoY - 10
+    );
+  }
+
+  // 切り取り線
+  if (
+    JD.receiptTimer >=
+    readyAt
+  ) {
+    const cutY = 126;
+
+    jdFill("ink", 62);
+
+    for (
+      let x = paperX + 17;
+      x < paperX + paperW - 17;
+      x += 10
+    ) {
+      rect(
+        x,
+        cutY,
+        6,
+        1
+      );
+    }
+
+    jdFill("ink", 115);
+    font("Courier");
+    fontSize(7);
+    textAlign(CENTER);
+
+    text(
+      "CUT HERE",
+      cx,
+      cutY - 10
+    );
+  }
+
+  // 再プレイ用の控え伝票
+  if (
+    jdReceiptReady()
+  ) {
+    const bx = cx;
+    const by = 92;
+    const bw = 220;
+    const bh = 42;
+
+    rectMode(CENTER);
+
+    const pulse =
+      210 +
+      Math.sin(
+        ElapsedTime * 4.2
+      ) * 28;
+
+    jdFill("shadow", 38);
+
+    rect(
+      bx + 2,
+      by - 3,
+      bw,
+      bh,
+      7
+    );
+
+    jdFill("paper", 245);
+
+    rect(
+      bx,
+      by,
+      bw,
+      bh,
+      7
+    );
+
+    noFill();
+    jdStroke(
+      "redDeep",
+      pulse
+    );
+
+    strokeWidth(2);
+
+    rect(
+      bx,
+      by,
+      bw - 8,
+      bh - 8,
+      4
+    );
+
+    noStroke();
+
+    jdFill(
+      "redDeep",
+      pulse
+    );
+
+    textAlign(CENTER);
+    font("Courier-Bold");
+    fontSize(13);
+
+    text(
+      jdT(
+        "receipt.oneMore",
+        "ONE MORE SHIFT"
+      ),
+      bx,
+      by + 1
+    );
+
+    rectMode(CORNER);
   }
 }
 
+
 function jdUpdateReceipt(dt) { JD.receiptTimer += dt; }
-function jdReceiptReady() { return JD.receiptTimer / 0.08 >= JD.receiptLines.length; }
+function jdReceiptReady() {
+  const resultDelay = 0.22;
+  const resultInterval = 0.27;
+
+  const resultEnd =
+    resultDelay +
+    JD.results.length *
+    resultInterval;
+
+  const totalAt =
+    resultEnd + 0.18;
+
+  const rankAt =
+    totalAt + 0.38;
+
+  const memoAt =
+    rankAt + 0.38;
+
+  const readyAt =
+    memoAt + 0.42;
+
+  return (
+    JD.receiptTimer >=
+    readyAt
+  );
+}
+
 
 function jdMakeReceiptLines() {
   const lines = [];
