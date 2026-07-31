@@ -4779,35 +4779,37 @@ function jdSetCameraOverview() {
     1
   );
 
-  // 引き始めから反応しつつ、
-  // 中盤以降は穏やかに全景へ到達する
+  // 引き始めから反応し、最大時に全景へ到達
   const zoomT = Math.pow(ratio, 0.78);
-  const moveT = ratio * ratio * (3 - 2 * ratio);
+  const verticalT =
+    ratio * ratio * (3 - 2 * ratio);
 
-  // 触れた瞬間：
-  // 発射台を画面中央に置き、少しだけ大きく見せる
-  const startX = JD.launcher.x;
-  const startY = 252;
   const startZoom = 1.02;
-
-  // 最大まで引いた時：
-  // 現在の美しい店内全景へ到達する
-  const endX = 515;
-  const endY = 285;
   const endZoom = 0.42;
 
-  JD.cam.tx =
-    startX +
-    (endX - startX) * moveT;
-
-  JD.cam.ty =
-    startY +
-    (endY - startY) * moveT;
-
-  JD.cam.tz =
+  const zoom =
     startZoom +
     (endZoom - startZoom) * zoomT;
+
+  // 発射台を画面上の同じ横位置に固定する。
+  // 指だけが発射台から離れるため、ゴムを引く距離が明確に見える。
+  const launcherScreenX = 270;
+
+  JD.cam.tx =
+    JD.launcher.x -
+    (
+      launcherScreenX -
+      JD.camScreenX
+    ) / zoom;
+
+  // 横方向は固定しつつ、縦方向だけゆっくり全景へ開く
+  JD.cam.ty =
+    252 +
+    (285 - 252) * verticalT;
+
+  JD.cam.tz = zoom;
 }
+
 
 
 function jdSetCameraFollowFood() {
