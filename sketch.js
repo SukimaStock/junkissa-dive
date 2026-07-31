@@ -1722,13 +1722,24 @@ function jdDrawCafeWideBackdrop() {
     960
   );
 
-  // 壁上部を少し暗くする
-  jdFill("wallShade", 32);
+  // 壁上部をわずかに暗くし、
+  // 照明が落ちる場所との明暗差を作る
+  jdFill("wallShade", 24);
   rect(
     left,
     640,
     width,
     470
+  );
+
+  // 天井付近だけをもう一段暗くする。
+  // 下側の広い余白は明るく残し、料理と軌道を見やすくする。
+  jdFill("woodDark", 12);
+  rect(
+    left,
+    900,
+    width,
+    210
   );
 
   // 壁の見切り
@@ -2145,23 +2156,51 @@ function jdDrawCafeWideBackdrop() {
 
     noStroke();
 
-    // 灯りの広がり
-    fill(255, 220, 151, 17);
+    // 壁へ落ちる暖かな光。
+    // 輪郭の強い円ではなく、下へ広がる層として描く。
+    fill(255, 221, 158, 9);
     ellipse(
       lx,
-      853,
-      190,
-      160
+      770,
+      270,
+      330
     );
 
-    fill(255, 225, 163, 22);
+    fill(255, 224, 164, 13);
     ellipse(
       lx,
-      875,
-      120,
-      105
+      820,
+      220,
+      250
     );
 
+    fill(255, 229, 176, 18);
+    ellipse(
+      lx,
+      865,
+      148,
+      142
+    );
+
+    fill(255, 237, 196, 23);
+    ellipse(
+      lx,
+      894,
+      86,
+      70
+    );
+
+    // シェードの下だけを少し明るくして、
+    // 電球が灯っていることを伝える
+    fill(255, 230, 177, 26);
+    ellipse(
+      lx,
+      902,
+      54,
+      34
+    );
+
+    // 赤茶色のシェード
     jdFill("redDeep");
     ellipse(
       lx,
@@ -2170,6 +2209,7 @@ function jdDrawCafeWideBackdrop() {
       31
     );
 
+    // シェード上部の金具
     jdFill("woodDark", 230);
     rect(
       lx - 6,
@@ -2179,12 +2219,22 @@ function jdDrawCafeWideBackdrop() {
       4
     );
 
-    jdFill("creamWarm", 230);
+    // 暖色の電球
+    jdFill("creamWarm", 245);
     ellipse(
       lx,
       906,
       26,
       13
+    );
+
+    // 電球中心の小さなハイライト
+    jdFill("highlight", 135);
+    ellipse(
+      lx - 3,
+      909,
+      9,
+      5
     );
   }
 
@@ -2360,6 +2410,24 @@ function jdDrawCafeWideBackdrop() {
   // ==================================================
   // 中央下：丸椅子
   // ==================================================
+
+  // 床との接地影。
+  // 椅子の脚より先に描き、空間に置かれている感覚を出す。
+  jdFill("shadow", 42);
+  ellipse(
+    494,
+    -307,
+    178,
+    25
+  );
+
+  jdFill("shadow", 22);
+  ellipse(
+    494,
+    -302,
+    112,
+    13
+  );
 
   jdStroke("woodDark", 235);
   strokeWidth(9);
@@ -3629,25 +3697,6 @@ function jdDrawPlayUI() {
       91
     );
 
-  } else if (
-    JD.dragging &&
-    JD.food &&
-    !JD.food.launched &&
-    !JD.food.resolved
-  ) {
-    // 待機中のPULL表示は発射台側へ任せる
-    jdFill("ink", 210);
-    font("Courier-Bold");
-    fontSize(11);
-
-    text(
-      jdT(
-        "ui.dragging",
-        "RELEASE TO SHOOT"
-      ),
-      cx,
-      91
-    );
   }
 
   jdDrawDebugButton();
