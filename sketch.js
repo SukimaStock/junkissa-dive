@@ -4773,26 +4773,35 @@ function jdSetCameraClose(instant) {
 function jdSetCameraOverview() {
   const pull = jdGetScreenPull();
 
-  const ratio = jdClamp(
+  const powerRatio = jdClamp(
     Math.hypot(pull.x, pull.y) / JD.maxPull,
     0,
     1
   );
 
-  // 引き始めから反応し、最大時に全景へ到達
-  const zoomT = Math.pow(ratio, 0.78);
-  const verticalT =
-    ratio * ratio * (3 - 2 * ratio);
+  // 引っ張り量40％で全景に到達。
+  // それ以降はカメラを変えず、攻略に必要な視界を維持する。
+  const overviewRatio = jdClamp(
+    powerRatio / 0.40,
+    0,
+    1
+  );
+
+  // 最初は素早く反応し、全景付近で滑らかに止まる
+  const t =
+    overviewRatio *
+    overviewRatio *
+    (3 - 2 * overviewRatio);
 
   const startZoom = 1.02;
   const endZoom = 0.42;
 
   const zoom =
     startZoom +
-    (endZoom - startZoom) * zoomT;
+    (endZoom - startZoom) * t;
 
-  // 発射台を画面上の同じ横位置に固定する。
-  // 指だけが発射台から離れるため、ゴムを引く距離が明確に見える。
+  // 発射台を画面右寄りの同じ位置に固定する。
+  // ズーム中も発射台が逃げず、指との距離がそのまま見える。
   const launcherScreenX = 270;
 
   JD.cam.tx =
@@ -4802,13 +4811,14 @@ function jdSetCameraOverview() {
       JD.camScreenX
     ) / zoom;
 
-  // 横方向は固定しつつ、縦方向だけゆっくり全景へ開く
+  // 縦方向だけ、全景構図へ少しずつ移動
   JD.cam.ty =
     252 +
-    (285 - 252) * verticalT;
+    (285 - 252) * t;
 
   JD.cam.tz = zoom;
 }
+
 
 
 
