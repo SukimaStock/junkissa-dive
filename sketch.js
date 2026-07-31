@@ -1665,8 +1665,8 @@ function jdDrawCafeWideBackdrop() {
   // 店全体の基礎背景
   // ==================================================
 
-  // 下側：カウンター下と床
-  jdFill("tableFront", 255);
+  // カウンター下まで続く店内
+  jdFill("tableFront");
   rect(
     left,
     -520,
@@ -1674,8 +1674,8 @@ function jdDrawCafeWideBackdrop() {
     JD.tableY + 40
   );
 
-  // 上側：高い店内壁
-  jdFill("wall", 255);
+  // 高い店内壁
+  jdFill("wall");
   rect(
     left,
     JD.tableY,
@@ -1683,8 +1683,8 @@ function jdDrawCafeWideBackdrop() {
     960
   );
 
-  // 壁上部は少し暗くして奥行きを出す
-  jdFill("wallShade", 38);
+  // 壁上部を少し暗くする
+  jdFill("wallShade", 32);
   rect(
     left,
     640,
@@ -1692,7 +1692,7 @@ function jdDrawCafeWideBackdrop() {
     470
   );
 
-  // 壁の腰見切り
+  // 壁の見切り
   jdFill("redDeep", 135);
   rect(
     left,
@@ -1701,7 +1701,7 @@ function jdDrawCafeWideBackdrop() {
     6
   );
 
-  jdFill("wallLine", 45);
+  jdFill("wallLine", 42);
   rect(
     left,
     531,
@@ -1710,7 +1710,7 @@ function jdDrawCafeWideBackdrop() {
   );
 
   // ==================================================
-  // 上側：夜の窓
+  // 左上：静かな遠い夜景
   // ==================================================
 
   const windowX = 88;
@@ -1719,17 +1719,17 @@ function jdDrawCafeWideBackdrop() {
   const windowH = 250;
 
   // 窓の影
-  jdFill("shadow", 70);
+  jdFill("shadow", 60);
   rect(
-    windowX + 8,
-    windowY - 8,
+    windowX + 7,
+    windowY - 7,
     windowW,
     windowH,
     8
   );
 
   // 木枠
-  jdFill("woodDark", 255);
+  jdFill("woodDark");
   rect(
     windowX,
     windowY,
@@ -1739,7 +1739,7 @@ function jdDrawCafeWideBackdrop() {
   );
 
   // 夜空
-  fill(30, 38, 55, 255);
+  fill(29, 36, 52);
   rect(
     windowX + 14,
     windowY + 14,
@@ -1748,135 +1748,125 @@ function jdDrawCafeWideBackdrop() {
     3
   );
 
-  // 遠くの夜のグラデーション代わり
-  fill(48, 53, 67, 190);
+  // 夜空の淡い層
+  fill(42, 46, 60, 150);
   rect(
     windowX + 14,
-    windowY + 14,
+    windowY + 94,
     windowW - 28,
-    78
+    55
   );
 
-  fill(61, 58, 65, 120);
+  fill(53, 51, 59, 105);
   rect(
     windowX + 14,
-    windowY + 92,
+    windowY + 48,
     windowW - 28,
-    45
+    47
   );
 
-  // 向かいの建物
-  fill(25, 27, 34, 245);
+  // 遠くの建物群
+  fill(23, 26, 34, 245);
+
   rect(
-    windowX + 22,
-    windowY + 23,
-    92,
-    104
+    windowX + 20,
+    windowY + 20,
+    48,
+    76
   );
 
   rect(
-    windowX + 122,
-    windowY + 23,
+    windowX + 65,
+    windowY + 20,
+    66,
+    105
+  );
+
+  rect(
+    windowX + 126,
+    windowY + 20,
+    42,
+    68
+  );
+
+  rect(
+    windowX + 164,
+    windowY + 20,
     72,
-    133
+    118
   );
 
   rect(
-    windowX + 202,
-    windowY + 23,
-    64,
-    86
+    windowX + 231,
+    windowY + 20,
+    37,
+    84
   );
 
-  // 建物の明かり
-  fill(232, 193, 112, 165);
+  // 遠くの灯りを少数だけ置く
+  fill(235, 198, 120, 150);
 
   rect(
-    windowX + 35,
-    windowY + 88,
-    16,
-    22,
-    2
+    windowX + 82,
+    windowY + 78,
+    10,
+    13,
+    1
   );
 
   rect(
-    windowX + 70,
+    windowX + 109,
     windowY + 52,
-    18,
-    25,
-    2
+    9,
+    12,
+    1
   );
 
   rect(
-    windowX + 139,
-    windowY + 107,
-    16,
-    23,
-    2
-  );
-
-  rect(
-    windowX + 168,
-    windowY + 65,
-    15,
-    21,
-    2
-  );
-
-  rect(
-    windowX + 220,
-    windowY + 68,
-    17,
-    24,
-    2
-  );
-
-  // 街灯
-  fill(29, 28, 29, 245);
-  rect(
-    windowX + 239,
-    windowY + 28,
-    5,
-    92
-  );
-
-  fill(238, 198, 116, 72);
-  ellipse(
-    windowX + 241,
-    windowY + 126,
-    56,
-    38
-  );
-
-  fill(245, 218, 155, 220);
-  ellipse(
-    windowX + 241,
-    windowY + 128,
+    windowX + 182,
+    windowY + 92,
+    10,
     14,
-    10
+    1
   );
 
-  // 雨上がりの路面反射
-  fill(230, 181, 104, 38);
   rect(
-    windowX + 214,
-    windowY + 18,
-    54,
-    6,
-    3
+    windowX + 215,
+    windowY + 58,
+    9,
+    12,
+    1
   );
 
-  fill(172, 204, 190, 28);
+  fill(178, 211, 199, 95);
+
   rect(
-    windowX + 48,
-    windowY + 18,
-    72,
-    4,
-    2
+    windowX + 41,
+    windowY + 53,
+    8,
+    11,
+    1
   );
 
-  // 窓の縦横桟
-  jdFill("wood", 255);
+  rect(
+    windowX + 247,
+    windowY + 68,
+    8,
+    12,
+    1
+  );
+
+  // 遠い町の水平線
+  fill(18, 22, 29, 230);
+  rect(
+    windowX + 14,
+    windowY + 20,
+    windowW - 28,
+    15
+  );
+
+  // 窓桟
+  jdFill("wood");
   rect(
     windowX + windowW / 2 - 5,
     windowY + 8,
@@ -1891,47 +1881,27 @@ function jdDrawCafeWideBackdrop() {
     10
   );
 
-  // ガラスの薄い反射
-  jdFill("highlight", 30);
-  rect(
-    windowX + 30,
-    windowY + 147,
-    5,
-    70,
-    3
-  );
+  // ガラスの反射は控えめに
+  jdFill("highlight", 18);
 
   rect(
-    windowX + 177,
-    windowY + 152,
+    windowX + 35,
+    windowY + 155,
     4,
-    58,
+    55,
     3
   );
 
-  // 小さな喫茶看板
-  jdFill("redDeep", 215);
   rect(
-    windowX + 250,
-    windowY + 148,
-    27,
-    63,
-    4
-  );
-
-  jdFill("creamWarm", 225);
-  font("Courier-Bold");
-  fontSize(10);
-  textAlign(CENTER);
-
-  text(
-    "KISSA",
-    windowX + 263,
-    windowY + 179
+    windowX + 181,
+    windowY + 160,
+    3,
+    43,
+    3
   );
 
   // ==================================================
-  // 上側中央：古い壁時計
+  // 中央：古い壁時計
   // ==================================================
 
   const clockX = 510;
@@ -1945,7 +1915,7 @@ function jdDrawCafeWideBackdrop() {
     96
   );
 
-  jdFill("woodDark", 255);
+  jdFill("woodDark");
   ellipse(
     clockX,
     clockY,
@@ -1953,7 +1923,7 @@ function jdDrawCafeWideBackdrop() {
     92
   );
 
-  jdFill("creamWarm", 255);
+  jdFill("creamWarm");
   ellipse(
     clockX,
     clockY,
@@ -1964,7 +1934,6 @@ function jdDrawCafeWideBackdrop() {
   jdStroke("ink", 190);
   strokeWidth(3);
 
-  // 時計の針
   line(
     clockX,
     clockY,
@@ -1981,7 +1950,6 @@ function jdDrawCafeWideBackdrop() {
 
   strokeWidth(2);
 
-  // 12・3・6・9時の印
   line(
     clockX,
     clockY + 31,
@@ -2012,7 +1980,7 @@ function jdDrawCafeWideBackdrop() {
 
   noStroke();
 
-  jdFill("redDeep", 220);
+  jdFill("redDeep");
   ellipse(
     clockX,
     clockY,
@@ -2037,7 +2005,7 @@ function jdDrawCafeWideBackdrop() {
     8
   );
 
-  jdFill("woodDark", 255);
+  jdFill("woodDark");
   rect(
     menuX,
     menuY,
@@ -2046,7 +2014,7 @@ function jdDrawCafeWideBackdrop() {
     7
   );
 
-  fill(44, 55, 48, 255);
+  fill(44, 55, 48);
   rect(
     menuX + 12,
     menuY + 12,
@@ -2103,7 +2071,7 @@ function jdDrawCafeWideBackdrop() {
   // 天井とペンダントライト
   // ==================================================
 
-  jdFill("woodDark", 255);
+  jdFill("woodDark");
   rect(
     left,
     1015,
@@ -2125,9 +2093,7 @@ function jdDrawCafeWideBackdrop() {
     855
   ];
 
-  for (
-    const lx of lightXs
-  ) {
+  for (const lx of lightXs) {
     jdStroke("woodDark", 210);
     strokeWidth(4);
 
@@ -2140,8 +2106,8 @@ function jdDrawCafeWideBackdrop() {
 
     noStroke();
 
-    // 柔らかな光
-    fill(255, 220, 151, 20);
+    // 灯りの広がり
+    fill(255, 220, 151, 17);
     ellipse(
       lx,
       853,
@@ -2149,7 +2115,7 @@ function jdDrawCafeWideBackdrop() {
       160
     );
 
-    fill(255, 225, 163, 25);
+    fill(255, 225, 163, 22);
     ellipse(
       lx,
       875,
@@ -2157,7 +2123,7 @@ function jdDrawCafeWideBackdrop() {
       105
     );
 
-    jdFill("redDeep", 245);
+    jdFill("redDeep");
     ellipse(
       lx,
       920,
@@ -2184,182 +2150,6 @@ function jdDrawCafeWideBackdrop() {
   }
 
   // ==================================================
-  // 右側：発射装置の備品棚
-  // ==================================================
-
-  const shelfX = 820;
-  const shelfY = 430;
-  const shelfW = 125;
-  const shelfH = 120;
-
-  jdFill("shadow", 48);
-  rect(
-    shelfX + 5,
-    shelfY - 5,
-    shelfW,
-    shelfH,
-    6
-  );
-
-  jdFill("woodDark", 235);
-  rect(
-    shelfX,
-    shelfY,
-    shelfW,
-    shelfH,
-    5
-  );
-
-  jdFill("wood", 225);
-  rect(
-    shelfX + 8,
-    shelfY + 8,
-    shelfW - 16,
-    shelfH - 16,
-    3
-  );
-
-  jdFill("woodDark", 180);
-  rect(
-    shelfX + 7,
-    shelfY + 55,
-    shelfW - 14,
-    7
-  );
-
-  // シロップ瓶
-  const bottleXs = [
-    shelfX + 25,
-    shelfX + 55,
-    shelfX + 86
-  ];
-
-  const bottleCols = [
-    "red",
-    "sodaDeep",
-    "coffeeLight"
-  ];
-
-  for (
-    let i = 0;
-    i < bottleXs.length;
-    i++
-  ) {
-    const bx =
-      bottleXs[i];
-
-    jdFill(
-      bottleCols[i],
-      210
-    );
-
-    rect(
-      bx - 9,
-      shelfY + 19,
-      18,
-      38,
-      5
-    );
-
-    jdFill("creamWarm", 210);
-    rect(
-      bx - 5,
-      shelfY + 56,
-      10,
-      10,
-      2
-    );
-
-    jdFill("paper", 185);
-    rect(
-      bx - 7,
-      shelfY + 28,
-      14,
-      9,
-      2
-    );
-  }
-
-  // 伝票差し
-  jdFill("paper", 225);
-  rect(
-    shelfX + 18,
-    shelfY + 76,
-    42,
-    29,
-    2
-  );
-
-  jdFill("redDeep", 140);
-  rect(
-    shelfX + 23,
-    shelfY + 91,
-    32,
-    3,
-    1
-  );
-
-  // 布巾
-  jdFill("creamWarm", 180);
-  rect(
-    shelfX + 73,
-    shelfY + 71,
-    34,
-    31,
-    3
-  );
-
-  jdStroke("redDeep", 80);
-  strokeWidth(2);
-
-  line(
-    shelfX + 79,
-    shelfY + 76,
-    shelfX + 79,
-    shelfY + 97
-  );
-
-  line(
-    shelfX + 90,
-    shelfY + 76,
-    shelfX + 90,
-    shelfY + 97
-  );
-
-  noStroke();
-
-  // 注意書き
-  jdFill("paper", 218);
-  rect(
-    785,
-    584,
-    145,
-    48,
-    3
-  );
-
-  jdFill("redDeep", 195);
-  font("Courier-Bold");
-  fontSize(10);
-  textAlign(CENTER);
-
-  text(
-    "HANDLE WITH CARE",
-    857,
-    611
-  );
-
-  jdFill("ink", 155);
-  font("Courier");
-  fontSize(8);
-
-  text(
-    "DO NOT THROW FOOD",
-    857,
-    594
-  );
-
-  // ==================================================
   // 下側：カウンター収納
   // ==================================================
 
@@ -2369,7 +2159,7 @@ function jdDrawCafeWideBackdrop() {
     cabinetTop -
     cabinetBottom;
 
-  jdFill("tableFront", 255);
+  jdFill("tableFront");
   rect(
     left,
     cabinetBottom,
@@ -2377,8 +2167,7 @@ function jdDrawCafeWideBackdrop() {
     cabinetH
   );
 
-  // カウンター前面上部の縁
-  jdFill("tableLip", 255);
+  jdFill("tableLip");
   rect(
     left,
     cabinetTop - 12,
@@ -2394,7 +2183,7 @@ function jdDrawCafeWideBackdrop() {
     4
   );
 
-  // 収納扉
+  // 収納扉だけを整然と並べる
   for (
     let x = -95;
     x < JD.worldW + 90;
@@ -2418,7 +2207,6 @@ function jdDrawCafeWideBackdrop() {
       5
     );
 
-    // 内側の飾り枠
     noFill();
     jdStroke("tableStripe", 36);
     strokeWidth(3);
@@ -2433,7 +2221,6 @@ function jdDrawCafeWideBackdrop() {
 
     noStroke();
 
-    // 真鍮の取っ手
     jdFill("gold", 190);
     ellipse(
       x + 78,
@@ -2450,7 +2237,7 @@ function jdDrawCafeWideBackdrop() {
   const floorTop =
     cabinetBottom;
 
-  fill(46, 37, 34, 255);
+  fill(46, 37, 34);
   rect(
     left,
     -520,
@@ -2458,7 +2245,6 @@ function jdDrawCafeWideBackdrop() {
     floorTop + 520
   );
 
-  // 市松模様の床
   const tile = 72;
 
   for (
@@ -2481,9 +2267,9 @@ function jdDrawCafeWideBackdrop() {
       if (
         (row + col) % 2 === 0
       ) {
-        fill(67, 55, 49, 255);
+        fill(67, 55, 49);
       } else {
-        fill(39, 46, 43, 255);
+        fill(39, 46, 43);
       }
 
       rect(
@@ -2495,7 +2281,6 @@ function jdDrawCafeWideBackdrop() {
     }
   }
 
-  // タイル目地
   stroke(
     236,
     218,
@@ -2534,93 +2319,9 @@ function jdDrawCafeWideBackdrop() {
   noStroke();
 
   // ==================================================
-  // 下側の小物
+  // 中央下：丸椅子
   // ==================================================
 
-  // 紙袋
-  jdFill("shadow", 40);
-  rect(
-    114,
-    -300,
-    104,
-    127,
-    7
-  );
-
-  jdFill("posterBg2", 230);
-  rect(
-    106,
-    -292,
-    104,
-    127,
-    6
-  );
-
-  jdFill("woodDark", 120);
-  rect(
-    126,
-    -171,
-    64,
-    7,
-    3
-  );
-
-  jdFill("redDeep", 175);
-  font("Courier-Bold");
-  fontSize(11);
-  textAlign(CENTER);
-
-  text(
-    "YUMANIWA",
-    158,
-    -232
-  );
-
-  // 牛乳箱
-  jdFill("shadow", 44);
-  rect(
-    730,
-    -320,
-    126,
-    111,
-    5
-  );
-
-  jdFill("wood", 235);
-  rect(
-    722,
-    -312,
-    126,
-    111,
-    5
-  );
-
-  noFill();
-  jdStroke("woodDark", 170);
-  strokeWidth(5);
-
-  rect(
-    735,
-    -299,
-    100,
-    85,
-    2
-  );
-
-  noStroke();
-
-  jdFill("creamWarm", 215);
-  font("Courier-Bold");
-  fontSize(14);
-  textAlign(CENTER);
-
-  text(
-    "MILK",
-    785,
-    -260
-  );
-
-  // 丸椅子の脚
   jdStroke("woodDark", 235);
   strokeWidth(9);
 
@@ -2650,7 +2351,7 @@ function jdDrawCafeWideBackdrop() {
 
   noStroke();
 
-  jdFill("redDeep", 245);
+  jdFill("redDeep");
   ellipse(
     494,
     -21,
@@ -2666,6 +2367,7 @@ function jdDrawCafeWideBackdrop() {
     24
   );
 }
+
 
 
 
