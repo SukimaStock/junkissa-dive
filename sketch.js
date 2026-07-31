@@ -4694,20 +4694,74 @@ function jdBestTargetDebugInfo() {
 
 function jdUpdateCamera(dt) {
   if (JD.state === STATE_PLAY) {
-    if (JD.dragging) jdSetCameraOverview();
-    else if (JD.perfectZoomActive && JD.hitZoomTimer > 0) { JD.hitZoomTimer -= dt; jdSetCameraHitZoom(); }
-    else if (JD.food && JD.food.launched) jdSetCameraFollowFood();
-    else if (JD.food && JD.food.resolved) jdFreezeCamera();
-    else jdSetCameraClose(false);
+    if (JD.dragging) {
+      // 引っ張り量に応じたカメラへ毎フレーム更新
+      jdSetCameraOverview();
+
+    } else if (
+      JD.perfectZoomActive &&
+      JD.hitZoomTimer > 0
+    ) {
+      JD.hitZoomTimer -= dt;
+      jdSetCameraHitZoom();
+
+    } else if (
+      JD.food &&
+      JD.food.launched
+    ) {
+      jdSetCameraFollowFood();
+
+    } else if (
+      JD.food &&
+      JD.food.resolved
+    ) {
+      jdFreezeCamera();
+
+    } else {
+      jdSetCameraClose(false);
+    }
   }
+
   let k = 7.5;
-  if (JD.dragging) k = 11;
-  else if (JD.perfectZoomActive && JD.hitZoomTimer > 0) k = 12.5;
-  const a = Math.min(1, dt * k);
-  JD.cam.x += (JD.cam.tx - JD.cam.x) * a;
-  JD.cam.y += (JD.cam.ty - JD.cam.y) * a;
-  JD.cam.zoom += (JD.cam.tz - JD.cam.zoom) * a;
+
+  if (JD.dragging) {
+    const pull = jdGetScreenPull();
+
+    const ratio = jdClamp(
+      Math.hypot(pull.x, pull.y) / JD.maxPull,
+      0,
+      1
+    );
+
+    // 引き始めは素早く発射台へ寄り、
+    // 大きく引いた後は少し穏やかに全景へ開く
+    k =
+      13.5 -
+      ratio * 3.0;
+
+  } else if (
+    JD.perfectZoomActive &&
+    JD.hitZoomTimer > 0
+  ) {
+    k = 12.5;
+  }
+
+  const a =
+    Math.min(
+      1,
+      dt * k
+    );
+
+  JD.cam.x +=
+    (JD.cam.tx - JD.cam.x) * a;
+
+  JD.cam.y +=
+    (JD.cam.ty - JD.cam.y) * a;
+
+  JD.cam.zoom +=
+    (JD.cam.tz - JD.cam.zoom) * a;
 }
+
 
 function jdSetCameraClose(instant) {
   JD.cam.tx = JD.launcher.x - 105;
@@ -4716,7 +4770,45 @@ function jdSetCameraClose(instant) {
   if (instant) { JD.cam.x = JD.cam.tx; JD.cam.y = JD.cam.ty; JD.cam.zoom = JD.cam.tz; }
 }
 
-function jdSetCameraOverview() { JD.cam.tx = 515; JD.cam.ty = 285; JD.cam.tz = 0.42; }
+function jdSetCameraOverview() {
+  const pull = jdGetScreenPull();
+
+  const ratio = jdClamp(
+    Math.hypot(pull.x, pull.y) / JD.maxPull,
+    0,
+    1
+  );
+
+  // 引き始めから反応しつつ、
+  // 中盤以降は穏やかに全景へ到達する
+  const zoomT = Math.pow(ratio, 0.78);
+  const moveT = ratio * ratio * (3 - 2 * ratio);
+
+  // 触れた瞬間：
+  // 発射台を画面中央に置き、少しだけ大きく見せる
+  const startX = JD.launcher.x;
+  const startY = 252;
+  const startZoom = 1.02;
+
+  // 最大まで引いた時：
+  // 現在の美しい店内全景へ到達する
+  const endX = 515;
+  const endY = 285;
+  const endZoom = 0.42;
+
+  JD.cam.tx =
+    startX +
+    (endX - startX) * moveT;
+
+  JD.cam.ty =
+    startY +
+    (endY - startY) * moveT;
+
+  JD.cam.tz =
+    startZoom +
+    (endZoom - startZoom) * zoomT;
+}
+
 
 function jdSetCameraFollowFood() {
   if (!JD.food) return jdSetCameraOverview();
