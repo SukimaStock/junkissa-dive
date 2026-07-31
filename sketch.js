@@ -3191,74 +3191,214 @@ function jdDrawLauncher() {
     !JD.food.launched &&
     !JD.food.resolved &&
     !JD.dragging &&
+    !JD.fortuneSpinning &&
     !(JD.fortunePickedTimer > 0);
+
+  // throwIndex=1 が最初の投擲
+  const firstThrow =
+    JD.throwIndex <= 1 &&
+    JD.results.length === 0;
 
   const pulse =
     0.5 +
-    0.5 * Math.sin(ElapsedTime * 3.2);
+    0.5 * Math.sin(
+      ElapsedTime * 3.2
+    );
 
   rectMode(CENTER);
   ellipseMode(CENTER);
   noStroke();
 
+  // --------------------------------------------------
+  // 初見時の操作フォーカス
+  // --------------------------------------------------
+
+  if (ready) {
+    const focusAlpha =
+      firstThrow
+        ? 30 + pulse * 28
+        : 12 + pulse * 12;
+
+    // 発射台を囲う、柔らかな楕円の光
+    jdFill(
+      "creamWarm",
+      focusAlpha
+    );
+
+    ellipse(
+      x,
+      y,
+      firstThrow ? 126 : 100,
+      firstThrow ? 88 : 66
+    );
+
+    jdFill(
+      "highlight",
+      focusAlpha * 0.72
+    );
+
+    ellipse(
+      x,
+      y,
+      firstThrow ? 94 : 78,
+      firstThrow ? 64 : 52
+    );
+  }
+
   // 卓上に落ちる影
   jdFill("shadow", 48);
-  ellipse(x + 5, y - 16, 78, 22);
+
+  ellipse(
+    x + 5,
+    y - 16,
+    78,
+    22
+  );
 
   // 木製の台座
   jdFill("woodDark", 255);
-  ellipse(x, y - 7, 72, 36);
+
+  ellipse(
+    x,
+    y - 7,
+    72,
+    36
+  );
 
   jdFill("wood", 255);
-  ellipse(x - 2, y - 3, 66, 31);
+
+  ellipse(
+    x - 2,
+    y - 3,
+    66,
+    31
+  );
 
   // 木目
   jdStroke("woodDark", 105);
   strokeWidth(2);
-  line(x - 25, y - 1, x + 21, y - 7);
-  line(x - 17, y + 5, x + 16, y + 1);
+
+  line(
+    x - 25,
+    y - 1,
+    x + 21,
+    y - 7
+  );
+
+  line(
+    x - 17,
+    y + 5,
+    x + 16,
+    y + 1
+  );
+
   noStroke();
 
-  // 食材を受ける小さな白い皿
+  // 食材を受ける白い皿
   jdFill("shadow", 32);
-  ellipse(x + 2, y - 1, 34, 14);
+
+  ellipse(
+    x + 2,
+    y - 1,
+    34,
+    14
+  );
 
   jdFill("plate", 250);
-  ellipse(x, y + 2, 32, 14);
+
+  ellipse(
+    x,
+    y + 2,
+    32,
+    14
+  );
 
   jdFill("highlight", 90);
-  ellipse(x - 3, y + 4, 19, 6);
+
+  ellipse(
+    x - 3,
+    y + 4,
+    19,
+    6
+  );
 
   // 上下の真鍮クリップ
   jdFill("woodDark", 225);
-  rect(x + 20, y + 15, 9, 24, 4);
-  rect(x + 20, y - 15, 9, 24, 4);
+
+  rect(
+    x + 20,
+    y + 15,
+    9,
+    24,
+    4
+  );
+
+  rect(
+    x + 20,
+    y - 15,
+    9,
+    24,
+    4
+  );
 
   jdFill("gold", 255);
-  ellipse(x + 20, y + 18, 13, 13);
-  ellipse(x + 20, y - 18, 13, 13);
+
+  ellipse(
+    x + 20,
+    y + 18,
+    13,
+    13
+  );
+
+  ellipse(
+    x + 20,
+    y - 18,
+    13,
+    13
+  );
 
   jdFill("highlight", 125);
-  ellipse(x + 17, y + 20, 4, 4);
-  ellipse(x + 17, y - 16, 4, 4);
 
-  // 待機中のゴム紐
-  // ドラッグ中は、後段で食材位置まで伸ばして描画する
+  ellipse(
+    x + 17,
+    y + 20,
+    4,
+    4
+  );
+
+  ellipse(
+    x + 17,
+    y - 16,
+    4,
+    4
+  );
+
+  // 待機中のゴム
   if (!JD.dragging) {
+    // 初投だけ、ゴムがゆっくり呼吸する
+    const breathe =
+      ready && firstThrow
+        ? pulse * 3
+        : 0;
+
     jdStroke("redDeep", 235);
-    strokeWidth(4);
+    strokeWidth(
+      ready && firstThrow
+        ? 4.8
+        : 4
+    );
 
     line(
       x + 20,
       y + 18,
-      x + 5,
+      x + 5 - breathe,
       y + 6
     );
 
     line(
       x + 20,
       y - 18,
-      x + 5,
+      x + 5 - breathe,
       y - 6
     );
 
@@ -3268,110 +3408,97 @@ function jdDrawLauncher() {
     line(
       x + 20,
       y + 19,
-      x + 5,
+      x + 5 - breathe,
       y + 7
     );
 
     line(
       x + 20,
       y - 17,
-      x + 5,
+      x + 5 - breathe,
       y - 5
     );
 
     noStroke();
   }
 
-  // 操作可能な時だけ、後方へ控えめな引っ張りガイド
+  // --------------------------------------------------
+  // 発射台から右下へ伸びる操作ガイド
+  // --------------------------------------------------
+
   if (ready) {
     const guideAlpha =
-      52 +
-      pulse * 74;
+      firstThrow
+        ? 92 + pulse * 92
+        : 42 + pulse * 46;
 
-    jdFill(
-      "creamWarm",
-      guideAlpha * 0.34
-    );
+    const guideLength =
+      firstThrow
+        ? 88
+        : 66;
 
-    rect(
-      x + 66,
-      y,
-      76,
-      32,
-      10
-    );
-
-    // 点線
+    // 点線を右下方向へ伸ばす
     jdFill(
       "highlight",
       guideAlpha
     );
 
-    for (let i = 0; i < 4; i++) {
-      const dotX =
-        x + 35 + i * 11;
+    for (let i = 0; i < 5; i++) {
+      const t =
+        (i + 1) / 5;
 
       ellipse(
-        dotX,
-        y,
-        3.5 + pulse * 1.2
+        x + 30 + guideLength * t,
+        y - 2 - 25 * t,
+        firstThrow
+          ? 4.4 + pulse * 1.4
+          : 3.2 + pulse * 0.8
       );
     }
 
-    // 小さな「>」で右へ引くことを示す
+    // 終端の矢印
+    const arrowX =
+      x + 36 + guideLength;
+
+    const arrowY =
+      y - 30;
+
     jdStroke(
       "redDeep",
-      guideAlpha + 40
+      guideAlpha
     );
 
-    strokeWidth(2.5);
-
-    line(
-      x + 73,
-      y + 7,
-      x + 82,
-      y
+    strokeWidth(
+      firstThrow
+        ? 3
+        : 2
     );
 
     line(
-      x + 82,
-      y,
-      x + 73,
-      y - 7
+      arrowX - 10,
+      arrowY + 2,
+      arrowX,
+      arrowY
+    );
+
+    line(
+      arrowX,
+      arrowY,
+      arrowX - 4,
+      arrowY + 9
+    );
+
+    line(
+      arrowX,
+      arrowY,
+      arrowX - 10,
+      arrowY - 2
     );
 
     noStroke();
-
-    // 伝票風の小さな表示
-    jdFill(
-      "paper",
-      155 + pulse * 45
-    );
-
-    rect(
-      x + 60,
-      y - 23,
-      43,
-      16,
-      3
-    );
-
-    jdFill(
-      "ink",
-      175 + pulse * 55
-    );
-
-    font("Courier-Bold");
-    fontSize(8);
-    textAlign(CENTER);
-
-    text(
-      "PULL",
-      x + 60,
-      y - 25
-    );
   }
 }
+
 
 
 
@@ -3502,7 +3629,6 @@ function jdDrawFloatTexts() {}
 function jdDrawLauncherItemTicket() {
   const f = JD.food;
 
-  // 食材が発射台に待機している時だけ表示
   if (
     !f ||
     f.launched ||
@@ -3514,72 +3640,148 @@ function jdDrawLauncherItemTicket() {
     return;
   }
 
+  const firstThrow =
+    JD.throwIndex <= 1 &&
+    JD.results.length === 0;
+
+  const pulse =
+    0.5 +
+    0.5 * Math.sin(
+      ElapsedTime * 3.2
+    );
+
+  // 発射台の左上へ配置し、
+  // 発射台と視線がひとまとまりになるようにする
   const x =
-    JD.launcher.x - 7;
+    JD.launcher.x - 34;
 
   const y =
-    JD.launcher.y + 43;
+    JD.launcher.y + 58;
+
+  const itemName =
+    f.name || "-";
+
+  // 長い食材名にも対応
+  const estimatedTextW =
+    itemName.length * 8.2;
+
+  const ticketW =
+    Math.max(
+      firstThrow ? 116 : 98,
+      estimatedTextW + 30
+    );
+
+  const ticketH =
+    firstThrow ? 48 : 40;
 
   rectMode(CENTER);
   noStroke();
   textAlign(CENTER);
 
-  // 影
-  jdFill("shadow", 35);
-
-  rect(
-    x + 2,
-    y - 3,
-    68,
-    30,
-    4
+  // 発射台との接続線
+  jdStroke(
+    "redDeep",
+    firstThrow
+      ? 125 + pulse * 42
+      : 88
   );
 
-  // 発射台に差し込まれた注文伝票
-  jdFill("paper", 232);
+  strokeWidth(2);
+
+  line(
+    x + ticketW * 0.34,
+    y - ticketH * 0.34,
+    JD.launcher.x - 9,
+    JD.launcher.y + 20
+  );
+
+  noStroke();
+
+  // 影
+  jdFill(
+    "shadow",
+    firstThrow ? 45 : 32
+  );
+
+  rect(
+    x + 3,
+    y - 4,
+    ticketW,
+    ticketH,
+    6
+  );
+
+  // 紙
+  jdFill(
+    "paper",
+    firstThrow
+      ? 246
+      : 226
+  );
 
   rect(
     x,
     y,
-    68,
-    30,
-    4
+    ticketW,
+    ticketH,
+    6
   );
 
-  // 上部の赤線
-  jdFill("redDeep", 165);
+  // 赤い伝票線
+  jdFill(
+    "redDeep",
+    firstThrow
+      ? 190
+      : 145
+  );
 
   rect(
     x,
-    y + 10,
-    58,
-    2,
-    1
+    y + ticketH / 2 - 7,
+    ticketW - 16,
+    3,
+    2
   );
 
-  jdFill("ink", 205);
+  // 食材名を主役にする
+  jdFill("ink", 235);
+  font("Courier-Bold");
 
-  font("Courier");
-  fontSize(7);
+  fontSize(
+    firstThrow
+      ? 13
+      : 11
+  );
 
   text(
-    jdT(
-      "ui.item",
-      "ITEM"
-    ),
+    itemName,
     x,
-    y + 4
+    y + 8
+  );
+
+  // 操作文
+  jdFill(
+    "redDeep",
+    firstThrow
+      ? 225
+      : 175
   );
 
   font("Courier-Bold");
-  fontSize(10);
+
+  fontSize(
+    firstThrow
+      ? 11
+      : 9
+  );
 
   text(
-    f.name || "-",
+    "PULL TO DIVE",
     x,
-    y - 7
+    y - 10
   );
 }
+
 
 function jdUpdateFloatTexts(_dt) { JD.floatTexts.length = 0; }
 
