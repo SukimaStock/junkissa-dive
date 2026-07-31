@@ -31,7 +31,7 @@ function draw() {
   let pushed = false;
 
   try {
-    background(34, 25, 20);
+    background(27, 20, 18);
     jdUpdateScale();
 
     pushMatrix();
@@ -168,43 +168,82 @@ function touched(touch) {
 
 function jdInitVisualTheme() {
   JD.visual = {
-    page: color(34, 25, 20),
-    posterBg: color(238, 220, 188),
-    posterBg2: color(229, 199, 158),
-    wall: color(238, 219, 184),
-    wallShade: color(205, 164, 116),
-    wallLine: color(149, 93, 58),
-    tableTop: color(49, 96, 72),
-    tableLip: color(32, 64, 51),
-    tableFront: color(38, 73, 58),
-    tableStripe: color(244, 225, 190),
-    wood: color(126, 73, 45),
-    woodDark: color(75, 42, 31),
-    cream: color(250, 239, 211),
-    creamWarm: color(255, 244, 214),
-    paper: color(249, 242, 218),
-    ink: color(57, 42, 33),
-    coffee: color(67, 35, 23),
-    coffeeLight: color(111, 68, 42),
-    soda: color(93, 211, 140),
-    sodaLight: color(178, 246, 188),
-    sodaDeep: color(47, 164, 104),
-    cakeCream: color(255, 246, 231),
-    cakeSponge: color(244, 201, 114),
-    cakePink: color(242, 138, 153),
-    red: color(204, 54, 51),
-    redDeep: color(143, 41, 42),
-    shadow: color(25, 18, 14),
-    uiPanel: color(42, 31, 26),
-    uiText: color(255, 245, 220),
-    gold: color(238, 203, 122),
-    glass: color(232, 250, 235),
-    glassEdge: color(238, 252, 238),
-    ice: color(205, 247, 214),
-    plate: color(247, 237, 206),
-    highlight: color(255, 251, 228)
+    // 画面外・夜の空気
+    page: color(27, 20, 18),
+
+    // ポスター・タイトル背景
+    // 明るいベージュから、少し古びた紙色へ
+    posterBg: color(224, 199, 158),
+    posterBg2: color(203, 163, 113),
+
+    // 店内壁
+    // 新しいカフェの白壁ではなく、照明で飴色に見える壁
+    wall: color(210, 178, 132),
+    wallShade: color(160, 112, 73),
+    wallLine: color(111, 66, 45),
+
+    // カウンター
+    // 鮮やかな緑を抑え、夜の深いモスグリーンへ
+    tableTop: color(46, 77, 59),
+    tableLip: color(25, 47, 39),
+    tableFront: color(31, 58, 47),
+    tableStripe: color(197, 169, 125),
+
+    // 木材
+    // 茶色を少し赤く、重くする
+    wood: color(112, 59, 39),
+    woodDark: color(57, 31, 27),
+
+    // クリーム・紙類
+    // 真っ白を避けて、生成りと古紙へ
+    cream: color(239, 222, 184),
+    creamWarm: color(246, 224, 180),
+    paper: color(235, 219, 184),
+
+    // 文字
+    ink: color(48, 34, 29),
+
+    // 飲食物
+    coffee: color(52, 27, 21),
+    coffeeLight: color(89, 50, 34),
+
+    // メロンソーダは鮮やかさを少し抑え、
+    // 暗い店内でも光って見える程度に残す
+    soda: color(77, 181, 117),
+    sodaLight: color(159, 222, 170),
+    sodaDeep: color(38, 127, 81),
+
+    cakeCream: color(245, 229, 203),
+    cakeSponge: color(214, 164, 82),
+    cakePink: color(207, 105, 119),
+
+    // 赤は昭和ポスターの朱色寄り
+    red: color(177, 48, 43),
+    redDeep: color(111, 33, 34),
+
+    // 影は真っ黒ではなく、赤みのある濃茶
+    shadow: color(29, 18, 16),
+
+    // UI
+    uiPanel: color(38, 27, 24),
+    uiText: color(241, 224, 188),
+
+    // 真鍮
+    gold: color(207, 166, 83),
+
+    // ガラス・氷
+    // 青白さを減らし、店内照明になじませる
+    glass: color(211, 229, 210),
+    glassEdge: color(227, 237, 218),
+    ice: color(181, 220, 190),
+
+    plate: color(232, 216, 179),
+
+    // ハイライトも真っ白ではなく暖色
+    highlight: color(246, 230, 190)
   };
 }
+
 function jdC(name) {
   if (!JD.visual) jdInitVisualTheme();
   return JD.visual[name] || color(255, 255, 255);
