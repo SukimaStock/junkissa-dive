@@ -1679,6 +1679,7 @@ function jdDrawWorld() {
   for (const o of JD.obstacles) jdDrawObstacle(o);
   jdDrawPlacedFoods();
   jdDrawLauncher();
+  jdDrawLauncherItemTicket();
 
   let fx = JD.food ? JD.food.x : JD.launcher.x;
   let fy = JD.food ? JD.food.y : JD.launcher.y;
@@ -2573,42 +2574,463 @@ function jdUpdateParticles(dt) {
 }
 
 function jdDrawFloatTexts() {}
+
+function jdDrawLauncherItemTicket() {
+  const f = JD.food;
+
+  // 食材が発射台に待機している時だけ表示
+  if (
+    !f ||
+    f.launched ||
+    f.resolved ||
+    JD.dragging ||
+    JD.fortuneSpinning ||
+    JD.fortunePickedTimer > 0
+  ) {
+    return;
+  }
+
+  const x =
+    JD.launcher.x - 7;
+
+  const y =
+    JD.launcher.y + 43;
+
+  rectMode(CENTER);
+  noStroke();
+  textAlign(CENTER);
+
+  // 影
+  jdFill("shadow", 35);
+
+  rect(
+    x + 2,
+    y - 3,
+    68,
+    30,
+    4
+  );
+
+  // 発射台に差し込まれた注文伝票
+  jdFill("paper", 232);
+
+  rect(
+    x,
+    y,
+    68,
+    30,
+    4
+  );
+
+  // 上部の赤線
+  jdFill("redDeep", 165);
+
+  rect(
+    x,
+    y + 10,
+    58,
+    2,
+    1
+  );
+
+  jdFill("ink", 205);
+
+  font("Courier");
+  fontSize(7);
+
+  text(
+    jdT(
+      "ui.item",
+      "ITEM"
+    ),
+    x,
+    y + 4
+  );
+
+  font("Courier-Bold");
+  fontSize(10);
+
+  text(
+    f.name || "-",
+    x,
+    y - 7
+  );
+}
+
 function jdUpdateFloatTexts(_dt) { JD.floatTexts.length = 0; }
 
 function jdDrawPlayUI() {
-  rectMode(CORNER); noStroke();
-  jdFill("uiPanel", 214); rect(18, JD.LOGICAL_H - 86, JD.LOGICAL_W - 36, 66, 16);
-  jdFill("redDeep", 190); rect(30, JD.LOGICAL_H - 35, JD.LOGICAL_W - 60, 3, 2);
-  jdFill("uiText", 245); font('Courier-Bold'); fontSize(14); textAlign(CENTER);
-  text(`${jdT("ui.shift")}     ${jdT("ui.sales")} ${JD.totalSales} ${jdT("ui.yen")}`, JD.LOGICAL_W / 2, JD.LOGICAL_H - 42);
-  font('Courier'); fontSize(12);
-  let rest = JD.queue.length - JD.throwIndex + 1;
-  if (rest < 0) rest = 0;
-  let itemName = "-";
-  if (JD.fortuneSpinning) itemName = "FORTUNE...";
-  else if (JD.food) itemName = JD.food.name;
-  else if (JD.fortuneDisplayName) itemName = JD.fortuneDisplayName;
-  text(`${jdT("ui.rest")} ${rest} / ${jdT("ui.item")} ${itemName}`, JD.LOGICAL_W / 2, JD.LOGICAL_H - 64);
+  rectMode(CENTER);
+  noStroke();
+  textAlign(CENTER);
 
-  if (JD.gamePhase === PHASE_SHIFT_START) {
-    jdFill("ink", 225); font('Courier-Bold'); fontSize(13); text("SHIFT START", JD.LOGICAL_W / 2, 92);
-  } else if (JD.fortuneSpinning) {
-    jdFill("ink", 225); font('Courier-Bold'); fontSize(13); text(jdT("ui.fortuneSpin"), JD.LOGICAL_W / 2, 92);
-  } else if (JD.food && !JD.food.launched && !JD.food.resolved) {
-    jdFill("ink", 225); font('Courier-Bold'); fontSize(13);
-    text(JD.dragging ? jdT("ui.dragging") : jdT("ui.pull"), JD.LOGICAL_W / 2, 92);
+  let rest =
+    JD.queue.length -
+    JD.throwIndex +
+    1;
+
+  if (rest < 0) rest = 0;
+
+  const resultMode =
+    JD.food &&
+    JD.food.resolved;
+
+  const panelAlpha =
+    resultMode ? 118 : 224;
+
+  const textAlpha =
+    resultMode ? 145 : 245;
+
+  const cx =
+    JD.LOGICAL_W / 2;
+
+  const cy =
+    JD.LOGICAL_H - 31;
+
+  const w =
+    JD.LOGICAL_W - 32;
+
+  const h = 34;
+
+  // 勤務伝票の影
+  jdFill(
+    "shadow",
+    resultMode ? 24 : 42
+  );
+
+  rect(
+    cx + 2,
+    cy - 3,
+    w,
+    h,
+    7
+  );
+
+  // 勤務伝票
+  jdFill(
+    "paper",
+    panelAlpha
+  );
+
+  rect(
+    cx,
+    cy,
+    w,
+    h,
+    7
+  );
+
+  // 左端の赤線
+  jdFill(
+    "redDeep",
+    resultMode ? 82 : 178
+  );
+
+  rect(
+    30,
+    cy,
+    4,
+    h - 8,
+    2
+  );
+
+  // パンチ穴
+  jdFill(
+    "woodDark",
+    resultMode ? 42 : 88
+  );
+
+  ellipse(
+    42,
+    cy,
+    5
+  );
+
+  // 情報の区切り
+  jdFill(
+    "ink",
+    resultMode ? 28 : 58
+  );
+
+  rect(
+    129,
+    cy,
+    1,
+    20
+  );
+
+  rect(
+    246,
+    cy,
+    1,
+    20
+  );
+
+  jdFill(
+    "ink",
+    textAlpha
+  );
+
+  // SHIFT
+  font("Courier");
+  fontSize(8);
+
+  text(
+    "WORK TICKET",
+    82,
+    cy + 7
+  );
+
+  font("Courier-Bold");
+  fontSize(9);
+
+  text(
+    jdT("ui.shift"),
+    82,
+    cy - 6
+  );
+
+  // SALES
+  font("Courier");
+  fontSize(8);
+
+  text(
+    jdT("ui.sales"),
+    187,
+    cy + 7
+  );
+
+  font("Courier-Bold");
+  fontSize(12);
+
+  text(
+    `${JD.totalSales} ${jdT("ui.yen")}`,
+    187,
+    cy - 6
+  );
+
+  // REST
+  font("Courier");
+  fontSize(8);
+
+  text(
+    jdT("ui.rest"),
+    292,
+    cy + 7
+  );
+
+  font("Courier-Bold");
+  fontSize(13);
+
+  text(
+    String(rest),
+    292,
+    cy - 6
+  );
+
+  // 状況説明は必要な時だけ表示
+  if (
+    JD.gamePhase ===
+    PHASE_SHIFT_START
+  ) {
+    jdFill("ink", 205);
+    font("Courier-Bold");
+    fontSize(12);
+
+    text(
+      "SHIFT START",
+      cx,
+      91
+    );
+
+  } else if (
+    JD.fortuneSpinning
+  ) {
+    jdFill("ink", 205);
+    font("Courier-Bold");
+    fontSize(11);
+
+    text(
+      jdT("ui.fortuneSpin"),
+      cx,
+      91
+    );
+
+  } else if (
+    JD.dragging &&
+    JD.food &&
+    !JD.food.launched &&
+    !JD.food.resolved
+  ) {
+    // 待機中のPULL表示は発射台側へ任せる
+    jdFill("ink", 210);
+    font("Courier-Bold");
+    fontSize(11);
+
+    text(
+      jdT(
+        "ui.dragging",
+        "RELEASE TO SHOOT"
+      ),
+      cx,
+      91
+    );
   }
 
   jdDrawDebugButton();
 }
 
+
 function jdDrawShotMeter() {
-  if (!JD.food || JD.food.launched || JD.food.resolved || JD.fortuneSpinning) return;
-  const y = 26;
-  font('Courier-Bold'); fontSize(10); textAlign(CENTER);
-  fill(255, 242, 215, 165);
-  text(`${jdT("shot.last")}  ${jdPowerName(JD.lastPowerRatio)} / ${JD.lastAngleName}`, JD.LOGICAL_W / 2, y);
+  // 引っ張っている時だけ表示
+  if (
+    !JD.dragging ||
+    !JD.food ||
+    JD.food.launched ||
+    JD.food.resolved ||
+    JD.fortuneSpinning
+  ) {
+    return;
+  }
+
+  const pull =
+    jdGetScreenPull();
+
+  const dist =
+    Math.hypot(
+      pull.x,
+      pull.y
+    );
+
+  const ratio =
+    jdClamp(
+      dist / JD.maxPull,
+      0,
+      1
+    );
+
+  const powerName =
+    jdPowerName(ratio);
+
+  const angleName =
+    jdAngleName(pull);
+
+  const cx =
+    JD.LOGICAL_W / 2;
+
+  const cy = 34;
+
+  const w = 208;
+  const h = 38;
+
+  rectMode(CENTER);
+  noStroke();
+  textAlign(CENTER);
+
+  // 影
+  jdFill("shadow", 42);
+
+  rect(
+    cx + 2,
+    cy - 3,
+    w,
+    h,
+    8
+  );
+
+  // 小型伝票
+  jdFill("paper", 224);
+
+  rect(
+    cx,
+    cy,
+    w,
+    h,
+    8
+  );
+
+  // 中央の区切り
+  jdFill("ink", 48);
+
+  rect(
+    cx,
+    cy,
+    1,
+    23
+  );
+
+  jdFill("ink", 220);
+
+  // POWER
+  font("Courier");
+  fontSize(8);
+
+  text(
+    jdT(
+      "shot.power",
+      "POWER"
+    ),
+    cx - 51,
+    cy + 8
+  );
+
+  font("Courier-Bold");
+  fontSize(11);
+
+  text(
+    powerName,
+    cx - 51,
+    cy - 7
+  );
+
+  // ANGLE
+  font("Courier");
+  fontSize(8);
+
+  text(
+    jdT(
+      "shot.angle",
+      "ANGLE"
+    ),
+    cx + 51,
+    cy + 8
+  );
+
+  font("Courier-Bold");
+  fontSize(11);
+
+  text(
+    angleName,
+    cx + 51,
+    cy - 7
+  );
+
+  // 細い強さゲージ
+  const meterW = 184;
+
+  jdFill("woodDark", 58);
+
+  rect(
+    cx,
+    cy - 15,
+    meterW,
+    3,
+    2
+  );
+
+  rectMode(CORNER);
+
+  jdFill("redDeep", 205);
+
+  rect(
+    cx - meterW / 2,
+    cy - 16.5,
+    meterW * ratio,
+    3,
+    2
+  );
 }
+
 
 function jdDrawFortuneMachine() {
   if (!JD.fortuneSpinning && !(JD.fortunePickedTimer > 0)) return;
