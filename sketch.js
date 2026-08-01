@@ -124,46 +124,178 @@ function touched(touch) {
 
   try {
     try {
-      if (!JD.scale) jdUpdateScale();
-      const p = jdToLogical(touch);
-
-      if (JD.state === STATE_TITLE) {
-        if (touch.state === ENDED) jdStartPlay();
-        return;
+      if (!JD.scale) {
+        jdUpdateScale();
       }
 
-      if (JD.state === STATE_RECEIPT) {
-        if (touch.state === ENDED && jdReceiptReady()) {
-          if (p.x >= 70 && p.x <= 290 && p.y >= 70 && p.y <= 114) jdStartPlay();
+      const p =
+        jdToLogical(touch);
+
+      // タイトル画面
+      if (
+        JD.state ===
+        STATE_TITLE
+      ) {
+        if (
+          touch.state === ENDED &&
+          !(JD.titleExitTimer > 0)
+        ) {
+          JD.titleExitDuration =
+            0.58;
+
+          JD.titleExitTimer =
+            JD.titleExitDuration;
         }
+
         return;
       }
 
-      if (JD.state !== STATE_PLAY) return;
+      // レシート画面
+      if (
+        JD.state ===
+        STATE_RECEIPT
+      ) {
+        if (
+          touch.state === ENDED &&
+          jdReceiptReady() &&
+          p.x >= 70 &&
+          p.x <= 290 &&
+          p.y >= 70 &&
+          p.y <= 114
+        ) {
+          jdStartPlay();
+        }
 
-      if (jdDebugButtonHit(p.x, p.y) && touch.state === ENDED) {
-        JD.debugMode = !JD.debugMode;
         return;
       }
 
-      if (JD.gamePhase === PHASE_FORTUNE) return;
+      if (
+        JD.state !==
+        STATE_PLAY
+      ) {
+        return;
+      }
 
-      if (!jdCanAcceptAimTouch()) return;
+      // 開店導入
+      if (
+        JD.gamePhase ===
+        PHASE_SHIFT_START
+      ) {
+        if (
+          touch.state ===
+          ENDED
+        ) {
+          const duration =
+            Number.isFinite(
+              JD.shiftStartDuration
+            )
+              ? JD.shiftStartDuration
+              : 7.4;
 
-      if (touch.state === BEGAN) {
+          const elapsed =
+            duration -
+            (
+              Number.isFinite(
+                JD.shiftStartTimer
+              )
+                ? JD.shiftStartTimer
+                : duration
+            );
+
+          let nextElapsed;
+
+          if (
+            elapsed < 1.7
+          ) {
+            nextElapsed = 1.7;
+
+          } else if (
+            elapsed < 5.2
+          ) {
+            nextElapsed = 5.2;
+
+          } else {
+            nextElapsed =
+              duration;
+          }
+
+          JD.shiftStartTimer =
+            Math.max(
+              0,
+              duration -
+              nextElapsed
+            );
+        }
+
+        return;
+      }
+
+      if (
+        jdDebugButtonHit(
+          p.x,
+          p.y
+        ) &&
+        touch.state ===
+        ENDED
+      ) {
+        JD.debugMode =
+          !JD.debugMode;
+
+        return;
+      }
+
+      if (
+        JD.gamePhase ===
+        PHASE_FORTUNE
+      ) {
+        return;
+      }
+
+      if (
+        !jdCanAcceptAimTouch()
+      ) {
+        return;
+      }
+
+      if (
+        touch.state ===
+        BEGAN
+      ) {
         jdBeginAimTouch(p);
-      } else if (touch.state === MOVING) {
+
+      } else if (
+        touch.state ===
+        MOVING
+      ) {
         jdUpdateAimTouch(p);
-      } else if (touch.state === ENDED || touch.state === CANCELLED) {
-        jdReleaseAimTouch(p, touch.state === CANCELLED);
+
+      } else if (
+        touch.state ===
+          ENDED ||
+        touch.state ===
+          CANCELLED
+      ) {
+        jdReleaseAimTouch(
+          p,
+          touch.state ===
+            CANCELLED
+        );
       }
+
     } finally {
-      jdClearPrimaryPointerIfDone(touch);
+      jdClearPrimaryPointerIfDone(
+        touch
+      );
     }
+
   } catch (error) {
-    jdShowRuntimeError(error, "touched");
+    jdShowRuntimeError(
+      error,
+      "touched"
+    );
   }
 }
+
 
 
 function jdInitVisualTheme() {
@@ -562,15 +694,18 @@ function jdStartPlay() {
     PHASE_SHIFT_START
   );
 
-  // タイトルから最初のルーレットまでを
-  // 一つの導入シーンとして見せる
   JD.shiftStartDuration =
-    4.8;
+    7.4;
 
   JD.shiftStartTimer =
     JD.shiftStartDuration;
 
-  // 最初は喫茶店全体を見せる
+  JD.shiftFadeInDuration =
+    0.72;
+
+  JD.shiftFadeInTimer =
+    JD.shiftFadeInDuration;
+
   JD.cam.x = 515;
   JD.cam.y = 285;
   JD.cam.zoom = 0.42;
@@ -579,6 +714,7 @@ function jdStartPlay() {
   JD.cam.ty = 285;
   JD.cam.tz = 0.42;
 }
+
 
 
 function jdSetGamePhase(phase) {
@@ -721,6 +857,30 @@ function jdUpdateFortune(dt) {
 function jdAppUpdate(dt) {
   if (
     JD.state ===
+    STATE_TITLE
+  ) {
+    if (
+      JD.titleExitTimer > 0
+    ) {
+      JD.titleExitTimer -=
+        dt;
+
+      if (
+        JD.titleExitTimer <=
+        0
+      ) {
+        JD.titleExitTimer =
+          0;
+
+        jdStartPlay();
+      }
+    }
+
+    return;
+  }
+
+  if (
+    JD.state ===
     STATE_PLAY
   ) {
     if (
@@ -733,7 +893,7 @@ function jdAppUpdate(dt) {
         )
       ) {
         JD.shiftStartDuration =
-          4.8;
+          7.4;
       }
 
       if (
@@ -771,6 +931,7 @@ function jdAppUpdate(dt) {
     jdUpdateReceipt(dt);
   }
 }
+
 
 
 function jdUpdatePlay(dt) {
@@ -1656,51 +1817,227 @@ function jdDrawTitle() {
   noStroke();
 
   jdFill("posterBg");
-  rect(0, 0, JD.LOGICAL_W, JD.LOGICAL_H);
 
-  jdFill("posterBg2", 70);
-  rect(0, 0, JD.LOGICAL_W, 148);
-  jdFill("tableTop", 235);
-  rect(0, 0, JD.LOGICAL_W, 138);
-  jdFill("tableLip", 235);
-  rect(0, 134, JD.LOGICAL_W, 9);
+  rect(
+    0,
+    0,
+    JD.LOGICAL_W,
+    JD.LOGICAL_H
+  );
 
-  jdFill("red", 230);
-  rect(0, 458, JD.LOGICAL_W, 10);
-  jdFill("wood", 85);
-  rect(0, 470, JD.LOGICAL_W, 4);
+  jdFill(
+    "posterBg2",
+    70
+  );
 
-  // poster registration dots
-  jdFill("redDeep", 175); ellipse(38, 532, 8, 8);
-  jdFill("redDeep", 175); ellipse(JD.LOGICAL_W - 38, 532, 8, 8);
+  rect(
+    0,
+    0,
+    JD.LOGICAL_W,
+    148
+  );
+
+  jdFill(
+    "tableTop",
+    235
+  );
+
+  rect(
+    0,
+    0,
+    JD.LOGICAL_W,
+    138
+  );
+
+  jdFill(
+    "tableLip",
+    235
+  );
+
+  rect(
+    0,
+    134,
+    JD.LOGICAL_W,
+    9
+  );
+
+  jdFill(
+    "red",
+    230
+  );
+
+  rect(
+    0,
+    458,
+    JD.LOGICAL_W,
+    10
+  );
+
+  jdFill(
+    "wood",
+    85
+  );
+
+  rect(
+    0,
+    470,
+    JD.LOGICAL_W,
+    4
+  );
+
+  // ポスターの登録点
+  jdFill(
+    "redDeep",
+    175
+  );
+
+  ellipse(
+    38,
+    532,
+    8,
+    8
+  );
+
+  ellipse(
+    JD.LOGICAL_W - 38,
+    532,
+    8,
+    8
+  );
 
   jdDrawTinyCafePreview();
 
-  fill(60, 42, 31, 245);
+  fill(
+    60,
+    42,
+    31,
+    245
+  );
+
   textAlign(CENTER);
-  font('"Hiragino Mincho ProN", "Yu Mincho", serif');
+
+  font(
+    '"Hiragino Mincho ProN", "Yu Mincho", serif'
+  );
+
   fontSize(31);
-  text("純喫茶ダイヴ", JD.LOGICAL_W / 2, 414);
 
-  jdFill("redDeep", 230);
-  font('Courier-Bold');
+  text(
+    "純喫茶ダイヴ",
+    JD.LOGICAL_W / 2,
+    414
+  );
+
+  jdFill(
+    "redDeep",
+    230
+  );
+
+  font("Courier-Bold");
   fontSize(16);
-  text(jdT("title.en"), JD.LOGICAL_W / 2, 382);
 
-  fill(84, 62, 48, 220);
-  font('Courier');
+  text(
+    "JUNKISSA DIVE",
+    JD.LOGICAL_W / 2,
+    382
+  );
+
+  fill(
+    84,
+    62,
+    48,
+    220
+  );
+
+  font(
+    '"Hiragino Mincho ProN", "Yu Mincho", serif'
+  );
+
   fontSize(12);
-  text("喫茶店の一日を、指先で。", JD.LOGICAL_W / 2, 356);
 
-  const pulse = 150 + Math.sin(ElapsedTime * 4.6) * 48;
-  jdFill("uiPanel", 218);
+  text(
+    "喫茶店の一日を、指先で。",
+    JD.LOGICAL_W / 2,
+    356
+  );
+
+  const pulse =
+    150 +
+    Math.sin(
+      ElapsedTime * 4.6
+    ) * 48;
+
+  jdFill(
+    "uiPanel",
+    218
+  );
+
   rectMode(CENTER);
-  rect(JD.LOGICAL_W / 2, 104, 182, 40, 18);
-  jdFill("uiText", pulse);
-  font('Courier-Bold');
-  fontSize(16);
-  text("タップして開店", JD.LOGICAL_W / 2, 104);
+
+  rect(
+    JD.LOGICAL_W / 2,
+    104,
+    182,
+    40,
+    18
+  );
+
+  jdFill(
+    "uiText",
+    pulse
+  );
+
+  font(
+    '"Hiragino Mincho ProN", "Yu Mincho", serif'
+  );
+
+  fontSize(15);
+
+  text(
+    "タップして開店",
+    JD.LOGICAL_W / 2,
+    104
+  );
+
+  // タップ後の暗転
+  if (
+    JD.titleExitTimer > 0
+  ) {
+    const duration =
+      Number.isFinite(
+        JD.titleExitDuration
+      )
+        ? JD.titleExitDuration
+        : 0.58;
+
+    const progress =
+      1 -
+      jdClamp(
+        JD.titleExitTimer /
+          duration,
+        0,
+        1
+      );
+
+    rectMode(CORNER);
+    noStroke();
+
+    fill(
+      24,
+      17,
+      15,
+      255 * progress
+    );
+
+    rect(
+      -80,
+      -80,
+      JD.LOGICAL_W + 160,
+      JD.LOGICAL_H + 160
+    );
+  }
 }
+
 
 function jdDrawTinyCafePreview() {
   rectMode(CENTER);
@@ -1746,7 +2083,6 @@ function jdDrawPlay() {
   ellipseMode(CENTER);
   noStroke();
 
-  // カメラ外周
   fill(
     31,
     23,
@@ -1754,473 +2090,438 @@ function jdDrawPlay() {
   );
 
   rect(
-    0,
-    0,
-    JD.LOGICAL_W,
-    JD.LOGICAL_H
+    -60,
+    -60,
+    JD.LOGICAL_W + 120,
+    JD.LOGICAL_H + 120
   );
 
   pushMatrix();
 
   jdApplyCamera();
-
-  // 拡張された喫茶店
   jdDrawCafeWideBackdrop();
-
-  // ゲーム空間
   jdDrawWorld();
 
   popMatrix();
 
-  // 通常UI
   jdDrawPlayUI();
   jdDrawShotMeter();
   jdDrawDebugScreen();
   jdDrawFortuneMachine();
 
-  // ==================================================
-  // 開店導入
-  // ==================================================
-
   if (
-    JD.gamePhase ===
+    JD.gamePhase !==
     PHASE_SHIFT_START
   ) {
-    const duration =
-      Number.isFinite(
-        JD.shiftStartDuration
-      )
-        ? JD.shiftStartDuration
-        : 4.8;
+    return;
+  }
 
-    const timer =
-      Number.isFinite(
-        JD.shiftStartTimer
-      )
-        ? JD.shiftStartTimer
-        : duration;
+  const duration =
+    Number.isFinite(
+      JD.shiftStartDuration
+    )
+      ? JD.shiftStartDuration
+      : 7.4;
 
-    const elapsed =
-      duration - timer;
+  const timer =
+    Number.isFinite(
+      JD.shiftStartTimer
+    )
+      ? JD.shiftStartTimer
+      : duration;
 
-    rectMode(CENTER);
-    ellipseMode(CENTER);
-    noStroke();
-    textAlign(CENTER);
+  const elapsed =
+    duration - timer;
 
-    // 背景を暗くしすぎず、
-    // 店内を見せながら案内する
-    let veilAlpha = 0;
+  rectMode(CENTER);
+  ellipseMode(CENTER);
+  noStroke();
+  textAlign(CENTER);
 
-    if (
-      elapsed < 0.45
-    ) {
-      veilAlpha =
-        50 *
-        (
-          elapsed /
-          0.45
-        );
+  // タイトルから喫茶店へのフェードイン
+  if (
+    JD.shiftFadeInTimer > 0
+  ) {
+    JD.shiftFadeInTimer =
+      Math.max(
+        0,
+        JD.shiftFadeInTimer -
+          DeltaTime
+      );
+  }
 
-    } else if (
-      elapsed < 3.6
-    ) {
-      veilAlpha = 50;
+  const fadeDuration =
+    Number.isFinite(
+      JD.shiftFadeInDuration
+    )
+      ? JD.shiftFadeInDuration
+      : 0.72;
 
-    } else {
-      veilAlpha =
-        50 *
+  const fadeAlpha =
+    JD.shiftFadeInTimer > 0
+      ? 255 *
         jdClamp(
-          (
-            4.55 -
-            elapsed
-          ) / 0.95,
+          JD.shiftFadeInTimer /
+            fadeDuration,
           0,
           1
-        );
-    }
+        )
+      : 0;
 
+  // 導入中の暖色暗幕
+  let veilAlpha = 50;
+
+  if (
+    elapsed < 0.45
+  ) {
+    veilAlpha =
+      50 *
+      (
+        elapsed /
+        0.45
+      );
+
+  } else if (
+    elapsed > 6.45
+  ) {
+    veilAlpha =
+      50 *
+      jdClamp(
+        (
+          7.25 -
+          elapsed
+        ) / 0.8,
+        0,
+        1
+      );
+  }
+
+  fill(
+    39,
+    27,
+    22,
+    veilAlpha
+  );
+
+  rect(
+    JD.LOGICAL_W / 2,
+    JD.LOGICAL_H / 2,
+    JD.LOGICAL_W + 180,
+    JD.LOGICAL_H + 180
+  );
+
+  if (
+    fadeAlpha > 0
+  ) {
     fill(
-      39,
-      27,
-      22,
-      veilAlpha
+      24,
+      17,
+      15,
+      fadeAlpha
     );
 
     rect(
       JD.LOGICAL_W / 2,
       JD.LOGICAL_H / 2,
-      JD.LOGICAL_W,
-      JD.LOGICAL_H
+      JD.LOGICAL_W + 200,
+      JD.LOGICAL_H + 200
+    );
+  }
+
+  // -----------------------------------------------
+  // 開店
+  // -----------------------------------------------
+
+  if (
+    elapsed < 1.85
+  ) {
+    const enterT =
+      jdClamp(
+        elapsed / 0.42,
+        0,
+        1
+      );
+
+    const lifeT =
+      jdClamp(
+        elapsed / 1.85,
+        0,
+        1
+      );
+
+    const alpha =
+      245 *
+      Math.sin(
+        lifeT *
+        Math.PI
+      );
+
+    const scaleIn =
+      0.94 +
+      0.06 *
+      (
+        1 -
+        Math.pow(
+          1 - enterT,
+          3
+        )
+      );
+
+    pushMatrix();
+
+    translate(
+      JD.LOGICAL_W / 2,
+      348
     );
 
-    // --------------------------------
-    // 1. 開店
-    // --------------------------------
-
-    if (
-      elapsed <
-      1.15
-    ) {
-      const t =
-        jdClamp(
-          elapsed / 0.38,
-          0,
-          1
-        );
-
-      const alpha =
-        245 *
-        Math.sin(
-          jdClamp(
-            elapsed / 1.15,
-            0,
-            1
-          ) *
-          Math.PI
-        );
-
-      const scaleIn =
-        0.94 +
-        0.06 *
-        (
-          1 -
-          Math.pow(
-            1 - t,
-            3
-          )
-        );
-
-      pushMatrix();
-
-      translate(
-        JD.LOGICAL_W / 2,
-        348
-      );
-
-      scale(
-        scaleIn
-      );
-
-      jdFill(
-        "shadow",
-        34 * t
-      );
-
-      rect(
-        4,
-        -4,
-        154,
-        58,
-        6
-      );
-
-      jdFill(
-        "paper",
-        240 * t
-      );
-
-      rect(
-        0,
-        0,
-        154,
-        58,
-        6
-      );
-
-      jdFill(
-        "redDeep",
-        alpha
-      );
-
-      font(
-        '"Hiragino Mincho ProN", "Yu Mincho", serif'
-      );
-
-      fontSize(25);
-
-      text(
-        "開店",
-        0,
-        7
-      );
-
-      jdFill(
-        "ink",
-        alpha * 0.72
-      );
-
-      font(
-        "Courier"
-      );
-
-      fontSize(8);
-
-      text(
-        "本日のシフトを始めます",
-        0,
-        -16
-      );
-
-      popMatrix();
-    }
-
-    // --------------------------------
-    // 2. 本日の注文票
-    // --------------------------------
-
-    if (
-      elapsed >= 0.85 &&
-      elapsed < 3.35
-    ) {
-      const enterT =
-        jdClamp(
-          (
-            elapsed -
-            0.85
-          ) / 0.38,
-          0,
-          1
-        );
-
-      const leaveT =
-        jdClamp(
-          (
-            3.35 -
-            elapsed
-          ) / 0.42,
-          0,
-          1
-        );
-
-      const alpha =
-        Math.min(
-          enterT,
-          leaveT
-        );
-
-      const cardY =
-        342 +
-        (
-          1 -
-          enterT
-        ) * 16;
-
-      const cardW = 218;
-      const cardH = 172;
-
-      // 影
-      jdFill(
-        "shadow",
-        40 * alpha
-      );
-
-      rect(
-        JD.LOGICAL_W / 2 + 4,
-        cardY - 4,
-        cardW,
-        cardH,
-        6
-      );
-
-      // 注文票
-      jdFill(
-        "paper",
-        244 * alpha
-      );
-
-      rect(
-        JD.LOGICAL_W / 2,
-        cardY,
-        cardW,
-        cardH,
-        6
-      );
-
-      // 上の赤線
-      jdFill(
-        "redDeep",
-        185 * alpha
-      );
-
-      rect(
-        JD.LOGICAL_W / 2,
-        cardY + 70,
-        cardW - 18,
-        3,
-        2
-      );
-
-      jdFill(
-        "ink",
-        235 * alpha
-      );
-
-      font(
-        '"Hiragino Mincho ProN", "Yu Mincho", serif'
-      );
-
-      fontSize(17);
-
-      text(
-        "本日のご注文",
-        JD.LOGICAL_W / 2,
-        cardY + 48
-      );
-
-      jdFill(
-        "ink",
-        160 * alpha
-      );
-
-      font(
-        "Courier"
-      );
-
-      fontSize(8);
-
-      text(
-        "月曜日のシフト",
-        JD.LOGICAL_W / 2,
-        cardY + 29
-      );
-
-      // 区切り
-      jdFill(
-        "ink",
-        62 * alpha
-      );
-
-      for (
-        let x = JD.LOGICAL_W / 2 - 88;
-        x <= JD.LOGICAL_W / 2 + 88;
-        x += 8
-      ) {
-        rect(
-          x,
-          cardY + 15,
-          4,
-          1
-        );
-      }
-
-      // 注文対象
-      textAlign(LEFT);
-
-      jdFill(
-        "ink",
-        225 * alpha
-      );
-
-      font(
-        "Courier-Bold"
-      );
-
-      fontSize(11);
-
-      text(
-        "・コーヒー",
-        JD.LOGICAL_W / 2 - 72,
-        cardY - 7
-      );
-
-      text(
-        "・ケーキ",
-        JD.LOGICAL_W / 2 - 72,
-        cardY - 30
-      );
-
-      text(
-        "・メロンソーダ",
-        JD.LOGICAL_W / 2 - 72,
-        cardY - 53
-      );
-
-      textAlign(RIGHT);
-
-      jdFill(
-        "redDeep",
-        220 * alpha
-      );
-
-      fontSize(12);
-
-      text(
-        "全5回",
-        JD.LOGICAL_W / 2 + 76,
-        cardY - 53
-      );
-
-      textAlign(CENTER);
-    }
-
-    // --------------------------------
-    // 3. カウンターへ移動
-    // --------------------------------
-
-    if (
-      elapsed >= 3.15
-    ) {
-      const enterT =
-        jdClamp(
-          (
-            elapsed -
-            3.15
-          ) / 0.42,
-          0,
-          1
-        );
-
-      const leaveT =
-        jdClamp(
-          (
-            4.72 -
-            elapsed
-          ) / 0.34,
-          0,
-          1
-        );
-
-      const alpha =
-        Math.min(
-          enterT,
-          leaveT
-        );
-
-      jdFill(
-        "paper",
-        220 * alpha
-      );
-
-      rect(
-        JD.LOGICAL_W / 2,
-        104,
-        190,
-        38,
-        18
-      );
-
-      jdFill(
-        "ink",
-        230 * alpha
-      );
-
-      font(
-        '"Hiragino Mincho ProN", "Yu Mincho", serif'
-      );
-
-      fontSize(13);
-
-      text(
-        "カウンターへどうぞ",
-        JD.LOGICAL_W / 2,
-        105
-      );
-    }
-
-    rectMode(CORNER);
+    scale(
+      scaleIn
+    );
+
+    jdFill(
+      "shadow",
+      34 * enterT
+    );
+
+    rect(
+      4,
+      -4,
+      154,
+      58,
+      6
+    );
+
+    jdFill(
+      "paper",
+      240 * enterT
+    );
+
+    rect(
+      0,
+      0,
+      154,
+      58,
+      6
+    );
+
+    jdFill(
+      "redDeep",
+      alpha
+    );
+
+    font(
+      '"Hiragino Mincho ProN", "Yu Mincho", serif'
+    );
+
+    fontSize(25);
+
+    text(
+      "開店",
+      0,
+      7
+    );
+
+    jdFill(
+      "ink",
+      alpha * 0.72
+    );
+
+    font("Courier");
+    fontSize(8);
+
+    text(
+      "本日のシフトを始めます",
+      0,
+      -16
+    );
+
+    popMatrix();
   }
+
+  // -----------------------------------------------
+  // 本日の注文票
+  // -----------------------------------------------
+
+  if (
+    elapsed >= 1.45 &&
+    elapsed < 5.45
+  ) {
+    const enterT =
+      jdClamp(
+        (
+          elapsed -
+          1.45
+        ) / 0.42,
+        0,
+        1
+      );
+
+    const leaveT =
+      jdClamp(
+        (
+          5.45 -
+          elapsed
+        ) / 0.48,
+        0,
+        1
+      );
+
+    const alpha =
+      Math.min(
+        enterT,
+        leaveT
+      );
+
+    const cardY =
+      342 +
+      (
+        1 -
+        enterT
+      ) * 16;
+
+    const cardW = 218;
+    const cardH = 172;
+
+    jdFill(
+      "shadow",
+      40 * alpha
+    );
+
+    rect(
+      JD.LOGICAL_W / 2 + 4,
+      cardY - 4,
+      cardW,
+      cardH,
+      6
+    );
+
+    jdFill(
+      "paper",
+      244 * alpha
+    );
+
+    rect(
+      JD.LOGICAL_W / 2,
+      cardY,
+      cardW,
+      cardH,
+      6
+    );
+
+    jdFill(
+      "redDeep",
+      185 * alpha
+    );
+
+    rect(
+      JD.LOGICAL_W / 2,
+      cardY + 70,
+      cardW - 18,
+      3,
+      2
+    );
+
+    jdFill(
+      "ink",
+      235 * alpha
+    );
+
+    font(
+      '"Hiragino Mincho ProN", "Yu Mincho", serif'
+    );
+
+    fontSize(17);
+
+    text(
+      "本日のご注文",
+      JD.LOGICAL_W / 2,
+      cardY + 48
+    );
+
+    jdFill(
+      "ink",
+      160 * alpha
+    );
+
+    font("Courier");
+    fontSize(8);
+
+    text(
+      "月曜日のシフト",
+      JD.LOGICAL_W / 2,
+      cardY + 29
+    );
+
+    jdFill(
+      "ink",
+      62 * alpha
+    );
+
+    for (
+      let x =
+        JD.LOGICAL_W / 2 - 88;
+      x <=
+        JD.LOGICAL_W / 2 + 88;
+      x += 8
+    ) {
+      rect(
+        x,
+        cardY + 15,
+        4,
+        1
+      );
+    }
+
+    textAlign(LEFT);
+
+    jdFill(
+      "ink",
+      225 * alpha
+    );
+
+    font("Courier-Bold");
+    fontSize(11);
+
+    text(
+      "・コーヒー",
+      JD.LOGICAL_W / 2 - 72,
+      cardY - 7
+    );
+
+    text(
+      "・ケーキ",
+      JD.LOGICAL_W / 2 - 72,
+      cardY - 30
+    );
+
+    text(
+      "・メロンソーダ",
+      JD.LOGICAL_W / 2 - 72,
+      cardY - 53
+    );
+
+    textAlign(RIGHT);
+
+    jdFill(
+      "redDeep",
+      220 * alpha
+    );
+
+    fontSize(12);
+
+    text(
+      "全5回",
+      JD.LOGICAL_W / 2 + 76,
+      cardY - 53
+    );
+
+    textAlign(CENTER);
+  }
+
+  // 「カウンターへどうぞ」は表示しない
+  rectMode(CORNER);
 }
+
 
 
 function jdDrawCafeWideBackdrop() {
@@ -4569,7 +4870,8 @@ function jdUpdateParticles(dt) {
 function jdDrawFloatTexts() {}
 
 function jdDrawLauncherItemTicket() {
-  const f = JD.food;
+  const f =
+    JD.food;
 
   if (
     !f ||
@@ -4582,67 +4884,32 @@ function jdDrawLauncherItemTicket() {
     return;
   }
 
-  const firstThrow =
-    JD.throwIndex <= 1 &&
-    JD.results.length === 0;
-
-  const pulse =
-    0.5 +
-    0.5 * Math.sin(
-      ElapsedTime * 3.2
-    );
-
-  const itemName =
-    f.name || "-";
-
   const x =
-    JD.launcher.x - 48;
+    JD.launcher.x - 105;
 
   const y =
-    JD.launcher.y + 64;
+    JD.launcher.y + 50;
 
-  const estimatedTextW =
-    itemName.length * 8.4;
+  const name =
+    f.name || "-";
 
   const ticketW =
-    Math.max(
-      firstThrow ? 122 : 108,
-      estimatedTextW + 34
+    jdClamp(
+      54 +
+      name.length * 7.4,
+      96,
+      142
     );
 
-  const ticketH =
-    firstThrow ? 46 : 40;
-
-  const radius = 6;
+  const ticketH = 38;
 
   rectMode(CENTER);
-  ellipseMode(CENTER);
   noStroke();
   textAlign(CENTER);
 
-  // 発射台との接続線
-  jdStroke(
-    "redDeep",
-    firstThrow
-      ? 92 + pulse * 24
-      : 58
-  );
-
-  strokeWidth(1.5);
-
-  line(
-    x + ticketW * 0.36,
-    y - ticketH * 0.31,
-    JD.launcher.x - 14,
-    JD.launcher.y + 21
-  );
-
-  noStroke();
-
-  // 勤務伝票と共通の右下4px影
   jdFill(
     "shadow",
-    firstThrow ? 34 : 26
+    34
   );
 
   rect(
@@ -4650,13 +4917,12 @@ function jdDrawLauncherItemTicket() {
     y - 4,
     ticketW,
     ticketH,
-    radius
+    6
   );
 
-  // 生成りの紙
   jdFill(
     "paper",
-    firstThrow ? 240 : 222
+    238
   );
 
   rect(
@@ -4664,13 +4930,12 @@ function jdDrawLauncherItemTicket() {
     y,
     ticketW,
     ticketH,
-    radius
+    6
   );
 
-  // 共通の上端赤線
   jdFill(
     "redDeep",
-    firstThrow ? 178 : 132
+    170
   );
 
   rect(
@@ -4681,40 +4946,43 @@ function jdDrawLauncherItemTicket() {
     2
   );
 
-  // 食材名：主要情報
   jdFill(
     "ink",
-    firstThrow ? 240 : 216
+    232
   );
 
   font("Courier-Bold");
+
   fontSize(
-    firstThrow ? 13 : 11
+    name.length >= 10
+      ? 11
+      : 12
   );
 
   text(
-    itemName,
+    name,
     x,
-    y + 7
+    y + 3
   );
 
-  // 操作文：補助情報
   jdFill(
     "redDeep",
-    firstThrow ? 202 : 154
+    185
   );
 
-  font("Courier");
-  fontSize(
-    firstThrow ? 9.5 : 8
+  font(
+    '"Hiragino Mincho ProN", "Yu Mincho", serif'
   );
+
+  fontSize(8);
 
   text(
-    "PULL TO DIVE",
+    "素材",
     x,
-    y - 10
+    y - 11
   );
 }
+
 
 
 
@@ -4983,12 +5251,94 @@ function jdDrawFortuneMachine() {
   textAlign(CENTER);
   noStroke();
 
-  const cx = JD.LOGICAL_W / 2;
+  const baseCx =
+    JD.LOGICAL_W / 2;
+
   const cy = 328;
 
-  const active = JD.fortuneSpinning;
-  const duration = JD.fortuneDuration || 0.9;
-  const timer = JD.fortuneTimer || 0;
+  const active =
+    JD.fortuneSpinning;
+
+  const duration =
+    JD.fortuneDuration ||
+    0.9;
+
+  const timer =
+    JD.fortuneTimer ||
+    0;
+
+  const enterT =
+    active
+      ? jdClamp(
+          (
+            duration -
+            timer
+          ) / 0.18,
+          0,
+          1
+        )
+      : 1;
+
+  const enterEase =
+    1 -
+    Math.pow(
+      1 -
+      enterT,
+      3
+    );
+
+  const exitT =
+    !active &&
+    JD.fortunePickedTimer > 0
+      ? jdClamp(
+          (
+            0.22 -
+            JD.fortunePickedTimer
+          ) / 0.22,
+          0,
+          1
+        )
+      : 0;
+
+  const exitEase =
+    exitT *
+    exitT;
+
+  const visibility =
+    jdClamp(
+      Math.min(
+        enterEase,
+        1 -
+        exitEase
+      ),
+      0,
+      1
+    );
+
+  const cx =
+    baseCx +
+    (
+      1 -
+      enterEase
+    ) * 22 -
+    exitEase * 20;
+
+  pushMatrix();
+
+  translate(
+    cx,
+    cy
+  );
+
+  scale(
+    0.96 +
+    visibility * 0.04
+  );
+
+  translate(
+    -cx,
+    -cy
+  );
 
   const p = 1 - jdClamp(timer / duration, 0, 1);
   const pickedP = JD.fortunePickedTimer > 0
@@ -5112,8 +5462,31 @@ function jdDrawFortuneMachine() {
   jdFill("woodDark", 255);
   ellipse(cx, wheelCy, 9, 9);
 
-  // 回転中は結果を表示しない
-  if (active) return;
+  if (
+    visibility < 1
+  ) {
+    jdFill(
+      "wall",
+      (
+        1 -
+        visibility
+      ) * 190
+    );
+
+    rect(
+      cx,
+      cy,
+      174,
+      246,
+      24
+    );
+  }
+
+  // 回転中は結果札を表示しない
+  if (active) {
+    popMatrix();
+    return;
+  }
 
   const showName =
     JD.fortuneDisplayName ||
@@ -5147,7 +5520,13 @@ function jdDrawFortuneMachine() {
   jdFill("redDeep", 230);
   font("Courier-Bold");
   fontSize(nameSize);
-  text(showName, cx, paperY - 1);
+  text(
+    showName,
+    cx,
+    paperY - 1
+  );
+
+  popMatrix();
 }
 
 
@@ -5415,7 +5794,9 @@ function jdDrawReceipt() {
 
   popMatrix();
 
-  // 背景を少し静かにしてレシートを主役にする
+  rectMode(CORNER);
+  noStroke();
+
   fill(
     55,
     37,
@@ -5424,10 +5805,10 @@ function jdDrawReceipt() {
   );
 
   rect(
-    0,
-    0,
-    JD.LOGICAL_W,
-    JD.LOGICAL_H
+    -80,
+    -80,
+    JD.LOGICAL_W + 160,
+    JD.LOGICAL_H + 160
   );
 
   // レシート背後の淡い照明
@@ -6130,7 +6511,10 @@ function jdDrawReceipt() {
       jdClamp(
         (
           JD.receiptTimer -
-          readyAt
+          (
+            readyAt +
+            0.72
+          )
         ) / 0.28,
         0,
         1
@@ -6260,8 +6644,11 @@ function jdDrawReceipt() {
 
 function jdUpdateReceipt(dt) { JD.receiptTimer += dt; }
 function jdReceiptReady() {
-  const resultDelay = 0.22;
-  const resultInterval = 0.27;
+  const resultDelay =
+    0.22;
+
+  const resultInterval =
+    0.27;
 
   const resultEnd =
     resultDelay +
@@ -6269,22 +6656,31 @@ function jdReceiptReady() {
     resultInterval;
 
   const totalAt =
-    resultEnd + 0.18;
+    resultEnd +
+    0.18;
 
   const rankAt =
-    totalAt + 0.38;
+    totalAt +
+    0.38;
 
   const memoAt =
-    rankAt + 0.38;
+    rankAt +
+    0.38;
 
-  const readyAt =
-    memoAt + 0.42;
+  const thankYouAt =
+    memoAt +
+    0.42;
+
+  const buttonReadyAt =
+    thankYouAt +
+    0.72;
 
   return (
     JD.receiptTimer >=
-    readyAt
+    buttonReadyAt
   );
 }
+
 
 
 function jdMakeReceiptLines() {
@@ -6399,7 +6795,7 @@ function jdUpdateCamera(dt) {
           JD.shiftStartDuration
         )
           ? JD.shiftStartDuration
-          : 4.8;
+          : 7.4;
 
       const timer =
         Number.isFinite(
@@ -6411,14 +6807,12 @@ function jdUpdateCamera(dt) {
       const elapsed =
         duration - timer;
 
-      // 最初の約2.2秒は店内全景を見せる。
-      // その後、発射台へゆっくり近づく。
       const moveT =
         jdClamp(
           (
             elapsed -
-            2.15
-          ) / 2.35,
+            5.10
+          ) / 2.05,
           0,
           1
         );
@@ -6431,44 +6825,26 @@ function jdUpdateCamera(dt) {
           2 * moveT
         );
 
-      const overviewX =
-        515;
-
-      const overviewY =
-        285;
-
-      const overviewZoom =
-        0.42;
-
-      const closeX =
-        JD.launcher.x -
-        105;
-
-      const closeY =
-        252;
-
-      const closeZoom =
-        1;
-
       JD.cam.tx =
-        overviewX +
+        515 +
         (
-          closeX -
-          overviewX
+          JD.launcher.x -
+          105 -
+          515
         ) * ease;
 
       JD.cam.ty =
-        overviewY +
+        285 +
         (
-          closeY -
-          overviewY
+          252 -
+          285
         ) * ease;
 
       JD.cam.tz =
-        overviewZoom +
+        0.42 +
         (
-          closeZoom -
-          overviewZoom
+          1 -
+          0.42
         ) * ease;
 
     } else if (
@@ -6506,7 +6882,6 @@ function jdUpdateCamera(dt) {
     JD.gamePhase ===
     PHASE_SHIFT_START
   ) {
-    // 導入のカメラは少しゆっくり動かす
     k = 4.8;
 
   } else if (
@@ -6545,6 +6920,7 @@ function jdUpdateCamera(dt) {
       JD.cam.zoom
     ) * a;
 }
+
 
 
 
