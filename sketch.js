@@ -259,11 +259,26 @@ function jdStroke(name, alpha = null) {
   stroke(c.r, c.g, c.b, alpha === null ? c.a : alpha);
 }
 
-function jdPosterShadow(x, y, w, h, a = 48, r = 0) {
+function jdPosterShadow(
+  x,
+  y,
+  w,
+  h,
+  alpha = 40,
+  radius = 0
+) {
   noStroke();
-  jdFill("shadow", a);
-  rect(x + 4, y - 4, w, h, r);
+  jdFill("shadow", alpha);
+
+  rect(
+    x + 4,
+    y - 4,
+    w,
+    h,
+    radius
+  );
 }
+
 
 function jdReadWebOptions() {
   JD.webPortVersion = JD_WEB_PORT_VERSION;
@@ -1957,12 +1972,13 @@ function jdDrawCafeWideBackdrop() {
   const clockX = 510;
   const clockY = 795;
 
-  jdFill("shadow", 54);
+  // 時計本体と同じ輪郭の切り絵影
+  jdFill("shadow", 42);
   ellipse(
-    clockX + 6,
-    clockY - 6,
-    96,
-    96
+    clockX + 4,
+    clockY - 4,
+    92,
+    92
   );
 
   jdFill("woodDark");
@@ -2046,13 +2062,14 @@ function jdDrawCafeWideBackdrop() {
   const menuW = 245;
   const menuH = 220;
 
-  jdFill("shadow", 58);
+  // 黒板本体と同じ輪郭の切り絵影
+  jdFill("shadow", 44);
   rect(
-    menuX + 7,
-    menuY - 7,
+    menuX + 4,
+    menuY - 4,
     menuW,
     menuH,
-    8
+    7
   );
 
   jdFill("woodDark");
@@ -3194,7 +3211,6 @@ function jdDrawLauncher() {
     !JD.fortuneSpinning &&
     !(JD.fortunePickedTimer > 0);
 
-  // throwIndex=1 が最初の投擲
   const firstThrow =
     JD.throwIndex <= 1 &&
     JD.results.length === 0;
@@ -3209,17 +3225,13 @@ function jdDrawLauncher() {
   ellipseMode(CENTER);
   noStroke();
 
-  // --------------------------------------------------
-  // 初見時の操作フォーカス
-  // --------------------------------------------------
-
+  // 初見時の柔らかな操作フォーカス
   if (ready) {
     const focusAlpha =
       firstThrow
         ? 30 + pulse * 28
         : 12 + pulse * 12;
 
-    // 発射台を囲う、柔らかな楕円の光
     jdFill(
       "creamWarm",
       focusAlpha
@@ -3245,14 +3257,14 @@ function jdDrawLauncher() {
     );
   }
 
-  // 卓上に落ちる影
-  jdFill("shadow", 48);
+  // 台座と同じ輪郭を右下へずらした切り絵影
+  jdFill("shadow", 42);
 
   ellipse(
-    x + 5,
-    y - 16,
-    78,
-    22
+    x + 4,
+    y - 11,
+    72,
+    36
   );
 
   // 木製の台座
@@ -3295,6 +3307,7 @@ function jdDrawLauncher() {
   noStroke();
 
   // 食材を受ける白い皿
+  // 食器なので、ここだけ接地影を残す
   jdFill("shadow", 32);
 
   ellipse(
@@ -3375,13 +3388,13 @@ function jdDrawLauncher() {
 
   // 待機中のゴム
   if (!JD.dragging) {
-    // 初投だけ、ゴムがゆっくり呼吸する
     const breathe =
       ready && firstThrow
         ? pulse * 3
         : 0;
 
     jdStroke("redDeep", 235);
+
     strokeWidth(
       ready && firstThrow
         ? 4.8
@@ -3422,10 +3435,7 @@ function jdDrawLauncher() {
     noStroke();
   }
 
-  // --------------------------------------------------
   // 発射台から右下へ伸びる操作ガイド
-  // --------------------------------------------------
-
   if (ready) {
     const guideAlpha =
       firstThrow
@@ -3437,7 +3447,6 @@ function jdDrawLauncher() {
         ? 88
         : 66;
 
-    // 点線を右下方向へ伸ばす
     jdFill(
       "highlight",
       guideAlpha
@@ -3456,7 +3465,6 @@ function jdDrawLauncher() {
       );
     }
 
-    // 終端の矢印
     const arrowX =
       x + 36 + guideLength;
 
@@ -3498,6 +3506,7 @@ function jdDrawLauncher() {
     noStroke();
   }
 }
+
 
 
 
@@ -3818,15 +3827,15 @@ function jdDrawPlayUI() {
 
   const h = 34;
 
-  // 勤務伝票の影
+  // 紙と同じ輪郭を右下へずらした切り絵影
   jdFill(
     "shadow",
-    resultMode ? 24 : 42
+    resultMode ? 20 : 36
   );
 
   rect(
-    cx + 2,
-    cy - 3,
+    cx + 4,
+    cy - 4,
     w,
     h,
     7
@@ -3989,154 +3998,12 @@ function jdDrawPlayUI() {
 
 
 function jdDrawShotMeter() {
-  // 引っ張っている時だけ表示
-  if (
-    !JD.dragging ||
-    !JD.food ||
-    JD.food.launched ||
-    JD.food.resolved ||
-    JD.fortuneSpinning
-  ) {
-    return;
-  }
-
-  const pull =
-    jdGetScreenPull();
-
-  const dist =
-    Math.hypot(
-      pull.x,
-      pull.y
-    );
-
-  const ratio =
-    jdClamp(
-      dist / JD.maxPull,
-      0,
-      1
-    );
-
-  const powerName =
-    jdPowerName(ratio);
-
-  const angleName =
-    jdAngleName(pull);
-
-  const cx =
-    JD.LOGICAL_W / 2;
-
-  const cy = 34;
-
-  const w = 208;
-  const h = 38;
-
-  rectMode(CENTER);
-  noStroke();
-  textAlign(CENTER);
-
-  // 影
-  jdFill("shadow", 42);
-
-  rect(
-    cx + 2,
-    cy - 3,
-    w,
-    h,
-    8
-  );
-
-  // 小型伝票
-  jdFill("paper", 224);
-
-  rect(
-    cx,
-    cy,
-    w,
-    h,
-    8
-  );
-
-  // 中央の区切り
-  jdFill("ink", 48);
-
-  rect(
-    cx,
-    cy,
-    1,
-    23
-  );
-
-  jdFill("ink", 220);
-
-  // POWER
-  font("Courier");
-  fontSize(8);
-
-  text(
-    jdT(
-      "shot.power",
-      "POWER"
-    ),
-    cx - 51,
-    cy + 8
-  );
-
-  font("Courier-Bold");
-  fontSize(11);
-
-  text(
-    powerName,
-    cx - 51,
-    cy - 7
-  );
-
-  // ANGLE
-  font("Courier");
-  fontSize(8);
-
-  text(
-    jdT(
-      "shot.angle",
-      "ANGLE"
-    ),
-    cx + 51,
-    cy + 8
-  );
-
-  font("Courier-Bold");
-  fontSize(11);
-
-  text(
-    angleName,
-    cx + 51,
-    cy - 7
-  );
-
-  // 細い強さゲージ
-  const meterW = 184;
-
-  jdFill("woodDark", 58);
-
-  rect(
-    cx,
-    cy - 15,
-    meterW,
-    3,
-    2
-  );
-
-  rectMode(CORNER);
-
-  jdFill("redDeep", 205);
-
-  rect(
-    cx - meterW / 2,
-    cy - 16.5,
-    meterW * ratio,
-    3,
-    2
-  );
+  // 下部のPOWER / ANGLEゲージは廃止。
+  // 引っ張り量と角度は、ゴム・軌道予測・
+  // カメラのズームアウトから体感できる構成にする。
+  return;
 }
+
 
 
 function jdDrawFortuneMachine() {
