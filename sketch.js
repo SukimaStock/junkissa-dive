@@ -4689,7 +4689,7 @@ function jdDrawReceipt() {
     offsetY = 0
   ) {
     const toothW = 10;
-    const toothH = 5;
+    const diamondSize = 7.2;
 
     const left =
       x + offsetX;
@@ -4704,90 +4704,93 @@ function jdDrawReceipt() {
       bottom + h;
 
     noStroke();
-
     jdFill(
       fillKey,
       alpha
     );
 
-    // 紙の中央
+    // 紙の中央部分
     rect(
       left,
-      bottom + toothH,
+      bottom + 4,
       w,
-      h - toothH * 2
+      h - 8
     );
 
-    // 三角形の間に隙間が出ないよう接続
+    // ギザギザとの接続帯
     rect(
       left,
-      bottom + toothH - 1,
+      bottom + 3,
       w,
-      3
+      5
     );
 
     rect(
       left,
-      top - toothH - 2,
+      top - 8,
       w,
-      3
+      5
     );
 
-    // 下端
+    rectMode(CENTER);
+
+    // 下端：
+    // triangleを使わず、45度回転した小さな正方形で
+    // 感熱紙の切り口を作る
     for (
-      let px = left;
+      let px = left + toothW / 2;
       px < right;
       px += toothW
     ) {
-      const nextX =
-        Math.min(
-          px + toothW,
-          right
-        );
+      pushMatrix();
 
-      const middleX =
-        (
-          px +
-          nextX
-        ) / 2;
-
-      triangle(
+      translate(
         px,
-        bottom + toothH,
-        middleX,
-        bottom,
-        nextX,
-        bottom + toothH
+        bottom + 3.5
       );
+
+      rotate(
+        Math.PI / 4
+      );
+
+      rect(
+        0,
+        0,
+        diamondSize,
+        diamondSize
+      );
+
+      popMatrix();
     }
 
     // 上端
     for (
-      let px = left;
+      let px = left + toothW / 2;
       px < right;
       px += toothW
     ) {
-      const nextX =
-        Math.min(
-          px + toothW,
-          right
-        );
+      pushMatrix();
 
-      const middleX =
-        (
-          px +
-          nextX
-        ) / 2;
-
-      triangle(
+      translate(
         px,
-        top - toothH,
-        middleX,
-        top,
-        nextX,
-        top - toothH
+        top - 3.5
       );
+
+      rotate(
+        Math.PI / 4
+      );
+
+      rect(
+        0,
+        0,
+        diamondSize,
+        diamondSize
+      );
+
+      popMatrix();
     }
+
+    rectMode(CORNER);
   }
 
   // ==================================================
