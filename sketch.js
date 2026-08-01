@@ -5374,6 +5374,7 @@ function jdDrawReceipt() {
 
 
 
+
 function jdUpdateReceipt(dt) { JD.receiptTimer += dt; }
 function jdReceiptReady() {
   const resultDelay = 0.22;
