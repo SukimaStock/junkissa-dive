@@ -26,6 +26,16 @@ function setup() {
   jdInstallRuntimeErrorHandlers();
   jdResetAll();
 
+  // 表示スタイル
+  JD.visualStyle =
+    jdLoadVisualStyle();
+
+  JD.styleSettingsOpen =
+    false;
+
+  JD.styleSettingsPressed =
+    false;
+
   // アプリを開いて最初の1投目だけ表示
   JD.tutorialSeen = false;
   JD.tutorialActive = false;
@@ -207,9 +217,57 @@ function touched(touch) {
         STATE_TITLE
       ) {
         if (
-          touch.state === ENDED &&
+          touch.state ===
+          ENDED &&
           !(JD.titleExitTimer > 0)
         ) {
+          // 設定画面を開いている場合
+          if (
+            JD.styleSettingsOpen
+          ) {
+            const selected =
+              jdStyleSettingsHit(
+                p.x,
+                p.y
+              );
+
+            if (
+              selected
+            ) {
+              jdSetVisualStyle(
+                selected
+              );
+
+              jdPlaySound(
+                "ticket"
+              );
+
+            } else {
+              JD.styleSettingsOpen =
+                false;
+            }
+
+            return;
+          }
+
+          // 右上の設定ボタン
+          if (
+            p.x >= 308 &&
+            p.x <= 350 &&
+            p.y >= 576 &&
+            p.y <= 620
+          ) {
+            JD.styleSettingsOpen =
+              true;
+
+            jdPlaySound(
+              "ticket"
+            );
+
+            return;
+          }
+
+          // 開店ボタン
           JD.titleExitDuration =
             JD.motion &&
             Number.isFinite(
@@ -467,15 +525,1007 @@ function jdC(name) {
   return JD.visual[name] || color(255, 255, 255);
 }
 
-function jdFill(name, alpha = null) {
-  const c = jdC(name);
-  fill(c.r, c.g, c.b, alpha === null ? c.a : alpha);
+function jdFill(
+  name,
+  alpha = null
+) {
+  const c =
+    jdC(name);
+
+  const baseAlpha =
+    alpha === null
+      ? (
+          c.a === undefined
+            ? 255
+            : c.a
+        )
+      : alpha;
+
+  fill(
+    c.r,
+    c.g,
+    c.b,
+    jdStyleAlpha(
+      name,
+      baseAlpha
+    )
+  );
 }
 
-function jdStroke(name, alpha = null) {
-  const c = jdC(name);
-  stroke(c.r, c.g, c.b, alpha === null ? c.a : alpha);
+
+function jdStroke(
+  name,
+  alpha = null
+) {
+  const c =
+    jdC(name);
+
+  const baseAlpha =
+    alpha === null
+      ? (
+          c.a === undefined
+            ? 255
+            : c.a
+        )
+      : alpha;
+
+  stroke(
+    c.r,
+    c.g,
+    c.b,
+    jdStyleAlpha(
+      name,
+      baseAlpha
+    )
+  );
 }
+
+
+function jdVisualStyleNames() {
+  return [
+    {
+      id: "current",
+      label: "オリジナル",
+      sub: "現在のスタイル"
+    },
+    {
+      id: "fine",
+      label: "極細線画",
+      sub: "淡く、繊細に"
+    },
+    {
+      id: "bold",
+      label: "極太線画",
+      sub: "強く、くっきり"
+    },
+    {
+      id: "poster",
+      label: "ポスターカラー",
+      sub: "影を減らした色面"
+    }
+  ];
+}
+
+function jdLoadVisualStyle() {
+  if (
+    typeof localStorage ===
+    "undefined"
+  ) {
+    return "current";
+  }
+
+  try {
+    const saved =
+      localStorage.getItem(
+        "junkissa_visual_style"
+      );
+
+    const valid =
+      jdVisualStyleNames().some(
+        item =>
+          item.id === saved
+      );
+
+    return valid
+      ? saved
+      : "current";
+
+  } catch (_error) {
+    return "current";
+  }
+}
+
+function jdSetVisualStyle(styleId) {
+  const valid =
+    jdVisualStyleNames().some(
+      item =>
+        item.id === styleId
+    );
+
+  JD.visualStyle =
+    valid
+      ? styleId
+      : "current";
+
+  if (
+    typeof localStorage !==
+    "undefined"
+  ) {
+    try {
+      localStorage.setItem(
+        "junkissa_visual_style",
+        JD.visualStyle
+      );
+    } catch (_error) {
+      // 保存できなくても表示切り替えは続行
+    }
+  }
+}
+
+function jdStyleMixColor(
+  source,
+  target,
+  amount
+) {
+  const t =
+    jdClamp(
+      amount,
+      0,
+      1
+    );
+
+  return {
+    r:
+      source.r +
+      (
+        target.r -
+        source.r
+      ) * t,
+
+    g:
+      source.g +
+      (
+        target.g -
+        source.g
+      ) * t,
+
+    b:
+      source.b +
+      (
+        target.b -
+        source.b
+      ) * t,
+
+    a:
+      source.a === undefined
+        ? 255
+        : source.a
+  };
+}
+
+function jdStyleColor(
+  name,
+  source
+) {
+  const style =
+    JD.visualStyle ||
+    "current";
+
+  if (
+    style === "current"
+  ) {
+    return source;
+  }
+
+  // --------------------------------
+  // 極細線画
+  // 紙色へ少し寄せ、コントラストを穏やかに
+  // --------------------------------
+
+  if (
+    style === "fine"
+  ) {
+    const paper = {
+      r: 239,
+      g: 222,
+      b: 188,
+      a: 255
+    };
+
+    if (
+      name === "ink" ||
+      name === "woodDark" ||
+      name === "wallLine"
+    ) {
+      return jdStyleMixColor(
+        source,
+        paper,
+        0.20
+      );
+    }
+
+    if (
+      name === "shadow" ||
+      name === "uiPanel"
+    ) {
+      return jdStyleMixColor(
+        source,
+        paper,
+        0.30
+      );
+    }
+
+    return jdStyleMixColor(
+      source,
+      paper,
+      0.08
+    );
+  }
+
+  // --------------------------------
+  // 極太線画
+  // 暗部を締め、色面を少し強くする
+  // --------------------------------
+
+  if (
+    style === "bold"
+  ) {
+    const dark = {
+      r: 30,
+      g: 20,
+      b: 18,
+      a: 255
+    };
+
+    if (
+      name === "ink" ||
+      name === "shadow" ||
+      name === "woodDark" ||
+      name === "wallLine" ||
+      name === "tableLip"
+    ) {
+      return jdStyleMixColor(
+        source,
+        dark,
+        0.30
+      );
+    }
+
+    return {
+      r:
+        jdClamp(
+          (
+            source.r -
+            128
+          ) *
+          1.10 +
+          128,
+          0,
+          255
+        ),
+
+      g:
+        jdClamp(
+          (
+            source.g -
+            128
+          ) *
+          1.10 +
+          128,
+          0,
+          255
+        ),
+
+      b:
+        jdClamp(
+          (
+            source.b -
+            128
+          ) *
+          1.10 +
+          128,
+          0,
+          255
+        ),
+
+      a:
+        source.a === undefined
+          ? 255
+          : source.a
+    };
+  }
+
+  // --------------------------------
+  // ポスターカラー
+  // 中間色を整理して、面の差を明確にする
+  // --------------------------------
+
+  if (
+    style === "poster"
+  ) {
+    const posterPalette = {
+      page: {
+        r: 38,
+        g: 27,
+        b: 24,
+        a: 255
+      },
+
+      posterBg: {
+        r: 224,
+        g: 190,
+        b: 140,
+        a: 255
+      },
+
+      posterBg2: {
+        r: 195,
+        g: 143,
+        b: 94,
+        a: 255
+      },
+
+      wall: {
+        r: 216,
+        g: 180,
+        b: 128,
+        a: 255
+      },
+
+      wallShade: {
+        r: 181,
+        g: 132,
+        b: 87,
+        a: 255
+      },
+
+      wallLine: {
+        r: 120,
+        g: 65,
+        b: 46,
+        a: 255
+      },
+
+      tableTop: {
+        r: 48,
+        g: 78,
+        b: 58,
+        a: 255
+      },
+
+      tableFront: {
+        r: 29,
+        g: 58,
+        b: 45,
+        a: 255
+      },
+
+      tableLip: {
+        r: 22,
+        g: 43,
+        b: 35,
+        a: 255
+      },
+
+      wood: {
+        r: 125,
+        g: 64,
+        b: 43,
+        a: 255
+      },
+
+      woodDark: {
+        r: 66,
+        g: 33,
+        b: 29,
+        a: 255
+      },
+
+      paper: {
+        r: 239,
+        g: 220,
+        b: 177,
+        a: 255
+      },
+
+      cream: {
+        r: 241,
+        g: 218,
+        b: 174,
+        a: 255
+      },
+
+      creamWarm: {
+        r: 247,
+        g: 224,
+        b: 175,
+        a: 255
+      },
+
+      ink: {
+        r: 55,
+        g: 35,
+        b: 29,
+        a: 255
+      },
+
+      red: {
+        r: 181,
+        g: 50,
+        b: 43,
+        a: 255
+      },
+
+      redDeep: {
+        r: 119,
+        g: 35,
+        b: 35,
+        a: 255
+      },
+
+      shadow: {
+        r: 77,
+        g: 48,
+        b: 38,
+        a: 255
+      }
+    };
+
+    if (
+      posterPalette[name]
+    ) {
+      return posterPalette[name];
+    }
+
+    return source;
+  }
+
+  return source;
+}
+
+function jdStyleAlpha(
+  name,
+  alpha
+) {
+  const style =
+    JD.visualStyle ||
+    "current";
+
+  let result =
+    alpha === null ||
+    alpha === undefined
+      ? 255
+      : alpha;
+
+  if (
+    style === "fine"
+  ) {
+    if (
+      name === "shadow"
+    ) {
+      result *= 0.38;
+
+    } else if (
+      name === "wallLine" ||
+      name === "woodDark" ||
+      name === "ink"
+    ) {
+      result *= 0.82;
+    }
+
+  } else if (
+    style === "bold"
+  ) {
+    if (
+      name === "shadow"
+    ) {
+      result *= 1.20;
+
+    } else if (
+      name === "ink" ||
+      name === "wallLine" ||
+      name === "woodDark"
+    ) {
+      result *= 1.10;
+    }
+
+  } else if (
+    style === "poster"
+  ) {
+    if (
+      name === "shadow"
+    ) {
+      result *= 0.16;
+
+    } else if (
+      name === "highlight"
+    ) {
+      result *= 0.42;
+    }
+  }
+
+  return jdClamp(
+    result,
+    0,
+    255
+  );
+}
+
+function jdDrawStyleSettingsButton() {
+  const x = 329;
+  const y = 598;
+  const size = 34;
+
+  rectMode(CENTER);
+  ellipseMode(CENTER);
+  noStroke();
+
+  jdFill(
+    "shadow",
+    34
+  );
+
+  rect(
+    x + 2,
+    y - 2,
+    size,
+    size,
+    12
+  );
+
+  jdFill(
+    "paper",
+    225
+  );
+
+  rect(
+    x,
+    y,
+    size,
+    size,
+    12
+  );
+
+  jdFill(
+    "ink",
+    210
+  );
+
+  // 歯車を簡素な喫茶店風ダイヤルとして描く
+  ellipse(
+    x,
+    y,
+    17,
+    17
+  );
+
+  jdFill(
+    "paper",
+    255
+  );
+
+  ellipse(
+    x,
+    y,
+    7,
+    7
+  );
+
+  jdStroke(
+    "ink",
+    185
+  );
+
+  strokeWidth(2);
+
+  for (
+    let i = 0;
+    i < 8;
+    i++
+  ) {
+    const a =
+      i *
+      Math.PI /
+      4;
+
+    line(
+      x +
+      Math.cos(a) *
+      9,
+      y +
+      Math.sin(a) *
+      9,
+      x +
+      Math.cos(a) *
+      13,
+      y +
+      Math.sin(a) *
+      13
+    );
+  }
+
+  noStroke();
+  rectMode(CORNER);
+}
+
+function jdDrawStyleSample(
+  styleId,
+  x,
+  y
+) {
+  pushMatrix();
+
+  const previous =
+    JD.visualStyle;
+
+  JD.visualStyle =
+    styleId;
+
+  rectMode(CENTER);
+  noStroke();
+
+  jdFill("wall");
+  rect(
+    x,
+    y,
+    44,
+    25,
+    5
+  );
+
+  jdFill("tableFront");
+  rect(
+    x,
+    y - 7,
+    44,
+    10,
+    0
+  );
+
+  jdFill("paper");
+  ellipse(
+    x - 9,
+    y + 4,
+    12,
+    7
+  );
+
+  jdFill("redDeep");
+  ellipse(
+    x + 9,
+    y + 5,
+    8,
+    8
+  );
+
+  jdStroke(
+    "ink",
+    styleId === "fine"
+      ? 115
+      : 210
+  );
+
+  strokeWidth(
+    styleId === "bold"
+      ? 3
+      : styleId === "fine"
+        ? 1
+        : 1.7
+  );
+
+  line(
+    x - 18,
+    y - 1,
+    x + 18,
+    y - 1
+  );
+
+  noStroke();
+
+  JD.visualStyle =
+    previous;
+
+  popMatrix();
+}
+
+function jdDrawStyleSettingsPanel() {
+  if (
+    !JD.styleSettingsOpen
+  ) {
+    return;
+  }
+
+  rectMode(CORNER);
+  noStroke();
+
+  // 全画面の薄いベール
+  fill(
+    27,
+    20,
+    18,
+    168
+  );
+
+  rect(
+    -10,
+    -10,
+    JD.LOGICAL_W + 20,
+    JD.LOGICAL_H + 20
+  );
+
+  const panelX = 38;
+  const panelY = 146;
+  const panelW = 284;
+  const panelH = 380;
+
+  jdFill(
+    "shadow",
+    70
+  );
+
+  rect(
+    panelX + 5,
+    panelY - 5,
+    panelW,
+    panelH,
+    14
+  );
+
+  jdFill(
+    "paper",
+    252
+  );
+
+  rect(
+    panelX,
+    panelY,
+    panelW,
+    panelH,
+    14
+  );
+
+  textAlign(CENTER);
+
+  jdFill(
+    "ink",
+    245
+  );
+
+  font(
+    '"Hiragino Maru Gothic ProN", ' +
+    '"Hiragino Kaku Gothic ProN", ' +
+    '"Yu Gothic", sans-serif'
+  );
+
+  fontSize(18);
+
+  text(
+    "表示スタイル",
+    JD.LOGICAL_W / 2,
+    492
+  );
+
+  jdFill(
+    "ink",
+    135
+  );
+
+  fontSize(9);
+
+  text(
+    "同じ喫茶店を、違うタッチで",
+    JD.LOGICAL_W / 2,
+    470
+  );
+
+  const styles =
+    jdVisualStyleNames();
+
+  const rowYs = [
+    418,
+    350,
+    282,
+    214
+  ];
+
+  for (
+    let i = 0;
+    i < styles.length;
+    i++
+  ) {
+    const item =
+      styles[i];
+
+    const y =
+      rowYs[i];
+
+    const selected =
+      JD.visualStyle ===
+      item.id;
+
+    if (
+      selected
+    ) {
+      jdFill(
+        "redDeep",
+        225
+      );
+
+    } else {
+      jdFill(
+        "cream",
+        210
+      );
+    }
+
+    rect(
+      58,
+      y - 26,
+      244,
+      54,
+      9
+    );
+
+    jdDrawStyleSample(
+      item.id,
+      88,
+      y
+    );
+
+    textAlign(LEFT);
+
+    if (
+      selected
+    ) {
+      jdFill(
+        "paper",
+        255
+      );
+
+    } else {
+      jdFill(
+        "ink",
+        235
+      );
+    }
+
+    fontSize(13);
+
+    text(
+      item.label,
+      120,
+      y + 7
+    );
+
+    if (
+      selected
+    ) {
+      jdFill(
+        "paper",
+        175
+      );
+
+    } else {
+      jdFill(
+        "ink",
+        125
+      );
+    }
+
+    fontSize(8);
+
+    text(
+      item.sub,
+      120,
+      y - 10
+    );
+  }
+
+  textAlign(CENTER);
+
+  jdFill(
+    "ink",
+    125
+  );
+
+  fontSize(9);
+
+  text(
+    "外側をタップして閉じる",
+    JD.LOGICAL_W / 2,
+    166
+  );
+
+  rectMode(CORNER);
+}
+
+function jdStyleSettingsHit(
+  x,
+  y
+) {
+  if (
+    !JD.styleSettingsOpen
+  ) {
+    return null;
+  }
+
+  const styles =
+    jdVisualStyleNames();
+
+  const rowYs = [
+    418,
+    350,
+    282,
+    214
+  ];
+
+  for (
+    let i = 0;
+    i < rowYs.length;
+    i++
+  ) {
+    if (
+      x >= 58 &&
+      x <= 302 &&
+      y >= rowYs[i] - 27 &&
+      y <= rowYs[i] + 27
+    ) {
+      return styles[i].id;
+    }
+  }
+
+  return null;
+}
+
+
+// =====================================================
+// 5. タイトル画面へボタンと設定パネルを描画
+// =====================================================
+
+// [REPLACE_EXACT: draw title style settings]
+// [FIND]
+  // タップ後の暗転
+  if (
+    JD.titleExitTimer > 0
+  ) {
+// [REPLACE]
+  // 表示スタイル設定
+  jdDrawStyleSettingsButton();
+  jdDrawStyleSettingsPanel();
+
+  // タップ後の暗転
+  if (
+    JD.titleExitTimer > 0
+  ) {
+
+
+
+// =====================================================
+// 3. 既存の色取得へスタイル変換を挟む
+// =====================================================
+
+// [PATCH: jdC]
+function jdC(name) {
+  if (
+    !JD.visual
+  ) {
+    jdInitVisualTheme();
+  }
+
+  const base =
+    JD.visual[name] ||
+    color(
+      255,
+      255,
+      255
+    );
+
+  return jdStyleColor(
+    name,
+    base
+  );
+}
+
 
 function jdJapaneseFont() {
   font(
