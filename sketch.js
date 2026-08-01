@@ -662,6 +662,105 @@ function jdSetVisualStyle(styleId) {
   }
 }
 
+function jdIsPosterStyle() {
+  return (
+    JD.visualStyle ===
+    "poster"
+  );
+}
+
+function jdDrawPosterPrintFinish() {
+  if (
+    !jdIsPosterStyle()
+  ) {
+    return;
+  }
+
+  rectMode(CORNER);
+  noStroke();
+
+  // ごく薄い暖色の刷り重ね
+  fill(
+    130,
+    63,
+    39,
+    7
+  );
+
+  rect(
+    0,
+    0,
+    JD.LOGICAL_W,
+    JD.LOGICAL_H
+  );
+
+  // 規則的すぎない長い印刷筋
+  fill(
+    255,
+    236,
+    190,
+    8
+  );
+
+  const drift =
+    Math.floor(
+      ElapsedTime * 0.15
+    ) % 19;
+
+  for (
+    let y =
+      -drift;
+    y <
+      JD.LOGICAL_H;
+    y += 19
+  ) {
+    rect(
+      0,
+      y,
+      JD.LOGICAL_W,
+      1
+    );
+  }
+
+  // 四隅に古い印刷物らしい登録点
+  jdFill(
+    "redDeep",
+    48
+  );
+
+  ellipse(
+    13,
+    13,
+    3,
+    3
+  );
+
+  ellipse(
+    JD.LOGICAL_W - 13,
+    13,
+    3,
+    3
+  );
+
+  ellipse(
+    13,
+    JD.LOGICAL_H - 13,
+    3,
+    3
+  );
+
+  ellipse(
+    JD.LOGICAL_W - 13,
+    JD.LOGICAL_H - 13,
+    3,
+    3
+  );
+
+  noStroke();
+}
+
+
+
 function jdStyleMixColor(
   source,
   target,
@@ -843,130 +942,251 @@ function jdStyleColor(
   if (
     style === "poster"
   ) {
+    // 昭和の喫茶店広告を意識した、
+    // 少数の強い色面へ整理する。
     const posterPalette = {
       page: {
-        r: 38,
-        g: 27,
-        b: 24,
+        r: 43,
+        g: 30,
+        b: 26,
         a: 255
       },
 
       posterBg: {
-        r: 224,
+        r: 226,
         g: 190,
-        b: 140,
+        b: 132,
         a: 255
       },
 
       posterBg2: {
-        r: 195,
-        g: 143,
-        b: 94,
+        r: 193,
+        g: 132,
+        b: 77,
         a: 255
       },
 
       wall: {
-        r: 216,
-        g: 180,
-        b: 128,
+        r: 222,
+        g: 185,
+        b: 127,
         a: 255
       },
 
       wallShade: {
-        r: 181,
-        g: 132,
-        b: 87,
+        r: 201,
+        g: 150,
+        b: 91,
         a: 255
       },
 
       wallLine: {
-        r: 120,
-        g: 65,
-        b: 46,
+        r: 139,
+        g: 72,
+        b: 48,
         a: 255
       },
 
       tableTop: {
-        r: 48,
-        g: 78,
-        b: 58,
+        r: 43,
+        g: 83,
+        b: 61,
         a: 255
       },
 
       tableFront: {
         r: 29,
-        g: 58,
-        b: 45,
+        g: 67,
+        b: 50,
         a: 255
       },
 
       tableLip: {
-        r: 22,
-        g: 43,
-        b: 35,
+        r: 25,
+        g: 48,
+        b: 39,
+        a: 255
+      },
+
+      tableStripe: {
+        r: 217,
+        g: 180,
+        b: 119,
         a: 255
       },
 
       wood: {
-        r: 125,
+        r: 133,
         g: 64,
-        b: 43,
+        b: 42,
         a: 255
       },
 
       woodDark: {
-        r: 66,
-        g: 33,
-        b: 29,
+        r: 75,
+        g: 35,
+        b: 31,
         a: 255
       },
 
       paper: {
-        r: 239,
+        r: 244,
         g: 220,
-        b: 177,
+        b: 169,
         a: 255
       },
 
       cream: {
-        r: 241,
-        g: 218,
-        b: 174,
+        r: 246,
+        g: 222,
+        b: 173,
         a: 255
       },
 
       creamWarm: {
-        r: 247,
-        g: 224,
-        b: 175,
+        r: 249,
+        g: 226,
+        b: 174,
         a: 255
       },
 
       ink: {
-        r: 55,
-        g: 35,
+        r: 52,
+        g: 34,
         b: 29,
         a: 255
       },
 
+      coffee: {
+        r: 59,
+        g: 29,
+        b: 22,
+        a: 255
+      },
+
+      coffeeLight: {
+        r: 95,
+        g: 48,
+        b: 31,
+        a: 255
+      },
+
+      soda: {
+        r: 61,
+        g: 174,
+        b: 105,
+        a: 255
+      },
+
+      sodaLight: {
+        r: 156,
+        g: 216,
+        b: 145,
+        a: 255
+      },
+
+      sodaDeep: {
+        r: 32,
+        g: 113,
+        b: 70,
+        a: 255
+      },
+
+      cakeCream: {
+        r: 247,
+        g: 224,
+        b: 181,
+        a: 255
+      },
+
+      cakeSponge: {
+        r: 213,
+        g: 148,
+        b: 59,
+        a: 255
+      },
+
+      cakePink: {
+        r: 205,
+        g: 83,
+        b: 101,
+        a: 255
+      },
+
       red: {
-        r: 181,
-        g: 50,
-        b: 43,
+        r: 190,
+        g: 45,
+        b: 39,
         a: 255
       },
 
       redDeep: {
         r: 119,
-        g: 35,
-        b: 35,
+        g: 30,
+        b: 32,
         a: 255
       },
 
       shadow: {
-        r: 77,
-        g: 48,
-        b: 38,
+        r: 70,
+        g: 42,
+        b: 34,
+        a: 255
+      },
+
+      uiPanel: {
+        r: 57,
+        g: 39,
+        b: 32,
+        a: 255
+      },
+
+      uiText: {
+        r: 246,
+        g: 221,
+        b: 169,
+        a: 255
+      },
+
+      gold: {
+        r: 211,
+        g: 158,
+        b: 59,
+        a: 255
+      },
+
+      glass: {
+        r: 184,
+        g: 215,
+        b: 179,
+        a: 255
+      },
+
+      glassEdge: {
+        r: 222,
+        g: 232,
+        b: 195,
+        a: 255
+      },
+
+      ice: {
+        r: 159,
+        g: 207,
+        b: 166,
+        a: 255
+      },
+
+      plate: {
+        r: 239,
+        g: 213,
+        b: 165,
+        a: 255
+      },
+
+      highlight: {
+        r: 255,
+        g: 232,
+        b: 178,
         a: 255
       }
     };
@@ -1032,13 +1252,29 @@ function jdStyleAlpha(
   } else if (
     style === "poster"
   ) {
+    // 奥行きを影ではなく色面の差で表現する。
     if (
       name === "shadow"
     ) {
-      result *= 0.16;
+      result *= 0.03;
 
     } else if (
       name === "highlight"
+    ) {
+      result *= 0.10;
+
+    } else if (
+      name === "wallLine"
+    ) {
+      result *= 0.48;
+
+    } else if (
+      name === "woodDark"
+    ) {
+      result *= 0.72;
+
+    } else if (
+      name === "glassEdge"
     ) {
       result *= 0.42;
     }
@@ -2070,8 +2306,20 @@ function jdPosterShadow(
   alpha = 40,
   radius = 0
 ) {
+  // ポスターカラーは影を使わず、
+  // 色面だけで形を分ける。
+  if (
+    jdIsPosterStyle()
+  ) {
+    return;
+  }
+
   noStroke();
-  jdFill("shadow", alpha);
+
+  jdFill(
+    "shadow",
+    alpha
+  );
 
   rect(
     x + 4,
@@ -2081,6 +2329,7 @@ function jdPosterShadow(
     radius
   );
 }
+
 
 
 function jdReadWebOptions() {
@@ -4160,6 +4409,8 @@ function jdDrawTitle() {
     104
   );
 
+  jdDrawPosterPrintFinish();
+
   // タイトル画面の表示スタイル設定
   jdDrawStyleSettingsButton();
   jdDrawStyleSettingsPanel();
@@ -4268,6 +4519,10 @@ function jdDrawPlay() {
   jdDrawWorld();
 
   popMatrix();
+
+  // 店内全体へ印刷物の質感を重ねる。
+  // UI文字の可読性は落とさないよう、UIより先に描く。
+  jdDrawPosterPrintFinish();
 
   jdDrawPlayUI();
   jdDrawShotMeter();
@@ -6667,6 +6922,9 @@ function jdDrawFood(
   ellipseMode(CENTER);
   noStroke();
 
+  const posterStyle =
+    jdIsPosterStyle();
+
   if (f.shape === "circle") {
     // チェリー
     jdFill("red", alpha);
@@ -6679,7 +6937,12 @@ function jdDrawFood(
 
     jdFill(
       "redDeep",
-      alpha * 0.22
+      alpha *
+      (
+        posterStyle
+          ? 0
+          : 0.22
+      )
     );
 
     ellipse(
@@ -6691,7 +6954,14 @@ function jdDrawFood(
 
     jdFill(
       "highlight",
-      Math.floor(alpha * 0.44)
+      Math.floor(
+        alpha *
+        (
+          posterStyle
+            ? 0
+            : 0.44
+        )
+      )
     );
 
     ellipse(
@@ -6743,7 +7013,14 @@ function jdDrawFood(
 
     jdFill(
       "highlight",
-      Math.floor(alpha * 0.50)
+      Math.floor(
+        alpha *
+        (
+          posterStyle
+            ? 0
+            : 0.50
+        )
+      )
     );
 
     rect(
@@ -6756,7 +7033,14 @@ function jdDrawFood(
 
     jdFill(
       "wallShade",
-      Math.floor(alpha * 0.22)
+      Math.floor(
+        alpha *
+        (
+          posterStyle
+            ? 0.12
+            : 0.22
+        )
+      )
     );
 
     rect(
@@ -6806,7 +7090,12 @@ function jdDrawFood(
 
     jdFill(
       "redDeep",
-      alpha * 0.18
+      alpha *
+      (
+        posterStyle
+          ? 0
+          : 0.18
+      )
     );
 
     ellipse(
