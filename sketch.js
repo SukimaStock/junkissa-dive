@@ -4079,15 +4079,12 @@ function jdDrawLauncherItemTicket() {
   const itemName =
     f.name || "-";
 
-  // 発射台の左上へ少し離して配置。
-  // 食材・台座・引っ張りガイドの周囲に呼吸できる余白を作る。
   const x =
     JD.launcher.x - 48;
 
   const y =
     JD.launcher.y + 64;
 
-  // 長いSTRAWBERRYでも左右に余白を残す
   const estimatedTextW =
     itemName.length * 8.4;
 
@@ -4100,16 +4097,19 @@ function jdDrawLauncherItemTicket() {
   const ticketH =
     firstThrow ? 46 : 40;
 
+  const radius = 6;
+
   rectMode(CENTER);
+  ellipseMode(CENTER);
   noStroke();
   textAlign(CENTER);
 
-  // 発射台との接続線は短く、薄くする
+  // 発射台との接続線
   jdStroke(
     "redDeep",
     firstThrow
-      ? 105 + pulse * 25
-      : 65
+      ? 92 + pulse * 24
+      : 58
   );
 
   strokeWidth(1.5);
@@ -4123,10 +4123,10 @@ function jdDrawLauncherItemTicket() {
 
   noStroke();
 
-  // 切り絵風の影
+  // 勤務伝票と共通の右下4px影
   jdFill(
     "shadow",
-    firstThrow ? 38 : 28
+    firstThrow ? 34 : 26
   );
 
   rect(
@@ -4134,13 +4134,13 @@ function jdDrawLauncherItemTicket() {
     y - 4,
     ticketW,
     ticketH,
-    6
+    radius
   );
 
-  // 注文伝票
+  // 生成りの紙
   jdFill(
     "paper",
-    firstThrow ? 244 : 224
+    firstThrow ? 240 : 222
   );
 
   rect(
@@ -4148,27 +4148,30 @@ function jdDrawLauncherItemTicket() {
     y,
     ticketW,
     ticketH,
-    6
+    radius
   );
 
-  // 上部の赤線
+  // 共通の上端赤線
   jdFill(
     "redDeep",
-    firstThrow ? 180 : 135
+    firstThrow ? 178 : 132
   );
 
   rect(
     x,
-    y + ticketH / 2 - 7,
-    ticketW - 18,
+    y + ticketH / 2 - 6,
+    ticketW - 16,
     3,
     2
   );
 
-  // 食材名
-  jdFill("ink", 238);
-  font("Courier-Bold");
+  // 食材名：主要情報
+  jdFill(
+    "ink",
+    firstThrow ? 240 : 216
+  );
 
+  font("Courier-Bold");
   fontSize(
     firstThrow ? 13 : 11
   );
@@ -4179,16 +4182,15 @@ function jdDrawLauncherItemTicket() {
     y + 7
   );
 
-  // 操作文
+  // 操作文：補助情報
   jdFill(
     "redDeep",
-    firstThrow ? 210 : 160
+    firstThrow ? 202 : 154
   );
 
-  font("Courier-Bold");
-
+  font("Courier");
   fontSize(
-    firstThrow ? 10 : 8.5
+    firstThrow ? 9.5 : 8
   );
 
   text(
@@ -4200,10 +4202,12 @@ function jdDrawLauncherItemTicket() {
 
 
 
+
 function jdUpdateFloatTexts(_dt) { JD.floatTexts.length = 0; }
 
 function jdDrawPlayUI() {
   rectMode(CENTER);
+  ellipseMode(CENTER);
   noStroke();
   textAlign(CENTER);
 
@@ -4218,27 +4222,34 @@ function jdDrawPlayUI() {
     JD.food &&
     JD.food.resolved;
 
-  const panelAlpha =
-    resultMode ? 118 : 224;
-
-  const textAlpha =
-    resultMode ? 145 : 245;
-
   const cx =
     JD.LOGICAL_W / 2;
 
   const cy =
-    JD.LOGICAL_H - 31;
+    JD.LOGICAL_H - 32;
 
   const w =
     JD.LOGICAL_W - 32;
 
-  const h = 34;
+  const h = 38;
+  const radius = 6;
 
-  // 紙と同じ輪郭を右下へずらした切り絵影
+  const paperAlpha =
+    resultMode ? 138 : 232;
+
+  const mainTextAlpha =
+    resultMode ? 154 : 238;
+
+  const subTextAlpha =
+    resultMode ? 112 : 178;
+
+  const accentAlpha =
+    resultMode ? 78 : 176;
+
+  // 右下4pxの切り絵影
   jdFill(
     "shadow",
-    resultMode ? 20 : 36
+    resultMode ? 20 : 34
   );
 
   rect(
@@ -4246,13 +4257,13 @@ function jdDrawPlayUI() {
     cy - 4,
     w,
     h,
-    7
+    radius
   );
 
-  // 勤務伝票
+  // 生成りの勤務伝票
   jdFill(
     "paper",
-    panelAlpha
+    paperAlpha
   );
 
   rect(
@@ -4260,87 +4271,108 @@ function jdDrawPlayUI() {
     cy,
     w,
     h,
-    7
+    radius
   );
 
-  // 左端の赤線
+  // 食材伝票と共通の上端赤線
   jdFill(
     "redDeep",
-    resultMode ? 82 : 178
+    accentAlpha
   );
 
   rect(
-    30,
-    cy,
-    4,
-    h - 8,
+    cx,
+    cy + h / 2 - 6,
+    w - 16,
+    3,
     2
   );
 
-  // パンチ穴
+  // 左側のパンチ穴
   jdFill(
     "woodDark",
-    resultMode ? 42 : 88
+    resultMode ? 38 : 72
   );
 
   ellipse(
-    42,
+    29,
     cy,
     5
   );
 
-  // 情報の区切り
+  // 情報の区切り線
   jdFill(
     "ink",
-    resultMode ? 28 : 58
+    resultMode ? 24 : 48
   );
 
   rect(
     129,
-    cy,
+    cy - 2,
     1,
-    20
+    21
   );
 
   rect(
     246,
-    cy,
+    cy - 2,
     1,
-    20
+    21
   );
+
+  // --------------------------------
+  // SHIFT
+  // --------------------------------
 
   jdFill(
     "ink",
-    textAlpha
+    subTextAlpha
   );
 
-  // SHIFT
   font("Courier");
   fontSize(8);
 
   text(
     "WORK TICKET",
-    82,
-    cy + 7
+    79,
+    cy + 6
+  );
+
+  jdFill(
+    "ink",
+    mainTextAlpha
   );
 
   font("Courier-Bold");
-  fontSize(9);
+  fontSize(10);
 
   text(
     jdT("ui.shift"),
-    82,
-    cy - 6
+    79,
+    cy - 7
   );
 
+  // --------------------------------
   // SALES
+  // --------------------------------
+
+  jdFill(
+    "ink",
+    subTextAlpha
+  );
+
   font("Courier");
   fontSize(8);
 
   text(
     jdT("ui.sales"),
     187,
-    cy + 7
+    cy + 6
+  );
+
+  jdFill(
+    "ink",
+    mainTextAlpha
   );
 
   font("Courier-Bold");
@@ -4349,17 +4381,30 @@ function jdDrawPlayUI() {
   text(
     `${JD.totalSales} ${jdT("ui.yen")}`,
     187,
-    cy - 6
+    cy - 7
   );
 
+  // --------------------------------
   // REST
+  // --------------------------------
+
+  jdFill(
+    "ink",
+    subTextAlpha
+  );
+
   font("Courier");
   fontSize(8);
 
   text(
     jdT("ui.rest"),
     292,
-    cy + 7
+    cy + 6
+  );
+
+  jdFill(
+    "ink",
+    mainTextAlpha
   );
 
   font("Courier-Bold");
@@ -4368,15 +4413,15 @@ function jdDrawPlayUI() {
   text(
     String(rest),
     292,
-    cy - 6
+    cy - 7
   );
 
-  // 状況説明は必要な時だけ表示
+  // 状況表示は必要な場面だけ
   if (
     JD.gamePhase ===
     PHASE_SHIFT_START
   ) {
-    jdFill("ink", 205);
+    jdFill("ink", 198);
     font("Courier-Bold");
     fontSize(12);
 
@@ -4389,7 +4434,7 @@ function jdDrawPlayUI() {
   } else if (
     JD.fortuneSpinning
   ) {
-    jdFill("ink", 205);
+    jdFill("ink", 198);
     font("Courier-Bold");
     fontSize(11);
 
@@ -4398,11 +4443,11 @@ function jdDrawPlayUI() {
       cx,
       91
     );
-
   }
 
   jdDrawDebugButton();
 }
+
 
 
 function jdDrawShotMeter() {
