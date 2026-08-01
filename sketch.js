@@ -669,6 +669,16 @@ function jdIsPosterStyle() {
   );
 }
 
+function jdPosterAlpha(
+  normalAlpha,
+  posterAlpha
+) {
+  return jdIsPosterStyle()
+    ? posterAlpha
+    : normalAlpha;
+}
+
+
 function jdDrawPosterPrintFinish() {
   if (
     !jdIsPosterStyle()
@@ -677,22 +687,39 @@ function jdDrawPosterPrintFinish() {
   }
 
   rectMode(CORNER);
+  ellipseMode(CENTER);
   noStroke();
 
-  // 全体を黄変させる色ベールは使用しない。
-  // 紙の繊維を思わせる固定の横筋だけを薄く重ねる。
+  // ごく薄い暖色の刷り重ね。
+  // 黄色いフィルターに見えない強さへ抑える。
   fill(
-    255,
-    248,
-    228,
-    3
+    125,
+    67,
+    48,
+    4
   );
 
+  rect(
+    0,
+    0,
+    JD.LOGICAL_W,
+    JD.LOGICAL_H
+  );
+
+  // 印刷筋は動かさず、
+  // 一枚の紙として固定する。
   for (
-    let y = 11;
+    let y = 8;
     y < JD.LOGICAL_H;
-    y += 34
+    y += 31
   ) {
+    fill(
+      255,
+      239,
+      205,
+      3
+    );
+
     rect(
       0,
       y,
@@ -701,30 +728,7 @@ function jdDrawPosterPrintFinish() {
     );
   }
 
-  // 刷りムラを数本だけ、不規則な位置へ置く
-  fill(
-    80,
-    53,
-    43,
-    2
-  );
-
-  rect(
-    0,
-    177,
-    JD.LOGICAL_W,
-    1
-  );
-
-  rect(
-    0,
-    431,
-    JD.LOGICAL_W,
-    1
-  );
-
-  // 登録点はポスターそのものに見える
-  // タイトル画面だけに限定
+  // 印刷物らしい登録点はタイトル画面だけ。
   if (
     JD.state ===
     STATE_TITLE
@@ -764,7 +768,9 @@ function jdDrawPosterPrintFinish() {
   }
 
   noStroke();
+  rectMode(CORNER);
 }
+
 
 
 
@@ -1264,33 +1270,33 @@ function jdStyleAlpha(
   } else if (
     style === "poster"
   ) {
-    // 奥行きを影ではなく色面の差で表現する。
+    // 落ち影はほぼ使わない
     if (
       name === "shadow"
     ) {
-      // ドロップシャドウはほぼ使用しない
-      result *= 0.025;
+      result *= 0.03;
 
+    // 完全なベタ塗りにはせず、
+    // 食器や電球へ乳白色の光を少し残す
     } else if (
       name === "highlight"
     ) {
-      // ランプ・ガラス・液面の光だけは残す
-      result *= 0.30;
+      result *= 0.20;
 
     } else if (
       name === "wallLine"
     ) {
-      result *= 0.38;
+      result *= 0.48;
 
     } else if (
       name === "woodDark"
     ) {
-      result *= 0.68;
+      result *= 0.72;
 
     } else if (
       name === "glassEdge"
     ) {
-      result *= 0.58;
+      result *= 0.42;
     }
   }
 
@@ -1300,6 +1306,7 @@ function jdStyleAlpha(
     255
   );
 }
+
 
 function jdDrawStyleSettingsButton() {
   const x = 329;
@@ -4977,6 +4984,7 @@ function jdDrawCafeWideBackdrop() {
 
   // 高い店内壁
   jdFill("wall");
+
   rect(
     left,
     JD.tableY,
@@ -4984,9 +4992,47 @@ function jdDrawCafeWideBackdrop() {
     960
   );
 
+  if (
+    jdIsPosterStyle()
+  ) {
+    // カウンターに近い下側は、
+    // 紙に近い明るい面として見せる。
+    jdFill(
+      "creamWarm",
+      13
+    );
+
+    rect(
+      left,
+      JD.tableY,
+      width,
+      390
+    );
+
+    // 上側はわずかに赤みのある面。
+    // 影ではなく色の切り替えで奥行きを作る。
+    jdFill(
+      "wallShade",
+      12
+    );
+
+    rect(
+      left,
+      540,
+      width,
+      420
+    );
+  }
+
   // 壁上部をわずかに暗くし、
   // 照明が落ちる場所との明暗差を作る
-  jdFill("wallShade", 24);
+  jdFill(
+    "wallShade",
+    jdPosterAlpha(
+      24,
+      9
+    )
+  );
   rect(
     left,
     640,
@@ -4996,7 +5042,13 @@ function jdDrawCafeWideBackdrop() {
 
   // 天井付近だけをもう一段暗くする。
   // 下側の広い余白は明るく残し、料理と軌道を見やすくする。
-  jdFill("woodDark", 12);
+  jdFill(
+    "woodDark",
+    jdPosterAlpha(
+      12,
+      6
+    )
+  );
   rect(
     left,
     900,
@@ -5566,7 +5618,15 @@ function jdDrawCafeWideBackdrop() {
 
     // 壁へ落ちる暖かな光。
     // 輪郭の強い円ではなく、下へ広がる層として描く。
-    fill(255, 221, 158, 9);
+    fill(
+      255,
+      229,
+      184,
+      jdPosterAlpha(
+        9,
+        11
+      )
+    );
     ellipse(
       lx,
       770,
@@ -5574,7 +5634,15 @@ function jdDrawCafeWideBackdrop() {
       330
     );
 
-    fill(255, 224, 164, 13);
+    fill(
+      255,
+      231,
+      188,
+      jdPosterAlpha(
+        13,
+        16
+      )
+    );
     ellipse(
       lx,
       820,
@@ -5582,7 +5650,15 @@ function jdDrawCafeWideBackdrop() {
       250
     );
 
-    fill(255, 229, 176, 18);
+    fill(
+      255,
+      234,
+      196,
+      jdPosterAlpha(
+        18,
+        22
+      )
+    );
     ellipse(
       lx,
       865,
@@ -5590,7 +5666,15 @@ function jdDrawCafeWideBackdrop() {
       142
     );
 
-    fill(255, 237, 196, 23);
+    fill(
+      255,
+      239,
+      207,
+      jdPosterAlpha(
+        23,
+        28
+      )
+    );
     ellipse(
       lx,
       894,
@@ -5600,7 +5684,15 @@ function jdDrawCafeWideBackdrop() {
 
     // シェードの下だけを少し明るくして、
     // 電球が灯っていることを伝える
-    fill(255, 230, 177, 26);
+    fill(
+      255,
+      240,
+      211,
+      jdPosterAlpha(
+        26,
+        34
+      )
+    );
     ellipse(
       lx,
       902,
@@ -6371,7 +6463,10 @@ function jdDrawCoffeeTarget(t) {
   // 左上の縦ハイライト
   jdFill(
     "highlight",
-    62
+    jdPosterAlpha(
+      62,
+      28
+    )
   );
 
   rect(
@@ -6435,7 +6530,10 @@ function jdDrawCoffeeTarget(t) {
   // コーヒー面の反射
   jdFill(
     "coffeeLight",
-    42
+    jdPosterAlpha(
+      42,
+      22
+    )
   );
 
   ellipse(
@@ -6628,7 +6726,13 @@ function jdDrawCakeTarget(t) {
   );
 
   // ケーキ側面にも左上の反射を一本だけ
-  jdFill("highlight", 48);
+  jdFill(
+    "highlight",
+    jdPosterAlpha(
+      48,
+      22
+    )
+  );
   rect(
     t.x - 27,
     JD.tableY + 34,
@@ -6647,7 +6751,13 @@ function jdDrawCakeTarget(t) {
       13
     );
 
-    jdFill("highlight", 66);
+    jdFill(
+      "highlight",
+      jdPosterAlpha(
+        66,
+        25
+      )
+    );
     ellipse(
       t.x + dx - 4,
       JD.tableY + 70,
@@ -6725,7 +6835,13 @@ function jdDrawMelonTarget(t) {
   );
 
   // グラス本体
-  jdFill("glass", 68);
+  jdFill(
+    "glass",
+    jdPosterAlpha(
+      68,
+      48
+    )
+  );
   rect(
     t.x,
     JD.tableY + 80,
@@ -6736,7 +6852,13 @@ function jdDrawMelonTarget(t) {
 
   // ガラス線は左右両方ではなく、
   // 左上側の反射を主役にする
-  jdFill("glassEdge", 112);
+  jdFill(
+    "glassEdge",
+    jdPosterAlpha(
+      112,
+      58
+    )
+  );
   rect(
     t.x - 29,
     JD.tableY + 82,
@@ -6745,7 +6867,13 @@ function jdDrawMelonTarget(t) {
     3
   );
 
-  jdFill("glassEdge", 72);
+  jdFill(
+    "glassEdge",
+    jdPosterAlpha(
+      72,
+      24
+    )
+  );
   rect(
     t.x + 29,
     JD.tableY + 80,
@@ -6773,7 +6901,13 @@ function jdDrawMelonTarget(t) {
   );
 
   // 左側だけに明るい色面を置く
-  jdFill("sodaLight", 72);
+  jdFill(
+    "sodaLight",
+    jdPosterAlpha(
+      72,
+      38
+    )
+  );
   rect(
     t.x - 11,
     JD.tableY + 78,
@@ -9861,21 +9995,41 @@ function jdDrawPlayUI() {
       ? 145
       : 245;
 
-  // 影
-  jdFill(
-    "shadow",
-    resultMode
-      ? 24
-      : 42
-  );
+  if (
+    jdIsPosterStyle()
+  ) {
+    // ポスター版は落ち影を使わず、
+    // 一回り大きな色面で紙を切り抜く。
+    jdFill(
+      "wallLine",
+      44
+    );
 
-  rect(
-    cx + 3,
-    cy - 4,
-    w,
-    h,
-    7
-  );
+    rect(
+      cx,
+      cy,
+      w + 2,
+      h + 2,
+      8
+    );
+
+  } else {
+    // オリジナル版は従来の落ち影
+    jdFill(
+      "shadow",
+      resultMode
+        ? 24
+        : 42
+    );
+
+    rect(
+      cx + 3,
+      cy - 4,
+      w,
+      h,
+      7
+    );
+  }
 
   // 勤務伝票
   jdFill(
