@@ -4646,6 +4646,57 @@ function jdDrawReceipt() {
     JD.LOGICAL_W / 2;
 
   // ==================================================
+  // 結果画面の演出時間
+  // ==================================================
+
+  // 背景がわずかに引いて、静止画の構図へ収まる
+  const backdropT =
+    jdClamp(
+      JD.receiptTimer / 0.85,
+      0,
+      1
+    );
+
+  const backdropEase =
+    1 -
+    Math.pow(
+      1 - backdropT,
+      3
+    );
+
+  // レシートは上から置かれる
+  const receiptT =
+    jdClamp(
+      (
+        JD.receiptTimer -
+        0.05
+      ) / 0.52,
+      0,
+      1
+    );
+
+  // 少しだけ行き過ぎて戻る、控えめな着地
+  const receiptEase =
+    1 +
+    2.7 *
+    Math.pow(
+      receiptT - 1,
+      3
+    ) +
+    1.7 *
+    Math.pow(
+      receiptT - 1,
+      2
+    );
+
+  const receiptOffsetY =
+    34 *
+    (
+      1 -
+      receiptEase
+    );
+
+  // ==================================================
   // ローカル関数：レシートの破線
   // ==================================================
 
@@ -4813,13 +4864,30 @@ function jdDrawReceipt() {
 
   pushMatrix();
 
-  // 終了時のカメラ状態に左右されない固定全景
+  // ゲーム終了直後は少し近く、
+  // 約0.85秒かけて静かな全景へ収まる
+  const receiptBackdropZoom =
+    0.445 +
+    (
+      0.42 -
+      0.445
+    ) * backdropEase;
+
+  const receiptBackdropY =
+    284 +
+    (
+      292 -
+      284
+    ) * backdropEase;
+
   translate(
     JD.LOGICAL_W / 2,
-    292
+    receiptBackdropY
   );
 
-  scale(0.42);
+  scale(
+    receiptBackdropZoom
+  );
 
   translate(
     -515,
@@ -4861,7 +4929,15 @@ function jdDrawReceipt() {
 
   // ==================================================
   // レシート本体
+  // 上からすっと置かれるレイヤー
   // ==================================================
+
+  pushMatrix();
+
+  translate(
+    0,
+    receiptOffsetY
+  );
 
   const paperW = 210;
   const paperH = 330;
@@ -5517,8 +5593,12 @@ function jdDrawReceipt() {
     );
   }
 
+  // レシート本体の移動レイヤーを終了
+  popMatrix();
+
   // ==================================================
   // 再プレイボタン
+  // 印字が終わったあと、少し遅れて現れる
   // ==================================================
 
   if (
@@ -5529,40 +5609,84 @@ function jdDrawReceipt() {
     const bw = 214;
     const bh = 38;
 
+    // 印字完了後、0.28秒かけて控えめに現れる
+    const buttonT =
+      jdClamp(
+        (
+          JD.receiptTimer -
+          readyAt
+        ) / 0.28,
+        0,
+        1
+      );
+
+    const buttonEase =
+      1 -
+      Math.pow(
+        1 - buttonT,
+        3
+      );
+
+    const buttonScale =
+      0.90 +
+      0.10 *
+      buttonEase;
+
+    const buttonAlpha =
+      40 +
+      202 *
+      buttonEase;
+
     rectMode(CENTER);
 
+    pushMatrix();
+
+    translate(
+      bx,
+      by
+    );
+
+    scale(
+      buttonScale
+    );
+
     const pulse =
-      200 +
+      buttonAlpha +
       Math.sin(
         ElapsedTime * 4.2
-      ) * 22;
+      ) *
+      18 *
+      buttonEase;
 
+    // 影
     jdFill(
       "shadow",
-      34
+      34 * buttonEase
     );
 
     rect(
-      bx + 4,
-      by - 4,
+      4,
+      -4,
       bw,
       bh,
       6
     );
 
+    // 紙
     jdFill(
       "paper",
-      242
+      242 * buttonEase
     );
 
     rect(
-      bx,
-      by,
+      0,
+      0,
       bw,
       bh,
       6
     );
 
+    // 外枠
     noFill();
 
     jdStroke(
@@ -5573,8 +5697,8 @@ function jdDrawReceipt() {
     strokeWidth(2);
 
     rect(
-      bx,
-      by,
+      0,
+      0,
       bw - 8,
       bh - 8,
       4
@@ -5582,6 +5706,7 @@ function jdDrawReceipt() {
 
     noStroke();
 
+    // テキスト
     jdFill(
       "redDeep",
       pulse
@@ -5600,9 +5725,11 @@ function jdDrawReceipt() {
         "receipt.oneMore",
         "ONE MORE SHIFT"
       ),
-      bx,
-      by + 1
+      0,
+      1
     );
+
+    popMatrix();
 
     rectMode(CORNER);
   }
