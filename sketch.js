@@ -694,6 +694,7 @@ function jdStartPlay() {
     PHASE_SHIFT_START
   );
 
+  // 開店導入
   JD.shiftStartDuration =
     7.4;
 
@@ -706,6 +707,26 @@ function jdStartPlay() {
   JD.shiftFadeInTimer =
     JD.shiftFadeInDuration;
 
+  // 前回のタイトル・導入演出を初期化
+  JD.titleExitTimer = 0;
+  JD.titleExitDuration = 0;
+
+  // 前回の素材札演出を初期化
+  JD.itemTicketTimer = 0;
+
+  // 前回のFortune表示状態を初期化
+  JD.fortuneSpinning = false;
+  JD.fortuneTimer = 0;
+  JD.fortuneDuration = 0;
+  JD.fortunePickedTimer = 0;
+  JD.fortuneDisplayName = null;
+  JD.fortuneSelected = null;
+  JD.pendingFood = null;
+
+  // 前回の結果画面演出を初期化
+  JD.receiptTimer = 0;
+
+  // 店内全景から開始
   JD.cam.x = 515;
   JD.cam.y = 285;
   JD.cam.zoom = 0.42;
@@ -714,6 +735,7 @@ function jdStartPlay() {
   JD.cam.ty = 285;
   JD.cam.tz = 0.42;
 }
+
 
 
 
@@ -4881,35 +4903,177 @@ function jdDrawLauncherItemTicket() {
     JD.fortuneSpinning ||
     JD.fortunePickedTimer > 0
   ) {
+    JD.itemTicketTimer = 0;
     return;
   }
 
-  const x =
-    JD.launcher.x - 105;
+  if (
+    !Number.isFinite(
+      JD.itemTicketTimer
+    )
+  ) {
+    JD.itemTicketTimer = 0;
+  }
 
+  // 描画開始から約0.42秒で静かに現れる
+  JD.itemTicketTimer =
+    Math.min(
+      0.42,
+      JD.itemTicketTimer +
+      DeltaTime
+    );
+
+  const appearT =
+    jdClamp(
+      JD.itemTicketTimer /
+      0.42,
+      0,
+      1
+    );
+
+  const appearEase =
+    1 -
+    Math.pow(
+      1 -
+      appearT,
+      3
+    );
+
+  const alpha =
+    255 *
+    appearEase;
+
+  // Closeカメラ時の画面中央付近
+  const x =
+    JD.launcher.x -
+    105;
+
+  const baseY =
+    JD.launcher.y +
+    50;
+
+  // 少し上から降りてくる
   const y =
-    JD.launcher.y + 50;
+    baseY +
+    (
+      1 -
+      appearEase
+    ) * 10;
 
   const name =
-    f.name || "-";
+    f.name ||
+    "-";
 
   const ticketW =
     jdClamp(
       54 +
-      name.length * 7.4,
+      name.length *
+      7.4,
       96,
       142
     );
 
-  const ticketH = 38;
+  const ticketH =
+    34;
+
+  const targetX =
+    JD.launcher.x -
+    18;
+
+  const targetY =
+    JD.launcher.y +
+    4;
+
+  const lineStartX =
+    x +
+    ticketW / 2 -
+    13;
+
+  const lineStartY =
+    y -
+    ticketH / 2 +
+    7;
+
+  const elbowY =
+    targetY +
+    18;
 
   rectMode(CENTER);
-  noStroke();
+  ellipseMode(CENTER);
   textAlign(CENTER);
+
+  // --------------------------------
+  // 素材へつながる説明線
+  // --------------------------------
+
+  noFill();
+
+  jdStroke(
+    "paper",
+    215 *
+    appearEase
+  );
+
+  strokeWidth(2);
+
+  line(
+    lineStartX,
+    lineStartY,
+    lineStartX,
+    elbowY
+  );
+
+  line(
+    lineStartX,
+    elbowY,
+    targetX,
+    elbowY
+  );
+
+  line(
+    targetX,
+    elbowY,
+    targetX,
+    targetY
+  );
+
+  noStroke();
+
+  // 先端の丸
+  jdFill(
+    "paper",
+    225 *
+    appearEase
+  );
+
+  ellipse(
+    targetX,
+    targetY,
+    9,
+    9
+  );
+
+  jdFill(
+    "redDeep",
+    165 *
+    appearEase
+  );
+
+  ellipse(
+    targetX,
+    targetY,
+    3,
+    3
+  );
+
+  // --------------------------------
+  // 素材札
+  // --------------------------------
 
   jdFill(
     "shadow",
-    34
+    34 *
+    appearEase
   );
 
   rect(
@@ -4922,7 +5086,8 @@ function jdDrawLauncherItemTicket() {
 
   jdFill(
     "paper",
-    238
+    238 *
+    appearEase
   );
 
   rect(
@@ -4933,30 +5098,50 @@ function jdDrawLauncherItemTicket() {
     6
   );
 
+  // 上線ではなく下線
   jdFill(
     "redDeep",
-    170
+    175 *
+    appearEase
   );
 
   rect(
     x,
-    y + ticketH / 2 - 6,
-    ticketW - 16,
+    y -
+    ticketH / 2 +
+    6,
+    ticketW -
+    16,
     3,
     2
   );
 
+  // 素材名だけを大きく表示
   jdFill(
     "ink",
-    232
+    238 *
+    appearEase
   );
 
-  font("Courier-Bold");
+  font(
+    "Courier-Bold"
+  );
+
+  let nameSize = 13;
+
+  if (
+    name.length >= 10
+  ) {
+    nameSize = 10.5;
+
+  } else if (
+    name.length >= 8
+  ) {
+    nameSize = 11.5;
+  }
 
   fontSize(
-    name.length >= 10
-      ? 11
-      : 12
+    nameSize
   );
 
   text(
@@ -4965,23 +5150,9 @@ function jdDrawLauncherItemTicket() {
     y + 3
   );
 
-  jdFill(
-    "redDeep",
-    185
-  );
-
-  font(
-    '"Hiragino Mincho ProN", "Yu Mincho", serif'
-  );
-
-  fontSize(8);
-
-  text(
-    "素材",
-    x,
-    y - 11
-  );
+  noStroke();
 }
+
 
 
 
@@ -5000,7 +5171,9 @@ function jdDrawPlayUI() {
     JD.throwIndex +
     1;
 
-  if (rest < 0) rest = 0;
+  if (rest < 0) {
+    rest = 0;
+  }
 
   const resultMode =
     JD.food &&
@@ -5010,44 +5183,43 @@ function jdDrawPlayUI() {
     JD.LOGICAL_W / 2;
 
   const cy =
-    JD.LOGICAL_H - 32;
+    JD.LOGICAL_H - 31;
 
   const w =
     JD.LOGICAL_W - 32;
 
-  const h = 38;
-  const radius = 6;
+  const h = 34;
 
-  const paperAlpha =
-    resultMode ? 138 : 232;
+  const panelAlpha =
+    resultMode
+      ? 118
+      : 224;
 
-  const mainTextAlpha =
-    resultMode ? 154 : 238;
+  const textAlpha =
+    resultMode
+      ? 145
+      : 245;
 
-  const subTextAlpha =
-    resultMode ? 112 : 178;
-
-  const accentAlpha =
-    resultMode ? 78 : 176;
-
-  // 右下4pxの切り絵影
+  // 影
   jdFill(
     "shadow",
-    resultMode ? 20 : 34
+    resultMode
+      ? 24
+      : 42
   );
 
   rect(
-    cx + 4,
+    cx + 3,
     cy - 4,
     w,
     h,
-    radius
+    7
   );
 
-  // 生成りの勤務伝票
+  // 勤務伝票
   jdFill(
     "paper",
-    paperAlpha
+    panelAlpha
   );
 
   rect(
@@ -5055,62 +5227,53 @@ function jdDrawPlayUI() {
     cy,
     w,
     h,
-    radius
+    7
   );
 
-  // 食材伝票と共通の上端赤線
-  jdFill(
-    "redDeep",
-    accentAlpha
-  );
-
-  rect(
-    cx,
-    cy + h / 2 - 6,
-    w - 16,
-    3,
-    2
-  );
-
-  // 左側のパンチ穴
+  // パンチ穴
   jdFill(
     "woodDark",
-    resultMode ? 38 : 72
+    resultMode
+      ? 42
+      : 88
   );
 
   ellipse(
-    29,
+    42,
     cy,
+    5,
     5
   );
 
-  // 情報の区切り線
+  // 情報の区切り
   jdFill(
     "ink",
-    resultMode ? 24 : 48
+    resultMode
+      ? 28
+      : 50
   );
 
   rect(
     129,
-    cy - 2,
+    cy,
     1,
-    21
+    20
   );
 
   rect(
     246,
-    cy - 2,
+    cy,
     1,
-    21
+    20
   );
 
   // --------------------------------
-  // SHIFT
+  // WORK TICKET
   // --------------------------------
 
   jdFill(
     "ink",
-    subTextAlpha
+    textAlpha
   );
 
   font("Courier");
@@ -5118,77 +5281,64 @@ function jdDrawPlayUI() {
 
   text(
     "WORK TICKET",
-    79,
-    cy + 6
-  );
-
-  jdFill(
-    "ink",
-    mainTextAlpha
+    82,
+    cy + 7
   );
 
   font("Courier-Bold");
-  fontSize(10);
+  fontSize(9);
 
   text(
-    jdT("ui.shift"),
-    79,
-    cy - 7
+    jdT(
+      "ui.shift",
+      "MONDAY SHIFT"
+    ),
+    82,
+    cy - 6
   );
 
   // --------------------------------
   // SALES
   // --------------------------------
 
-  jdFill(
-    "ink",
-    subTextAlpha
-  );
-
   font("Courier");
   fontSize(8);
 
   text(
-    jdT("ui.sales"),
+    jdT(
+      "ui.sales",
+      "SALES"
+    ),
     187,
-    cy + 6
-  );
-
-  jdFill(
-    "ink",
-    mainTextAlpha
+    cy + 7
   );
 
   font("Courier-Bold");
   fontSize(12);
 
   text(
-    `${JD.totalSales} ${jdT("ui.yen")}`,
+    `${JD.totalSales} ${jdT(
+      "ui.yen",
+      "YEN"
+    )}`,
     187,
-    cy - 7
+    cy - 6
   );
 
   // --------------------------------
   // REST
   // --------------------------------
 
-  jdFill(
-    "ink",
-    subTextAlpha
-  );
-
   font("Courier");
   fontSize(8);
 
   text(
-    jdT("ui.rest"),
+    jdT(
+      "ui.rest",
+      "REST"
+    ),
     292,
-    cy + 6
-  );
-
-  jdFill(
-    "ink",
-    mainTextAlpha
+    cy + 7
   );
 
   font("Courier-Bold");
@@ -5197,33 +5347,68 @@ function jdDrawPlayUI() {
   text(
     String(rest),
     292,
-    cy - 7
+    cy - 6
   );
 
-  // 状況表示は必要な場面だけ
+  // --------------------------------
+  // 下線
+  // 一枚の長い線ではなく、
+  // 3つの情報ごとに短く区切る
+  // --------------------------------
+
+  jdFill(
+    "redDeep",
+    resultMode
+      ? 80
+      : 165
+  );
+
+  const underlineY =
+    cy -
+    h / 2 +
+    5;
+
+  rect(
+    82,
+    underlineY,
+    86,
+    2.5,
+    1
+  );
+
+  rect(
+    187,
+    underlineY,
+    82,
+    2.5,
+    1
+  );
+
+  rect(
+    292,
+    underlineY,
+    58,
+    2.5,
+    1
+  );
+
+  // Fortune回転中の補助表示
   if (
-    JD.gamePhase ===
-    PHASE_SHIFT_START
-  ) {
-    jdFill("ink", 198);
-    font("Courier-Bold");
-    fontSize(12);
-
-    text(
-      "SHIFT START",
-      cx,
-      91
-    );
-
-  } else if (
     JD.fortuneSpinning
   ) {
-    jdFill("ink", 198);
-    font("Courier-Bold");
+    jdFill(
+      "ink",
+      190
+    );
+
+    font(
+      '"Hiragino Mincho ProN", "Yu Mincho", serif'
+    );
+
     fontSize(11);
 
     text(
-      jdT("ui.fortuneSpin"),
+      "本日の素材を選んでいます",
       cx,
       91
     );
@@ -5231,6 +5416,7 @@ function jdDrawPlayUI() {
 
   jdDrawDebugButton();
 }
+
 
 
 
@@ -5244,17 +5430,23 @@ function jdDrawShotMeter() {
 
 
 function jdDrawFortuneMachine() {
-  if (!JD.fortuneSpinning && !(JD.fortunePickedTimer > 0)) return;
+  if (
+    !JD.fortuneSpinning &&
+    !(JD.fortunePickedTimer > 0)
+  ) {
+    return;
+  }
 
   rectMode(CENTER);
   ellipseMode(CENTER);
   textAlign(CENTER);
   noStroke();
 
-  const baseCx =
+  const cx =
     JD.LOGICAL_W / 2;
 
-  const cy = 328;
+  const baseCy =
+    328;
 
   const active =
     JD.fortuneSpinning;
@@ -5267,13 +5459,18 @@ function jdDrawFortuneMachine() {
     JD.fortuneTimer ||
     0;
 
+  // 以前よりゆっくり登場
+  const enterDuration =
+    0.34;
+
   const enterT =
     active
       ? jdClamp(
           (
             duration -
             timer
-          ) / 0.18,
+          ) /
+          enterDuration,
           0,
           1
         )
@@ -5287,14 +5484,19 @@ function jdDrawFortuneMachine() {
       3
     );
 
+  // 確定表示の最後に下方向へ退場
+  const exitDuration =
+    0.36;
+
   const exitT =
     !active &&
     JD.fortunePickedTimer > 0
       ? jdClamp(
           (
-            0.22 -
+            exitDuration -
             JD.fortunePickedTimer
-          ) / 0.22,
+          ) /
+          exitDuration,
           0,
           1
         )
@@ -5302,7 +5504,11 @@ function jdDrawFortuneMachine() {
 
   const exitEase =
     exitT *
-    exitT;
+    exitT *
+    (
+      3 -
+      2 * exitT
+    );
 
   const visibility =
     jdClamp(
@@ -5315,13 +5521,16 @@ function jdDrawFortuneMachine() {
       1
     );
 
-  const cx =
-    baseCx +
+  // y軸は上方向が正。
+  // 上から登場：開始時はbaseCyより上
+  // 下へ退場：終了時はbaseCyより下
+  const cy =
+    baseCy +
     (
       1 -
       enterEase
-    ) * 22 -
-    exitEase * 20;
+    ) * 40 -
+    exitEase * 46;
 
   pushMatrix();
 
@@ -5331,8 +5540,9 @@ function jdDrawFortuneMachine() {
   );
 
   scale(
-    0.96 +
-    visibility * 0.04
+    0.965 +
+    visibility *
+    0.035
   );
 
   translate(
@@ -5340,93 +5550,322 @@ function jdDrawFortuneMachine() {
     -cy
   );
 
-  const p = 1 - jdClamp(timer / duration, 0, 1);
-  const pickedP = JD.fortunePickedTimer > 0
-    ? jdClamp(JD.fortunePickedTimer / 0.9, 0, 1)
-    : 0;
+  const p =
+    1 -
+    jdClamp(
+      timer /
+      duration,
+      0,
+      1
+    );
 
-  const bodyPop = active
-    ? Math.sin(Math.min(1, p * 1.8) * Math.PI) * 1.3
-    : pickedP;
+  const pickedP =
+    JD.fortunePickedTimer > 0
+      ? jdClamp(
+          JD.fortunePickedTimer /
+          0.9,
+          0,
+          1
+        )
+      : 0;
 
-  const wheelRot = active
-    ? (JD.fortuneDuration - timer) * 900
-    : 0;
+  const bodyPop =
+    active
+      ? Math.sin(
+          Math.min(
+            1,
+            p *
+            1.8
+          ) *
+          Math.PI
+        ) *
+        1.3
+      : pickedP;
 
-  const blink = active
-    ? 0.84 + 0.16 * Math.sin(ElapsedTime * 12)
-    : 1;
+  const wheelRot =
+    active
+      ? (
+          JD.fortuneDuration -
+          timer
+        ) *
+        900
+      : 0;
 
+  const blink =
+    active
+      ? 0.84 +
+        0.16 *
+        Math.sin(
+          ElapsedTime *
+          12
+        )
+      : 1;
+
+  const bodyW =
+    156;
+
+  const bodyH =
+    226 +
+    bodyPop;
+
+  // --------------------------------
   // 木製本体
-  const bodyW = 156;
-  const bodyH = 226 + bodyPop;
+  // --------------------------------
 
-  jdFill("shadow", active ? 78 : 62);
-  rect(cx + 4, cy - 8, bodyW + 8, bodyH + 8, 24);
+  jdFill(
+    "shadow",
+    (
+      active
+        ? 78
+        : 62
+    ) *
+    visibility
+  );
 
-  jdFill("woodDark", 210);
-  rect(cx + 3, cy - 3, bodyW, bodyH, 22);
+  rect(
+    cx + 4,
+    cy - 8,
+    bodyW + 8,
+    bodyH + 8,
+    24
+  );
 
-  jdFill("wood", 252);
-  rect(cx, cy, bodyW - 8, bodyH - 8, 20);
+  jdFill(
+    "woodDark",
+    210 *
+    visibility
+  );
 
-  jdFill("wallShade", 34);
-  rect(cx - 36, cy, 7, bodyH - 44, 4);
+  rect(
+    cx + 3,
+    cy - 3,
+    bodyW,
+    bodyH,
+    22
+  );
 
-  jdFill("highlight", 28);
-  rect(cx + 36, cy, 5, bodyH - 48, 4);
+  jdFill(
+    "wood",
+    252 *
+    visibility
+  );
 
+  rect(
+    cx,
+    cy,
+    bodyW - 8,
+    bodyH - 8,
+    20
+  );
+
+  jdFill(
+    "wallShade",
+    34 *
+    visibility
+  );
+
+  rect(
+    cx - 36,
+    cy,
+    7,
+    bodyH - 44,
+    4
+  );
+
+  jdFill(
+    "highlight",
+    28 *
+    visibility
+  );
+
+  rect(
+    cx + 36,
+    cy,
+    5,
+    bodyH - 48,
+    4
+  );
+
+  // --------------------------------
   // KISSA FORTUNE札
-  const signY = cy + 72;
+  // --------------------------------
 
-  jdFill("redDeep", 242);
-  rect(cx, signY, 118, 26, 10);
+  const signY =
+    cy + 72;
 
-  jdFill("gold", 220 + 20 * blink);
-  ellipse(cx - 46, signY, 6, 6);
-  ellipse(cx + 46, signY, 6, 6);
+  jdFill(
+    "redDeep",
+    242 *
+    visibility
+  );
 
-  jdFill("paper", 250);
-  font("Courier-Bold");
+  rect(
+    cx,
+    signY,
+    118,
+    26,
+    10
+  );
+
+  jdFill(
+    "gold",
+    (
+      220 +
+      20 *
+      blink
+    ) *
+    visibility
+  );
+
+  ellipse(
+    cx - 46,
+    signY,
+    6,
+    6
+  );
+
+  ellipse(
+    cx + 46,
+    signY,
+    6,
+    6
+  );
+
+  jdFill(
+    "paper",
+    250 *
+    visibility
+  );
+
+  font(
+    "Courier-Bold"
+  );
+
   fontSize(10);
-  text(jdT("fortune.title"), cx, signY + 1);
 
+  text(
+    jdT(
+      "fortune.title",
+      "KISSA FORTUNE"
+    ),
+    cx,
+    signY + 1
+  );
+
+  // --------------------------------
   // ルーレット
-  const wheelCy = cy - 4;
+  // --------------------------------
 
-  jdFill("uiPanel", 255);
-  ellipse(cx, wheelCy, 96, 96);
+  const wheelCy =
+    cy - 4;
 
-  jdFill("gold", 248);
-  ellipse(cx, wheelCy, 82, 82);
+  jdFill(
+    "uiPanel",
+    255 *
+    visibility
+  );
 
-  jdFill("cream", 248);
-  ellipse(cx, wheelCy, 68, 68);
+  ellipse(
+    cx,
+    wheelCy,
+    96,
+    96
+  );
 
-  jdFill("paper", 36);
-  ellipse(cx - 7, wheelCy + 9, 17, 44);
+  jdFill(
+    "gold",
+    248 *
+    visibility
+  );
+
+  ellipse(
+    cx,
+    wheelCy,
+    82,
+    82
+  );
+
+  jdFill(
+    "cream",
+    248 *
+    visibility
+  );
+
+  ellipse(
+    cx,
+    wheelCy,
+    68,
+    68
+  );
+
+  jdFill(
+    "paper",
+    36 *
+    visibility
+  );
+
+  ellipse(
+    cx - 7,
+    wheelCy + 9,
+    17,
+    44
+  );
 
   pushMatrix();
-  translate(cx, wheelCy);
-  rotate(wheelRot);
 
-  jdStroke("woodDark", 112);
+  translate(
+    cx,
+    wheelCy
+  );
+
+  rotate(
+    wheelRot
+  );
+
+  jdStroke(
+    "woodDark",
+    112 *
+    visibility
+  );
+
   strokeWidth(1.8);
 
-  for (let i = 0; i < 6; i++) {
-    const a = (i * 60 - 90) * Math.PI / 180;
+  for (
+    let i = 0;
+    i < 6;
+    i++
+  ) {
+    const a =
+      (
+        i *
+        60 -
+        90
+      ) *
+      Math.PI /
+      180;
 
     line(
       0,
       0,
-      Math.cos(a) * 34,
-      Math.sin(a) * 34
+      Math.cos(a) *
+      34,
+      Math.sin(a) *
+      34
     );
   }
 
   noStroke();
-  jdFill("ink", 218);
-  font("Courier-Bold");
+
+  jdFill(
+    "ink",
+    218 *
+    visibility
+  );
+
+  font(
+    "Courier-Bold"
+  );
+
   fontSize(7.2);
 
   const labels = [
@@ -5438,88 +5877,156 @@ function jdDrawFortuneMachine() {
     "LUCK"
   ];
 
-  for (let i = 0; i < labels.length; i++) {
-    const a = (i * 60 - 60) * Math.PI / 180;
+  for (
+    let i = 0;
+    i < labels.length;
+    i++
+  ) {
+    const a =
+      (
+        i *
+        60 -
+        60
+      ) *
+      Math.PI /
+      180;
 
     text(
       labels[i],
-      Math.cos(a) * 22,
-      Math.sin(a) * 22 - 1
+      Math.cos(a) *
+      22,
+      Math.sin(a) *
+      22 -
+      1
     );
   }
 
   popMatrix();
 
   // 固定ポインタ
-  jdStroke("red", 250);
+  jdStroke(
+    "red",
+    250 *
+    visibility
+  );
+
   strokeWidth(4);
-  line(cx, wheelCy + 44, cx, wheelCy + 34);
+
+  line(
+    cx,
+    wheelCy + 44,
+    cx,
+    wheelCy + 34
+  );
 
   noStroke();
-  jdFill("red", 250);
-  ellipse(cx, wheelCy + 43, 7, 7);
 
-  jdFill("woodDark", 255);
-  ellipse(cx, wheelCy, 9, 9);
+  jdFill(
+    "red",
+    250 *
+    visibility
+  );
 
+  ellipse(
+    cx,
+    wheelCy + 43,
+    7,
+    7
+  );
+
+  jdFill(
+    "woodDark",
+    255 *
+    visibility
+  );
+
+  ellipse(
+    cx,
+    wheelCy,
+    9,
+    9
+  );
+
+  // 回転中は結果札を出さない
   if (
-    visibility < 1
+    active
   ) {
-    jdFill(
-      "wall",
-      (
-        1 -
-        visibility
-      ) * 190
-    );
-
-    rect(
-      cx,
-      cy,
-      174,
-      246,
-      24
-    );
-  }
-
-  // 回転中は結果札を表示しない
-  if (active) {
     popMatrix();
     return;
   }
 
+  // --------------------------------
+  // 確定素材名
+  // --------------------------------
+
   const showName =
     JD.fortuneDisplayName ||
-    (JD.food ? JD.food.name : "CHERRY");
+    (
+      JD.food
+        ? JD.food.name
+        : "CHERRY"
+    );
 
-  const nameLength = showName.length;
+  const nameLength =
+    showName.length;
 
-  // 文字数に応じて枠幅を調整
-  const paperW = jdClamp(
-    44 + nameLength * 8.2,
-    94,
-    bodyW - 18
-  );
+  const paperW =
+    jdClamp(
+      44 +
+      nameLength *
+      8.2,
+      94,
+      bodyW - 18
+    );
 
-  const paperH = 32;
+  const paperH =
+    32;
 
-  // 木製本体内に収めつつ、ルーレットの少し下に配置
-  const paperY = cy - 72;
+  const paperY =
+    cy - 72;
 
-  let nameSize = 17;
+  let nameSize =
+    17;
 
-  if (nameLength >= 10) {
+  if (
+    nameLength >= 10
+  ) {
     nameSize = 14;
-  } else if (nameLength >= 8) {
+
+  } else if (
+    nameLength >= 8
+  ) {
     nameSize = 15;
   }
 
-  jdFill("paper", 252);
-  rect(cx, paperY, paperW, paperH, 9);
+  jdFill(
+    "paper",
+    252 *
+    visibility
+  );
 
-  jdFill("redDeep", 230);
-  font("Courier-Bold");
-  fontSize(nameSize);
+  rect(
+    cx,
+    paperY,
+    paperW,
+    paperH,
+    9
+  );
+
+  jdFill(
+    "redDeep",
+    230 *
+    visibility
+  );
+
+  font(
+    "Courier-Bold"
+  );
+
+  fontSize(
+    nameSize
+  );
+
   text(
     showName,
     cx,
@@ -5528,6 +6035,7 @@ function jdDrawFortuneMachine() {
 
   popMatrix();
 }
+
 
 
 
