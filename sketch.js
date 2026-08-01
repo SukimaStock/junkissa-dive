@@ -1687,7 +1687,7 @@ function jdCompleteFortuneSpin() {
   ) {
     jdStartAimTutorial();
   }
-
+}
 
 
 function jdUpdateFortune(dt) {
