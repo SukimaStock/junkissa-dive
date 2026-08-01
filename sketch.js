@@ -19,12 +19,20 @@ const PHASE_RESULT = "RESULT";
 function setup() {
   JD.LOGICAL_W = 360;
   JD.LOGICAL_H = 640;
+
   jdInitText();
   jdInitVisualTheme();
   jdReadWebOptions();
   jdInstallRuntimeErrorHandlers();
   jdResetAll();
+
+  // アプリを開いて最初の1投目だけ表示
+  JD.tutorialSeen = false;
+  JD.tutorialActive = false;
+  JD.tutorialTimer = 0;
+  JD.tutorialDuration = 2.85;
 }
+
 
 
 function draw() {
@@ -318,6 +326,15 @@ function touched(touch) {
         PHASE_FORTUNE
       ) {
         return;
+      }
+
+      // チュートリアルを待たずに触ったプレイヤーは、
+      // そのタッチからすぐ通常操作へ入れる。
+      if (
+        JD.tutorialActive &&
+        touch.state === BEGAN
+      ) {
+        jdStopAimTutorial(true);
       }
 
       if (
@@ -1317,6 +1334,11 @@ function jdResetShift() {
   // 素材札の登場演出
   JD.itemTicketTimer = 0;
 
+  // 再シフトではチュートリアルを再表示しない。
+  // tutorialSeenはsetup時から維持する。
+  JD.tutorialActive = false;
+  JD.tutorialTimer = 0;
+
   // ==================================================
   // Fortune
   // ==================================================
@@ -1657,7 +1679,14 @@ function jdCompleteFortuneSpin() {
   );
 
   jdSetCameraClose(false);
-}
+
+  // 最初の1投目のみ。
+  // 再シフト時はtutorialSeenが維持されるため表示されない。
+  if (
+    !JD.tutorialSeen
+  ) {
+    jdStartAimTutorial();
+  }
 
 
 
@@ -1800,6 +1829,8 @@ function jdUpdatePlay(dt) {
 
     return;
   }
+
+  jdUpdateAimTutorial(dt);
 
   jdUpdateParticles(dt);
   jdUpdateFloatTexts(dt);
@@ -4631,8 +4662,46 @@ function jdDrawWorld() {
   jdDrawLauncher();
   jdDrawLauncherItemTicket();
 
-  let fx = JD.food ? JD.food.x : JD.launcher.x;
-  let fy = JD.food ? JD.food.y : JD.launcher.y;
+  let fx =
+    JD.food
+      ? JD.food.x
+      : JD.launcher.x;
+
+  let fy =
+    JD.food
+      ? JD.food.y
+      : JD.launcher.y;
+
+  // チュートリアルでは実際の食材座標を変更せず、
+  // 描画位置だけを仮想的に動かす。
+  if (
+    JD.tutorialActive &&
+    JD.food &&
+    !JD.food.launched &&
+    !JD.food.resolved &&
+    !JD.dragging
+  ) {
+    const tutorialPose =
+      jdAimTutorialPose();
+
+    fx =
+      tutorialPose.x;
+
+    fy =
+      tutorialPose.y;
+  }
+
+  // 仮想素材へ向けたゴム・案内を先に描画
+  if (
+    JD.tutorialActive &&
+    JD.food &&
+    !JD.dragging
+  ) {
+    jdDrawAimTutorialWorld(
+      fx,
+      fy
+    );
+  }
 
   if (JD.dragging && JD.food && !JD.food.launched && !JD.food.resolved) {
     const pull = jdGetScreenPull();
@@ -4762,29 +4831,75 @@ function jdDrawWorld() {
             3
           );
 
-        // 0.72 → 1.08 → 1.00
-        // 派手に跳ねず、最後だけ軽く「ポン」と収まる。
-        const popEase =
-          1 +
-          2.35 *
-          Math.pow(
-            appearT - 1,
-            3
-          ) +
-          1.35 *
-          Math.pow(
-            appearT - 1,
-            2
-          );
+        // 0.70 → 1.12 → 1.00
+        // 前半で少し大きく膨らみ、
+        // 後半で柔らかく通常サイズへ戻る。
+        let popScale;
+
+        if (
+          appearT <
+          0.68
+        ) {
+          const growT =
+            jdClamp(
+              appearT /
+              0.68,
+              0,
+              1
+            );
+
+          const growEase =
+            1 -
+            Math.pow(
+              1 -
+              growT,
+              3
+            );
+
+          popScale =
+            0.70 +
+            (
+              1.12 -
+              0.70
+            ) *
+            growEase;
+
+        } else {
+          const settleT =
+            jdClamp(
+              (
+                appearT -
+                0.68
+              ) /
+              0.32,
+              0,
+              1
+            );
+
+          const settleEase =
+            settleT *
+            settleT *
+            (
+              3 -
+              2 *
+              settleT
+            );
+
+          popScale =
+            1.12 +
+            (
+              1.00 -
+              1.12
+            ) *
+            settleEase;
+        }
 
         foodAlpha =
           255 *
           fadeEase;
 
         foodScale =
-          0.72 +
-          0.28 *
-          popEase;
+          popScale;
       }
 
       jdDrawFood(
@@ -5056,14 +5171,16 @@ function jdDrawCoffeeTarget(t) {
 
     const steamX =
       t.x -
-      12 +
-      i * 6 +
-      sway;
+      9 +
+      i * 4.5 +
+      sway *
+      0.72;
 
     const steamY =
       JD.tableY +
-      54 +
-      rise;
+      47 +
+      rise *
+      0.84;
 
     jdFill(
       "creamWarm",
@@ -5073,9 +5190,9 @@ function jdDrawCoffeeTarget(t) {
     ellipse(
       steamX,
       steamY,
-      11 +
+      8 +
       progress * 10,
-      7 +
+      5 +
       progress * 7
     );
 
@@ -6764,43 +6881,86 @@ function jdDrawParticles() {
       p.kind ===
       "steam"
     ) {
-      noFill();
+      // 線ではなく、薄い楕円を重ねたスチーム。
+      // カップの口元では密度があり、
+      // 上へ行くほど広がって透明になる。
+      noStroke();
 
-      stroke(
-        c.r,
-        c.g,
-        c.b,
-        alpha * 0.62
-      );
-
-      strokeWidth(
-        Math.max(
-          1.2,
-          p.size * 0.16
-        )
-      );
+      const age =
+        p.age ||
+        0;
 
       const sway =
         Math.sin(
+          age *
+          4.2 +
           (
-            p.age || 0
-          ) *
-          8 +
-          (
-            p.seed || 0
+            p.seed ||
+            0
           )
         ) *
-        p.size *
-        0.34;
+        (
+          1.5 +
+          (
+            1 -
+            life
+          ) *
+          3.5
+        );
 
-      line(
-        -sway * 0.35,
-        -p.size * 0.45,
-        sway,
-        p.size * 0.45
+      const spread =
+        1 -
+        life;
+
+      fill(
+        c.r,
+        c.g,
+        c.b,
+        alpha *
+        0.32
       );
 
-      noStroke();
+      ellipse(
+        sway,
+        0,
+        p.size *
+        (
+          0.58 +
+          spread *
+          0.70
+        ),
+        p.size *
+        (
+          0.34 +
+          spread *
+          0.45
+        )
+      );
+
+      fill(
+        255,
+        248,
+        229,
+        alpha *
+        0.16
+      );
+
+      ellipse(
+        sway - 1.5,
+        1,
+        p.size *
+        (
+          0.34 +
+          spread *
+          0.44
+        ),
+        p.size *
+        (
+          0.20 +
+          spread *
+          0.28
+        )
+      );
 
     // --------------------------------
     // ケーキの粉糖
@@ -6997,54 +7157,55 @@ function jdSpawnSplash(
 
     for (
       let i = 0;
-      i < 7;
+      i < 9;
       i++
     ) {
       JD.particles.push({
         kind: "steam",
 
+        // カップの飲み口付近へ集中させる
         x:
           x -
-          13 +
+          9 +
           Math.random() *
-          26,
+          18,
 
         y:
           y +
-          4 +
+          1 +
+          Math.random() *
+          4,
+
+        vx:
+          -4 +
           Math.random() *
           8,
 
-        vx:
-          -7 +
-          Math.random() *
-          14,
-
         vy:
-          30 +
+          22 +
           Math.random() *
-          32,
+          27,
 
         gravity:
           0,
 
         drag:
-          0.982,
+          0.986,
 
         life:
-          0.70 +
+          0.72 +
           Math.random() *
-          0.24,
+          0.23,
 
         decay:
-          0.68 +
+          0.64 +
           Math.random() *
-          0.22,
+          0.18,
 
         size:
-          12 +
+          10 +
           Math.random() *
-          10,
+          8,
 
         age: 0,
 
@@ -7528,16 +7689,12 @@ function jdDrawLauncherItemTicket() {
   const lineStartX =
     x +
     ticketW / 2 -
-    13;
+    12;
 
   const lineStartY =
     y -
     ticketH / 2 +
-    7;
-
-  const elbowY =
-    targetY +
-    18;
+    6;
 
   rectMode(CENTER);
   ellipseMode(CENTER);
@@ -7560,20 +7717,6 @@ function jdDrawLauncherItemTicket() {
   line(
     lineStartX,
     lineStartY,
-    lineStartX,
-    elbowY
-  );
-
-  line(
-    lineStartX,
-    elbowY,
-    targetX,
-    elbowY
-  );
-
-  line(
-    targetX,
-    elbowY,
     targetX,
     targetY
   );
@@ -7613,22 +7756,65 @@ function jdDrawLauncherItemTicket() {
   // わずかに拡大しながら現れる。
   // --------------------------------
 
-  const ticketPop =
-    0.88 +
-    0.12 *
-    (
-      1 +
-      2.35 *
+  let ticketPop;
+
+  if (
+    appearT <
+    0.68
+  ) {
+    const growT =
+      jdClamp(
+        appearT /
+        0.68,
+        0,
+        1
+      );
+
+    const growEase =
+      1 -
       Math.pow(
-        appearT - 1,
+        1 -
+        growT,
         3
-      ) +
-      1.35 *
-      Math.pow(
-        appearT - 1,
-        2
-      )
-    );
+      );
+
+    ticketPop =
+      0.86 +
+      (
+        1.065 -
+        0.86
+      ) *
+      growEase;
+
+  } else {
+    const settleT =
+      jdClamp(
+        (
+          appearT -
+          0.68
+        ) /
+        0.32,
+        0,
+        1
+      );
+
+    const settleEase =
+      settleT *
+      settleT *
+      (
+        3 -
+        2 *
+        settleT
+      );
+
+    ticketPop =
+      1.065 +
+      (
+        1.00 -
+        1.065
+      ) *
+      settleEase;
+  }
 
   pushMatrix();
 
@@ -7730,6 +7916,523 @@ function jdDrawLauncherItemTicket() {
 
   noStroke();
 }
+
+function jdStartAimTutorial() {
+  if (
+    JD.tutorialSeen ||
+    !JD.food ||
+    JD.food.launched ||
+    JD.food.resolved
+  ) {
+    return;
+  }
+
+  JD.tutorialActive = true;
+  JD.tutorialTimer = 0;
+  JD.tutorialDuration = 2.85;
+}
+
+function jdStopAimTutorial(markSeen = true) {
+  JD.tutorialActive = false;
+  JD.tutorialTimer = 0;
+
+  if (
+    markSeen
+  ) {
+    JD.tutorialSeen = true;
+  }
+}
+
+function jdUpdateAimTutorial(dt) {
+  if (
+    !JD.tutorialActive
+  ) {
+    return;
+  }
+
+  if (
+    !JD.food ||
+    JD.food.launched ||
+    JD.food.resolved ||
+    JD.dragging ||
+    JD.gamePhase !== PHASE_AIM
+  ) {
+    jdStopAimTutorial(true);
+    return;
+  }
+
+  JD.tutorialTimer +=
+    dt;
+
+  const duration =
+    Number.isFinite(
+      JD.tutorialDuration
+    )
+      ? JD.tutorialDuration
+      : 2.85;
+
+  if (
+    JD.tutorialTimer >=
+    duration
+  ) {
+    jdStopAimTutorial(true);
+  }
+}
+
+function jdAimTutorialPose() {
+  const timer =
+    JD.tutorialTimer || 0;
+
+  const anchorX =
+    JD.launcher.x;
+
+  const anchorY =
+    JD.launcher.y;
+
+  let x =
+    anchorX;
+
+  let y =
+    anchorY;
+
+  let pullProgress = 0;
+  let returnProgress = 0;
+  let stage = "tap";
+
+  // --------------------------------
+  // 0.00〜0.62秒
+  // タップ
+  // --------------------------------
+
+  if (
+    timer < 0.62
+  ) {
+    stage = "tap";
+
+  // --------------------------------
+  // 0.62〜1.55秒
+  // 左下へ引っ張る
+  // --------------------------------
+
+  } else if (
+    timer < 1.55
+  ) {
+    stage = "pull";
+
+    const t =
+      jdClamp(
+        (
+          timer -
+          0.62
+        ) /
+        0.93,
+        0,
+        1
+      );
+
+    pullProgress =
+      t *
+      t *
+      (
+        3 -
+        2 * t
+      );
+
+  // --------------------------------
+  // 1.55〜1.92秒
+  // 引いた状態で「はなす」
+  // --------------------------------
+
+  } else if (
+    timer < 1.92
+  ) {
+    stage = "release";
+    pullProgress = 1;
+
+  // --------------------------------
+  // 1.92〜2.65秒
+  // 元の位置へ戻る
+  // --------------------------------
+
+  } else {
+    stage = "return";
+
+    const t =
+      jdClamp(
+        (
+          timer -
+          1.92
+        ) /
+        0.73,
+        0,
+        1
+      );
+
+    returnProgress =
+      1 -
+      Math.pow(
+        1 - t,
+        3
+      );
+
+    pullProgress =
+      1 -
+      returnProgress;
+  }
+
+  // 正解の角度を教えすぎない、
+  // 小さな左下方向のデモに留める
+  x =
+    anchorX -
+    32 *
+    pullProgress;
+
+  y =
+    anchorY -
+    25 *
+    pullProgress;
+
+  return {
+    x,
+    y,
+    stage,
+    pullProgress,
+    returnProgress
+  };
+}
+
+function jdDrawAimTutorialWorld(
+  foodX,
+  foodY
+) {
+  if (
+    !JD.tutorialActive ||
+    !JD.food ||
+    JD.dragging
+  ) {
+    return;
+  }
+
+  const pose =
+    jdAimTutorialPose();
+
+  const timer =
+    JD.tutorialTimer || 0;
+
+  const anchorX =
+    JD.launcher.x + 20;
+
+  const upperAnchorY =
+    JD.launcher.y + 18;
+
+  const lowerAnchorY =
+    JD.launcher.y - 18;
+
+  rectMode(CENTER);
+  ellipseMode(CENTER);
+  textAlign(CENTER);
+
+  // ==================================================
+  // タップ波紋
+  // ==================================================
+
+  if (
+    pose.stage === "tap"
+  ) {
+    const tapT =
+      jdClamp(
+        timer / 0.62,
+        0,
+        1
+      );
+
+    const ringT =
+      (
+        tapT * 1.45
+      ) % 1;
+
+    noFill();
+
+    jdStroke(
+      "creamWarm",
+      175 *
+      (
+        1 -
+        ringT
+      )
+    );
+
+    strokeWidth(2);
+
+    ellipse(
+      foodX,
+      foodY,
+      24 +
+      ringT * 30,
+      24 +
+      ringT * 30
+    );
+
+    noStroke();
+
+    jdFill(
+      "paper",
+      225 *
+      Math.sin(
+        tapT *
+        Math.PI
+      )
+    );
+
+    rect(
+      foodX,
+      foodY + 45,
+      68,
+      25,
+      13
+    );
+
+    jdFill(
+      "ink",
+      235 *
+      Math.sin(
+        tapT *
+        Math.PI
+      )
+    );
+
+    font(
+      '"Hiragino Mincho ProN", "Yu Mincho", serif'
+    );
+
+    fontSize(11);
+
+    text(
+      "タップ",
+      foodX,
+      foodY + 45
+    );
+  }
+
+  // ==================================================
+  // ゴム
+  // 引っ張り開始後だけ表示
+  // ==================================================
+
+  if (
+    pose.pullProgress > 0.01
+  ) {
+    jdStroke(
+      "redDeep",
+      215
+    );
+
+    strokeWidth(5);
+
+    line(
+      anchorX,
+      upperAnchorY,
+      foodX + 3,
+      foodY + 5
+    );
+
+    line(
+      anchorX,
+      lowerAnchorY,
+      foodX + 3,
+      foodY - 5
+    );
+
+    jdStroke(
+      "red",
+      125
+    );
+
+    strokeWidth(1.4);
+
+    line(
+      anchorX,
+      upperAnchorY + 1,
+      foodX + 3,
+      foodY + 6
+    );
+
+    line(
+      anchorX,
+      lowerAnchorY + 1,
+      foodX + 3,
+      foodY - 4
+    );
+
+    noStroke();
+  }
+
+  // ==================================================
+  // ひっぱる
+  // ==================================================
+
+  if (
+    pose.stage === "pull"
+  ) {
+    const alpha =
+      Math.sin(
+        jdClamp(
+          (
+            timer -
+            0.62
+          ) /
+          0.93,
+          0,
+          1
+        ) *
+        Math.PI
+      );
+
+    jdFill(
+      "paper",
+      225 * alpha
+    );
+
+    rect(
+      foodX - 3,
+      foodY + 47,
+      82,
+      25,
+      13
+    );
+
+    jdFill(
+      "ink",
+      235 * alpha
+    );
+
+    font(
+      '"Hiragino Mincho ProN", "Yu Mincho", serif'
+    );
+
+    fontSize(11);
+
+    text(
+      "ひっぱる",
+      foodX - 3,
+      foodY + 47
+    );
+
+    // 動かす方向を示す短い点線
+    for (
+      let i = 0;
+      i < 3;
+      i++
+    ) {
+      const p =
+        (
+          i + 1
+        ) / 4;
+
+      jdFill(
+        "creamWarm",
+        135 *
+        (
+          1 -
+          p * 0.45
+        )
+      );
+
+      ellipse(
+        JD.launcher.x -
+        32 *
+        p,
+        JD.launcher.y -
+        25 *
+        p,
+        4 -
+        p
+      );
+    }
+  }
+
+  // ==================================================
+  // はなす
+  // ==================================================
+
+  if (
+    pose.stage === "release"
+  ) {
+    const releaseT =
+      jdClamp(
+        (
+          timer -
+          1.55
+        ) /
+        0.37,
+        0,
+        1
+      );
+
+    const pulse =
+      Math.sin(
+        releaseT *
+        Math.PI
+      );
+
+    noFill();
+
+    jdStroke(
+      "creamWarm",
+      190 *
+      pulse
+    );
+
+    strokeWidth(2.5);
+
+    ellipse(
+      foodX,
+      foodY,
+      30 +
+      releaseT * 18,
+      30 +
+      releaseT * 18
+    );
+
+    noStroke();
+
+    jdFill(
+      "paper",
+      235 *
+      pulse
+    );
+
+    rect(
+      foodX,
+      foodY + 48,
+      72,
+      26,
+      13
+    );
+
+    jdFill(
+      "redDeep",
+      240 *
+      pulse
+    );
+
+    font(
+      '"Hiragino Mincho ProN", "Yu Mincho", serif'
+    );
+
+    fontSize(11);
+
+    text(
+      "はなす",
+      foodX,
+      foodY + 48
+    );
+  }
+
+  noStroke();
+  rectMode(CORNER);
+}
+
 
 
 
