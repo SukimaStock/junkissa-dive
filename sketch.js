@@ -3733,8 +3733,23 @@ function jdDrawCafeWideBackdrop() {
     84
   );
 
-  // 遠くの灯りを少数だけ置く
-  fill(235, 198, 120, 150);
+  // 遠くの灯りを少数だけ置く。
+  // 同時に点滅させず、長い周期でごく小さく呼吸させる。
+  const warmWindowPulse =
+    142 +
+    Math.sin(
+      ElapsedTime * 0.43
+    ) * 10 +
+    Math.sin(
+      ElapsedTime * 0.17 + 1.8
+    ) * 5;
+
+  fill(
+    235,
+    198,
+    120,
+    warmWindowPulse
+  );
 
   rect(
     windowX + 82,
@@ -3768,7 +3783,21 @@ function jdDrawCafeWideBackdrop() {
     1
   );
 
-  fill(178, 211, 199, 95);
+  const coolWindowPulse =
+    90 +
+    Math.sin(
+      ElapsedTime * 0.31 + 2.4
+    ) * 8 +
+    Math.sin(
+      ElapsedTime * 0.12
+    ) * 4;
+
+  fill(
+    178,
+    211,
+    199,
+    coolWindowPulse
+  );
 
   rect(
     windowX + 41,
@@ -3862,21 +3891,136 @@ function jdDrawCafeWideBackdrop() {
     74
   );
 
-  jdStroke("ink", 190);
-  strokeWidth(3);
+  // 現在時刻を使うため、タイトルから結果画面まで
+  // 同じ店の時間が途切れずに進む。
+  let clockHour = 10;
+  let clockMinute = 8;
+  let clockSecond = 0;
+  let clockMillis = 0;
 
-  line(
-    clockX,
-    clockY,
-    clockX - 4,
-    clockY + 25
+  try {
+    const clockNow =
+      new Date();
+
+    clockHour =
+      clockNow.getHours() % 12;
+
+    clockMinute =
+      clockNow.getMinutes();
+
+    clockSecond =
+      clockNow.getSeconds();
+
+    clockMillis =
+      clockNow.getMilliseconds();
+
+  } catch (_error) {
+    // 時刻取得に失敗した場合は初期値を使用
+  }
+
+  const smoothSecond =
+    clockSecond +
+    clockMillis / 1000;
+
+  const smoothMinute =
+    clockMinute +
+    smoothSecond / 60;
+
+  const smoothHour =
+    clockHour +
+    smoothMinute / 60;
+
+  const hourAngle =
+    Math.PI / 2 -
+    (
+      smoothHour / 12
+    ) *
+    Math.PI *
+    2;
+
+  const minuteAngle =
+    Math.PI / 2 -
+    (
+      smoothMinute / 60
+    ) *
+    Math.PI *
+    2;
+
+  const secondAngle =
+    Math.PI / 2 -
+    (
+      smoothSecond / 60
+    ) *
+    Math.PI *
+    2;
+
+  // 時針
+  jdStroke(
+    "ink",
+    205
   );
 
+  strokeWidth(4);
+
   line(
     clockX,
     clockY,
-    clockX + 20,
-    clockY + 8
+    clockX +
+    Math.cos(
+      hourAngle
+    ) * 18,
+    clockY +
+    Math.sin(
+      hourAngle
+    ) * 18
+  );
+
+  // 分針
+  jdStroke(
+    "ink",
+    190
+  );
+
+  strokeWidth(2.8);
+
+  line(
+    clockX,
+    clockY,
+    clockX +
+    Math.cos(
+      minuteAngle
+    ) * 27,
+    clockY +
+    Math.sin(
+      minuteAngle
+    ) * 27
+  );
+
+  // 秒針は主張しすぎない細い赤茶色
+  jdStroke(
+    "redDeep",
+    145
+  );
+
+  strokeWidth(1.2);
+
+  line(
+    clockX -
+    Math.cos(
+      secondAngle
+    ) * 5,
+    clockY -
+    Math.sin(
+      secondAngle
+    ) * 5,
+    clockX +
+    Math.cos(
+      secondAngle
+    ) * 29,
+    clockY +
+    Math.sin(
+      secondAngle
+    ) * 29
   );
 
   strokeWidth(2);
@@ -4691,12 +4835,95 @@ function jdDrawCoffeeTarget(t) {
 
   // コーヒー面の反射も左上へ統一
   jdFill("coffeeLight", 42);
+
   ellipse(
     t.x - 9,
     JD.tableY + 44,
     20,
     3.5
   );
+
+  // -----------------------------------------------
+  // 動くポストカード用の常時湯気
+  //
+  // 短いループを見せるのではなく、
+  // 周期の違う3本を重ねて「店の空気」に見せる。
+  // -----------------------------------------------
+
+  noFill();
+
+  const steamBaseY =
+    JD.tableY + 52;
+
+  const steamFade =
+    78 +
+    Math.sin(
+      ElapsedTime * 0.56
+    ) * 10;
+
+  for (
+    let i = 0;
+    i < 3;
+    i++
+  ) {
+    const phase =
+      ElapsedTime *
+      (
+        0.72 +
+        i * 0.11
+      ) +
+      i * 2.15;
+
+    const baseX =
+      t.x -
+      15 +
+      i * 15;
+
+    const lowerSway =
+      Math.sin(
+        phase
+      ) * 1.4;
+
+    const middleSway =
+      Math.sin(
+        phase + 0.9
+      ) * 3.0;
+
+    const upperSway =
+      Math.sin(
+        phase + 1.8
+      ) * 4.3;
+
+    jdStroke(
+      "creamWarm",
+      steamFade -
+      i * 10
+    );
+
+    strokeWidth(
+      1.3
+    );
+
+    line(
+      baseX +
+      lowerSway,
+      steamBaseY,
+      baseX +
+      middleSway,
+      steamBaseY + 11
+    );
+
+    line(
+      baseX +
+      middleSway,
+      steamBaseY + 11,
+      baseX +
+      upperSway,
+      steamBaseY + 22
+    );
+  }
+
+  noStroke();
 }
 
 
