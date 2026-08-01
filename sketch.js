@@ -8280,83 +8280,8 @@ function jdDrawReceipt() {
       receiptEase
     );
 
-  // 印字時間を先に算出。
-  // THANK YOUが出たあとは完全に静止させる。
-  const receiptResultDelay =
-    0.22;
-
-  const receiptResultInterval =
-    0.27;
-
-  const receiptResultEnd =
-    receiptResultDelay +
-    JD.results.length *
-    receiptResultInterval;
-
-  const receiptTotalAt =
-    receiptResultEnd +
-    0.18;
-
-  const receiptRankAt =
-    receiptTotalAt +
-    0.38;
-
-  const receiptMemoAt =
-    receiptRankAt +
-    0.38;
-
-  const receiptThankYouAt =
-    receiptMemoAt +
-    0.42;
-
-  const receiptIsPrinting =
-    JD.receiptTimer >=
-      receiptResultDelay &&
-    JD.receiptTimer <
-      receiptThankYouAt +
-      0.12;
-
-  // 感熱プリンターの細かな送り。
-  // 大きく揺らさず、1px未満に抑える。
-  const receiptPrintJitterX =
-    receiptIsPrinting
-      ? Math.sin(
-          JD.receiptTimer *
-          47
-        ) *
-        0.34
-      : 0;
-
-  const receiptPrintJitterY =
-    receiptIsPrinting
-      ? Math.sin(
-          JD.receiptTimer *
-          73
-        ) *
-        0.42
-      : 0;
-
-  // 紙を置いた直後だけ少し傾き、
-  // 約0.7秒で水平へ戻る。
-  const receiptTiltT =
-    jdClamp(
-      JD.receiptTimer /
-      0.72,
-      0,
-      1
-    );
-
-  const receiptTilt =
-    (
-      1 -
-      receiptTiltT
-    ) *
-    Math.sin(
-      receiptTiltT *
-      Math.PI *
-      2.2
-    ) *
-    0.009;
+  // レシートは上から置かれたあとは動かさない。
+  // 印字中も紙本体は完全に静止させる。
 
   // ==================================================
   // ローカル関数：レシートの破線
@@ -8599,19 +8524,8 @@ function jdDrawReceipt() {
   pushMatrix();
 
   translate(
-    cx +
-    receiptPrintJitterX,
-    receiptOffsetY +
-    receiptPrintJitterY
-  );
-
-  rotate(
-    receiptTilt
-  );
-
-  translate(
-    -cx,
-    0
+    0,
+    receiptOffsetY
   );
 
   const paperW = 210;
