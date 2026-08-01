@@ -26,9 +26,10 @@ function setup() {
   jdInstallRuntimeErrorHandlers();
   jdResetAll();
 
-  // 表示スタイル
+  // 正式ビジュアルはポスターカラー版に固定。
+  // 端末に保存されている旧スタイル設定は使用しない。
   JD.visualStyle =
-    jdLoadVisualStyle();
+    "poster";
 
   JD.styleSettingsOpen =
     false;
@@ -221,51 +222,8 @@ function touched(touch) {
           ENDED &&
           !(JD.titleExitTimer > 0)
         ) {
-          // 設定画面を開いている場合
-          if (
-            JD.styleSettingsOpen
-          ) {
-            const selected =
-              jdStyleSettingsHit(
-                p.x,
-                p.y
-              );
-
-            if (
-              selected
-            ) {
-              jdSetVisualStyle(
-                selected
-              );
-
-              jdPlaySound(
-                "ticket"
-              );
-
-            } else {
-              JD.styleSettingsOpen =
-                false;
-            }
-
-            return;
-          }
-
-          // 右上の設定ボタン
-          if (
-            p.x >= 308 &&
-            p.x <= 350 &&
-            p.y >= 576 &&
-            p.y <= 620
-          ) {
-            JD.styleSettingsOpen =
-              true;
-
-            jdPlaySound(
-              "ticket"
-            );
-
-            return;
-          }
+          // 表示スタイル設定は廃止。
+          // ポスターカラー版を正式スタイルとして固定する。
 
           // 開店ボタン
           JD.titleExitDuration =
@@ -630,60 +588,32 @@ function jdVisualStyleNames() {
 }
 
 function jdLoadVisualStyle() {
-  if (
-    typeof localStorage ===
-    "undefined"
-  ) {
-    return "current";
-  }
-
-  try {
-    const saved =
-      localStorage.getItem(
-        "junkissa_visual_style"
-      );
-
-    const valid =
-      jdVisualStyleNames().some(
-        item =>
-          item.id === saved
-      );
-
-    return valid
-      ? saved
-      : "current";
-
-  } catch (_error) {
-    return "current";
-  }
+  return "poster";
 }
 
-function jdSetVisualStyle(styleId) {
-  const valid =
-    jdVisualStyleNames().some(
-      item =>
-        item.id === styleId
-    );
 
+function jdSetVisualStyle(_styleId) {
   JD.visualStyle =
-    valid
-      ? styleId
-      : "current";
+    "poster";
 
+  JD.styleSettingsOpen =
+    false;
+
+  // 以前の比較用設定が残らないよう削除する。
   if (
     typeof localStorage !==
     "undefined"
   ) {
     try {
-      localStorage.setItem(
-        "junkissa_visual_style",
-        JD.visualStyle
+      localStorage.removeItem(
+        "junkissa_visual_style"
       );
     } catch (_error) {
-      // 保存できなくても表示切り替えは続行
+      // 保存領域へアクセスできなくてもゲームは続行
     }
   }
 }
+
 
 function jdIsPosterStyle() {
   return (
@@ -1724,430 +1654,31 @@ function jdStyleAlpha(
 
 
 function jdDrawStyleSettingsButton() {
-  const x = 329;
-  const y = 598;
-  const size = 34;
-
-  rectMode(CENTER);
-  ellipseMode(CENTER);
-  noStroke();
-
-  jdFill(
-    "shadow",
-    34
-  );
-
-  rect(
-    x + 2,
-    y - 2,
-    size,
-    size,
-    12
-  );
-
-  jdFill(
-    "paper",
-    225
-  );
-
-  rect(
-    x,
-    y,
-    size,
-    size,
-    12
-  );
-
-  jdFill(
-    "ink",
-    210
-  );
-
-  // 歯車を簡素な喫茶店風ダイヤルとして描く
-  ellipse(
-    x,
-    y,
-    17,
-    17
-  );
-
-  jdFill(
-    "paper",
-    255
-  );
-
-  ellipse(
-    x,
-    y,
-    7,
-    7
-  );
-
-  jdStroke(
-    "ink",
-    185
-  );
-
-  strokeWidth(2);
-
-  for (
-    let i = 0;
-    i < 8;
-    i++
-  ) {
-    const a =
-      i *
-      Math.PI /
-      4;
-
-    line(
-      x +
-      Math.cos(a) *
-      9,
-      y +
-      Math.sin(a) *
-      9,
-      x +
-      Math.cos(a) *
-      13,
-      y +
-      Math.sin(a) *
-      13
-    );
-  }
-
-  noStroke();
-  rectMode(CORNER);
+  return;
 }
+
 
 function jdDrawStyleSample(
-  styleId,
-  x,
-  y
+  _styleId,
+  _x,
+  _y
 ) {
-  pushMatrix();
-
-  const previous =
-    JD.visualStyle;
-
-  JD.visualStyle =
-    styleId;
-
-  rectMode(CENTER);
-  noStroke();
-
-  jdFill("wall");
-  rect(
-    x,
-    y,
-    44,
-    25,
-    5
-  );
-
-  jdFill("tableFront");
-  rect(
-    x,
-    y - 7,
-    44,
-    10,
-    0
-  );
-
-  jdFill("paper");
-  ellipse(
-    x - 9,
-    y + 4,
-    12,
-    7
-  );
-
-  jdFill("redDeep");
-  ellipse(
-    x + 9,
-    y + 5,
-    8,
-    8
-  );
-
-  jdStroke(
-    "ink",
-    styleId === "fine"
-      ? 115
-      : 210
-  );
-
-  strokeWidth(
-    styleId === "bold"
-      ? 3
-      : styleId === "fine"
-        ? 1
-        : 1.7
-  );
-
-  line(
-    x - 18,
-    y - 1,
-    x + 18,
-    y - 1
-  );
-
-  noStroke();
-
-  JD.visualStyle =
-    previous;
-
-  popMatrix();
+  return;
 }
+
 
 function jdDrawStyleSettingsPanel() {
-  if (
-    !JD.styleSettingsOpen
-  ) {
-    return;
-  }
-
-  rectMode(CORNER);
-  noStroke();
-
-  // 全画面の薄いベール
-  fill(
-    27,
-    20,
-    18,
-    168
-  );
-
-  rect(
-    -10,
-    -10,
-    JD.LOGICAL_W + 20,
-    JD.LOGICAL_H + 20
-  );
-
-  const panelX = 38;
-  const panelY = 146;
-  const panelW = 284;
-  const panelH = 380;
-
-  jdFill(
-    "shadow",
-    70
-  );
-
-  rect(
-    panelX + 5,
-    panelY - 5,
-    panelW,
-    panelH,
-    14
-  );
-
-  jdFill(
-    "paper",
-    252
-  );
-
-  rect(
-    panelX,
-    panelY,
-    panelW,
-    panelH,
-    14
-  );
-
-  textAlign(CENTER);
-
-  jdFill(
-    "ink",
-    245
-  );
-
-  font(
-    '"Hiragino Maru Gothic ProN", ' +
-    '"Hiragino Kaku Gothic ProN", ' +
-    '"Yu Gothic", sans-serif'
-  );
-
-  fontSize(18);
-
-  text(
-    "表示スタイル",
-    JD.LOGICAL_W / 2,
-    492
-  );
-
-  jdFill(
-    "ink",
-    135
-  );
-
-  fontSize(9);
-
-  text(
-    "同じ喫茶店を、違うタッチで",
-    JD.LOGICAL_W / 2,
-    470
-  );
-
-  const styles =
-    jdVisualStyleNames();
-
-  const rowYs = [
-    418,
-    350,
-    282,
-    214
-  ];
-
-  for (
-    let i = 0;
-    i < styles.length;
-    i++
-  ) {
-    const item =
-      styles[i];
-
-    const y =
-      rowYs[i];
-
-    const selected =
-      JD.visualStyle ===
-      item.id;
-
-    if (
-      selected
-    ) {
-      jdFill(
-        "redDeep",
-        225
-      );
-
-    } else {
-      jdFill(
-        "cream",
-        210
-      );
-    }
-
-    rect(
-      58,
-      y - 26,
-      244,
-      54,
-      9
-    );
-
-    jdDrawStyleSample(
-      item.id,
-      88,
-      y
-    );
-
-    textAlign(LEFT);
-
-    if (
-      selected
-    ) {
-      jdFill(
-        "paper",
-        255
-      );
-
-    } else {
-      jdFill(
-        "ink",
-        235
-      );
-    }
-
-    fontSize(13);
-
-    text(
-      item.label,
-      120,
-      y + 7
-    );
-
-    if (
-      selected
-    ) {
-      jdFill(
-        "paper",
-        175
-      );
-
-    } else {
-      jdFill(
-        "ink",
-        125
-      );
-    }
-
-    fontSize(8);
-
-    text(
-      item.sub,
-      120,
-      y - 10
-    );
-  }
-
-  textAlign(CENTER);
-
-  jdFill(
-    "ink",
-    125
-  );
-
-  fontSize(9);
-
-  text(
-    "外側をタップして閉じる",
-    JD.LOGICAL_W / 2,
-    166
-  );
-
-  rectMode(CORNER);
+  return;
 }
+
 
 function jdStyleSettingsHit(
-  x,
-  y
+  _x,
+  _y
 ) {
-  if (
-    !JD.styleSettingsOpen
-  ) {
-    return null;
-  }
-
-  const styles =
-    jdVisualStyleNames();
-
-  const rowYs = [
-    418,
-    350,
-    282,
-    214
-  ];
-
-  for (
-    let i = 0;
-    i < rowYs.length;
-    i++
-  ) {
-    if (
-      x >= 58 &&
-      x <= 302 &&
-      y >= rowYs[i] - 27 &&
-      y <= rowYs[i] + 27
-    ) {
-      return styles[i].id;
-    }
-  }
-
   return null;
 }
+
 
 
 // =====================================================
