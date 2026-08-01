@@ -4646,134 +4646,12 @@ function jdDrawReceipt() {
     JD.LOGICAL_W / 2;
 
   // ==================================================
-  // 背景
+  // ローカル関数：レシートの破線
   // ==================================================
-
-  jdFill("posterBg");
-  rect(
-    0,
-    0,
-    JD.LOGICAL_W,
-    JD.LOGICAL_H
-  );
-
-  jdFill("posterBg2", 58);
-  rect(
-    0,
-    92,
-    JD.LOGICAL_W,
-    42
-  );
-
-  jdFill("tableTop");
-  rect(
-    0,
-    78,
-    JD.LOGICAL_W,
-    34
-  );
-
-  jdFill("tableLip");
-  rect(
-    0,
-    106,
-    JD.LOGICAL_W,
-    5
-  );
-
-  jdFill("tableStripe", 55);
-  rect(
-    0,
-    94,
-    JD.LOGICAL_W,
-    3
-  );
-
-  jdFill("tableFront");
-  rect(
-    0,
-    0,
-    JD.LOGICAL_W,
-    94
-  );
-
-  jdFill("tableStripe", 18);
-
-  for (
-    let x = 44;
-    x < JD.LOGICAL_W;
-    x += 92
-  ) {
-    rect(
-      x,
-      0,
-      3,
-      92
-    );
-  }
-
-  // ==================================================
-  // レシート本体
-  // 細幅・短め・高密度
-  // ==================================================
-
-  const paperW = 210;
-  const paperH = 330;
-
-  const paperX =
-    cx - paperW / 2;
-
-  const paperY = 190;
-
-  const paperTop =
-    paperY + paperH;
-
-  // 切り絵影
-  jdFill("shadow", 48);
-
-  rect(
-    paperX + 5,
-    paperY - 5,
-    paperW,
-    paperH,
-    3
-  );
-
-  // 感熱紙
-  jdFill("paper");
-
-  rect(
-    paperX,
-    paperY,
-    paperW,
-    paperH,
-    3
-  );
-
-  // 紙端
-  jdFill("wallShade", 24);
-
-  rect(
-    paperX + paperW - 3,
-    paperY + 4,
-    3,
-    paperH - 8
-  );
-
-  jdFill("highlight", 26);
-
-  rect(
-    paperX + 3,
-    paperY + 4,
-    2,
-    paperH - 8
-  );
-
-  // --------------------------------------------------
-  // 破線
-  // --------------------------------------------------
 
   function drawReceiptDash(
+    paperX,
+    paperW,
     y,
     alpha = 88
   ) {
@@ -4796,9 +4674,253 @@ function jdDrawReceipt() {
     }
   }
 
-  // --------------------------------------------------
+  // ==================================================
+  // ローカル関数：上下がギザギザの感熱紙
+  // ==================================================
+
+  function drawZigzagPaper(
+    x,
+    y,
+    w,
+    h,
+    fillKey,
+    alpha = 255,
+    offsetX = 0,
+    offsetY = 0
+  ) {
+    const toothW = 10;
+    const toothH = 5;
+
+    const left =
+      x + offsetX;
+
+    const bottom =
+      y + offsetY;
+
+    const right =
+      left + w;
+
+    const top =
+      bottom + h;
+
+    noStroke();
+
+    jdFill(
+      fillKey,
+      alpha
+    );
+
+    // 紙の中央
+    rect(
+      left,
+      bottom + toothH,
+      w,
+      h - toothH * 2
+    );
+
+    // 三角形の間に隙間が出ないよう接続
+    rect(
+      left,
+      bottom + toothH - 1,
+      w,
+      3
+    );
+
+    rect(
+      left,
+      top - toothH - 2,
+      w,
+      3
+    );
+
+    // 下端
+    for (
+      let px = left;
+      px < right;
+      px += toothW
+    ) {
+      const nextX =
+        Math.min(
+          px + toothW,
+          right
+        );
+
+      const middleX =
+        (
+          px +
+          nextX
+        ) / 2;
+
+      triangle(
+        px,
+        bottom + toothH,
+        middleX,
+        bottom,
+        nextX,
+        bottom + toothH
+      );
+    }
+
+    // 上端
+    for (
+      let px = left;
+      px < right;
+      px += toothW
+    ) {
+      const nextX =
+        Math.min(
+          px + toothW,
+          right
+        );
+
+      const middleX =
+        (
+          px +
+          nextX
+        ) / 2;
+
+      triangle(
+        px,
+        top - toothH,
+        middleX,
+        top,
+        nextX,
+        top - toothH
+      );
+    }
+  }
+
+  // ==================================================
+  // 背景：ゲーム中の純喫茶
+  // ==================================================
+
+  // カメラ外周
+  fill(
+    31,
+    23,
+    20
+  );
+
+  rect(
+    0,
+    0,
+    JD.LOGICAL_W,
+    JD.LOGICAL_H
+  );
+
+  pushMatrix();
+
+  // 終了時のカメラ状態に左右されない固定全景
+  translate(
+    JD.LOGICAL_W / 2,
+    292
+  );
+
+  scale(0.42);
+
+  translate(
+    -515,
+    -285
+  );
+
+  jdDrawCafeWideBackdrop();
+  jdDrawWorld();
+
+  popMatrix();
+
+  // 背景を少し静かにしてレシートを主役にする
+  fill(
+    55,
+    37,
+    28,
+    70
+  );
+
+  rect(
+    0,
+    0,
+    JD.LOGICAL_W,
+    JD.LOGICAL_H
+  );
+
+  // レシート背後の淡い照明
+  jdFill(
+    "creamWarm",
+    15
+  );
+
+  ellipse(
+    cx,
+    360,
+    286,
+    450
+  );
+
+  // ==================================================
+  // レシート本体
+  // ==================================================
+
+  const paperW = 210;
+  const paperH = 330;
+
+  const paperX =
+    cx - paperW / 2;
+
+  const paperY = 190;
+
+  const paperTop =
+    paperY + paperH;
+
+  // 同じギザギザ形状の影
+  drawZigzagPaper(
+    paperX,
+    paperY,
+    paperW,
+    paperH,
+    "shadow",
+    48,
+    5,
+    -5
+  );
+
+  // 感熱紙
+  drawZigzagPaper(
+    paperX,
+    paperY,
+    paperW,
+    paperH,
+    "paper",
+    255
+  );
+
+  // 紙端のわずかな陰
+  jdFill(
+    "wallShade",
+    24
+  );
+
+  rect(
+    paperX + paperW - 3,
+    paperY + 8,
+    3,
+    paperH - 16
+  );
+
+  jdFill(
+    "highlight",
+    26
+  );
+
+  rect(
+    paperX + 3,
+    paperY + 8,
+    2,
+    paperH - 16
+  );
+
+  // ==================================================
   // 日付
-  // --------------------------------------------------
+  // ==================================================
 
   let dateText =
     "20XX/XX/XX 00:00";
@@ -4848,7 +4970,7 @@ function jdDrawReceipt() {
       `${yyyy}/${mm}/${dd} ${hh}:${min}`;
 
   } catch (_error) {
-    // 初期値を使用
+    // 日付取得に失敗した場合は初期値
   }
 
   const receiptNo =
@@ -4868,8 +4990,15 @@ function jdDrawReceipt() {
 
   textAlign(CENTER);
 
-  jdFill("ink", 245);
-  font("Courier-Bold");
+  jdFill(
+    "ink",
+    245
+  );
+
+  font(
+    "Courier-Bold"
+  );
+
   fontSize(15.5);
 
   text(
@@ -4889,8 +5018,15 @@ function jdDrawReceipt() {
     paperTop - 33
   );
 
-  jdFill("ink", 165);
-  font("Courier");
+  jdFill(
+    "ink",
+    165
+  );
+
+  font(
+    "Courier"
+  );
+
   fontSize(7.5);
 
   text(
@@ -4900,13 +5036,23 @@ function jdDrawReceipt() {
   );
 
   drawReceiptDash(
+    paperX,
+    paperW,
     paperTop - 55
   );
 
   // 日時・番号
   textAlign(LEFT);
-  jdFill("ink", 215);
-  font("Courier");
+
+  jdFill(
+    "ink",
+    215
+  );
+
+  font(
+    "Courier"
+  );
+
   fontSize(8.8);
 
   text(
@@ -4930,12 +5076,13 @@ function jdDrawReceipt() {
   );
 
   drawReceiptDash(
+    paperX,
+    paperW,
     paperTop - 92
   );
 
   // ==================================================
   // 商品一覧
-  // 行間を極力削り、文字サイズを優先
   // ==================================================
 
   const resultDelay = 0.22;
@@ -4992,8 +5139,16 @@ function jdDrawReceipt() {
 
     // 番号
     textAlign(LEFT);
-    jdFill("ink", 182);
-    font("Courier");
+
+    jdFill(
+      "ink",
+      182
+    );
+
+    font(
+      "Courier"
+    );
+
     fontSize(8.5);
 
     text(
@@ -5015,6 +5170,7 @@ function jdDrawReceipt() {
         "redDeep",
         225
       );
+
     } else {
       jdFill(
         "ink",
@@ -5022,7 +5178,10 @@ function jdDrawReceipt() {
       );
     }
 
-    font("Courier-Bold");
+    font(
+      "Courier-Bold"
+    );
+
     fontSize(8);
 
     text(
@@ -5032,8 +5191,15 @@ function jdDrawReceipt() {
     );
 
     // 食材と着地点
-    jdFill("ink", 240);
-    font("Courier-Bold");
+    jdFill(
+      "ink",
+      240
+    );
+
+    font(
+      "Courier-Bold"
+    );
+
     fontSize(9.6);
 
     const itemText =
@@ -5053,7 +5219,11 @@ function jdDrawReceipt() {
 
     // 金額
     textAlign(RIGHT);
-    font("Courier-Bold");
+
+    font(
+      "Courier-Bold"
+    );
+
     fontSize(9.6);
 
     text(
@@ -5097,6 +5267,8 @@ function jdDrawReceipt() {
     totalAt
   ) {
     drawReceiptDash(
+      paperX,
+      paperW,
       listBottomY,
       100
     );
@@ -5113,8 +5285,16 @@ function jdDrawReceipt() {
       listBottomY - 16;
 
     textAlign(LEFT);
-    jdFill("ink", 242);
-    font("Courier-Bold");
+
+    jdFill(
+      "ink",
+      242
+    );
+
+    font(
+      "Courier-Bold"
+    );
+
     fontSize(11);
 
     text(
@@ -5127,8 +5307,16 @@ function jdDrawReceipt() {
     );
 
     textAlign(RIGHT);
-    jdFill("redDeep", 248);
-    font("Courier-Bold");
+
+    jdFill(
+      "redDeep",
+      248
+    );
+
+    font(
+      "Courier-Bold"
+    );
+
     fontSize(17);
 
     text(
@@ -5150,13 +5338,23 @@ function jdDrawReceipt() {
     rankAt
   ) {
     drawReceiptDash(
+      paperX,
+      paperW,
       rankLineY,
       84
     );
 
     textAlign(LEFT);
-    jdFill("ink", 180);
-    font("Courier");
+
+    jdFill(
+      "ink",
+      180
+    );
+
+    font(
+      "Courier"
+    );
+
     fontSize(8);
 
     text(
@@ -5169,8 +5367,16 @@ function jdDrawReceipt() {
     );
 
     textAlign(RIGHT);
-    jdFill("redDeep", 228);
-    font("Courier-Bold");
+
+    jdFill(
+      "redDeep",
+      228
+    );
+
+    font(
+      "Courier-Bold"
+    );
+
     fontSize(11);
 
     text(
@@ -5192,13 +5398,23 @@ function jdDrawReceipt() {
     memoAt
   ) {
     drawReceiptDash(
+      paperX,
+      paperW,
       memoLineY,
       78
     );
 
     textAlign(LEFT);
-    jdFill("ink", 180);
-    font("Courier");
+
+    jdFill(
+      "ink",
+      180
+    );
+
+    font(
+      "Courier"
+    );
+
     fontSize(8);
 
     text(
@@ -5224,8 +5440,15 @@ function jdDrawReceipt() {
         maxChars
       );
 
-    jdFill("ink", 220);
-    font("Courier");
+    jdFill(
+      "ink",
+      220
+    );
+
+    font(
+      "Courier"
+    );
+
     fontSize(9.2);
 
     text(
@@ -5234,7 +5457,9 @@ function jdDrawReceipt() {
       memoLineY - 25
     );
 
-    if (memoLine2) {
+    if (
+      memoLine2
+    ) {
       text(
         memoLine2,
         paperX + 9,
@@ -5245,7 +5470,6 @@ function jdDrawReceipt() {
 
   // ==================================================
   // フッター
-  // 店長メモのすぐ下へ詰める
   // ==================================================
 
   if (
@@ -5256,13 +5480,23 @@ function jdDrawReceipt() {
       memoLineY - 56;
 
     drawReceiptDash(
+      paperX,
+      paperW,
       footerDashY,
       70
     );
 
     textAlign(CENTER);
-    jdFill("ink", 175);
-    font("Courier");
+
+    jdFill(
+      "ink",
+      175
+    );
+
+    font(
+      "Courier"
+    );
+
     fontSize(8.5);
 
     text(
@@ -5300,7 +5534,10 @@ function jdDrawReceipt() {
         ElapsedTime * 4.2
       ) * 22;
 
-    jdFill("shadow", 34);
+    jdFill(
+      "shadow",
+      34
+    );
 
     rect(
       bx + 4,
@@ -5310,7 +5547,10 @@ function jdDrawReceipt() {
       6
     );
 
-    jdFill("paper", 242);
+    jdFill(
+      "paper",
+      242
+    );
 
     rect(
       bx,
@@ -5345,7 +5585,11 @@ function jdDrawReceipt() {
     );
 
     textAlign(CENTER);
-    font("Courier-Bold");
+
+    font(
+      "Courier-Bold"
+    );
+
     fontSize(12);
 
     text(
@@ -5360,6 +5604,7 @@ function jdDrawReceipt() {
     rectMode(CORNER);
   }
 }
+
 
 
 
