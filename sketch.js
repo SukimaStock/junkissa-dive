@@ -4713,12 +4713,121 @@ function jdDrawWorld() {
     jdDrawTrajectory(pull);
   }
 
-  if (JD.food) {
-    if (!(JD.food.resolved && JD.food.hideAfterResolve)) jdDrawFood(JD.food, fx, fy, 255, 1);
-    if (JD.food.resolved && JD.food.label) {
-      jdFill("highlight", 230);
-      font('Courier-Bold'); fontSize(23); textAlign(CENTER);
-      text(JD.food.label, JD.food.x, JD.food.y + 34);
+  if (
+    JD.food
+  ) {
+    if (
+      !(
+        JD.food.resolved &&
+        JD.food.hideAfterResolve
+      )
+    ) {
+      let foodAlpha =
+        255;
+
+      let foodScale =
+        1;
+
+      // Fortune退場後、発射台へ現れる素材だけを
+      // フェード＋小さなオーバーシュートで表示する。
+      if (
+        !JD.food.launched &&
+        !JD.food.resolved &&
+        !JD.dragging
+      ) {
+        const enterDuration =
+          JD.motion &&
+          Number.isFinite(
+            JD.motion.itemTicketEnter
+          )
+            ? JD.motion.itemTicketEnter
+            : 0.46;
+
+        const appearT =
+          jdClamp(
+            (
+              JD.itemTicketTimer ||
+              0
+            ) /
+            enterDuration,
+            0,
+            1
+          );
+
+        const fadeEase =
+          1 -
+          Math.pow(
+            1 -
+            appearT,
+            3
+          );
+
+        // 0.72 → 1.08 → 1.00
+        // 派手に跳ねず、最後だけ軽く「ポン」と収まる。
+        const popEase =
+          1 +
+          2.35 *
+          Math.pow(
+            appearT - 1,
+            3
+          ) +
+          1.35 *
+          Math.pow(
+            appearT - 1,
+            2
+          );
+
+        foodAlpha =
+          255 *
+          fadeEase;
+
+        foodScale =
+          0.72 +
+          0.28 *
+          popEase;
+      }
+
+      jdDrawFood(
+        JD.food,
+        fx,
+        fy,
+        foodAlpha,
+        foodScale
+      );
+    }
+
+    if (
+      JD.food.resolved &&
+      JD.food.label
+    ) {
+      jdFill(
+        "highlight",
+        230
+      );
+
+      font(
+        "Courier-Bold"
+      );
+
+      fontSize(23);
+      textAlign(CENTER);
+
+      // FLOORは食材や皿と重なりやすいため、
+      // カウンター前面の緑色部分へ表示する。
+      const resultLabelY =
+        JD.food.label ===
+        jdT(
+          "result.floor",
+          "FLOOR"
+        )
+          ? JD.tableY - 12
+          : JD.food.y + 34;
+
+      text(
+        JD.food.label,
+        JD.food.x,
+        resultLabelY
+      );
     }
   }
 
@@ -4780,7 +4889,11 @@ function jdDrawCoffeeTarget(t) {
   );
 
   // カップ本体
-  jdFill("creamWarm", 255);
+  jdFill(
+    "creamWarm",
+    255
+  );
+
   rect(
     t.x,
     JD.tableY + 29,
@@ -4790,7 +4903,11 @@ function jdDrawCoffeeTarget(t) {
   );
 
   // 左上の縦ハイライト
-  jdFill("highlight", 62);
+  jdFill(
+    "highlight",
+    62
+  );
+
   rect(
     t.x - 18,
     JD.tableY + 31,
@@ -4800,7 +4917,11 @@ function jdDrawCoffeeTarget(t) {
   );
 
   // 取っ手
-  jdFill("creamWarm", 240);
+  jdFill(
+    "creamWarm",
+    240
+  );
+
   ellipse(
     t.x + 35,
     JD.tableY + 28,
@@ -4808,7 +4929,11 @@ function jdDrawCoffeeTarget(t) {
     25
   );
 
-  jdFill("wall", 255);
+  jdFill(
+    "wall",
+    255
+  );
+
   ellipse(
     t.x + 35,
     JD.tableY + 28,
@@ -4817,7 +4942,11 @@ function jdDrawCoffeeTarget(t) {
   );
 
   // 飲み口とコーヒー
-  jdFill("creamWarm", 255);
+  jdFill(
+    "creamWarm",
+    255
+  );
+
   ellipse(
     t.x,
     JD.tableY + 43,
@@ -4825,7 +4954,11 @@ function jdDrawCoffeeTarget(t) {
     15
   );
 
-  jdFill("coffee", 255);
+  jdFill(
+    "coffee",
+    255
+  );
+
   ellipse(
     t.x,
     JD.tableY + 43,
@@ -4833,8 +4966,11 @@ function jdDrawCoffeeTarget(t) {
     10.5
   );
 
-  // コーヒー面の反射も左上へ統一
-  jdFill("coffeeLight", 42);
+  // コーヒー面の反射
+  jdFill(
+    "coffeeLight",
+    42
+  );
 
   ellipse(
     t.x - 9,
@@ -4843,88 +4979,125 @@ function jdDrawCoffeeTarget(t) {
     3.5
   );
 
-  // -----------------------------------------------
-  // 動くポストカード用の常時湯気
+  // ==================================================
+  // 柔らかなスチーム
   //
-  // 短いループを見せるのではなく、
-  // 周期の違う3本を重ねて「店の空気」に見せる。
-  // -----------------------------------------------
+  // 線ではなく、薄い楕円を重ねる。
+  // 一見すると空気の霞に見え、
+  // 数秒眺めると上へ流れていることが分かる。
+  // ==================================================
 
-  noFill();
-
-  const steamBaseY =
-    JD.tableY + 52;
-
-  const steamFade =
-    78 +
-    Math.sin(
-      ElapsedTime * 0.56
-    ) * 10;
+  noStroke();
+  ellipseMode(CENTER);
 
   for (
     let i = 0;
-    i < 3;
+    i < 5;
     i++
   ) {
+    const cycle =
+      3.8 +
+      i * 0.43;
+
     const phase =
-      ElapsedTime *
       (
-        0.72 +
-        i * 0.11
-      ) +
-      i * 2.15;
+        ElapsedTime *
+        (
+          0.34 +
+          i * 0.018
+        ) +
+        i * 0.73
+      ) %
+      cycle;
 
-    const baseX =
+    const progress =
+      phase /
+      cycle;
+
+    const rise =
+      progress *
+      34;
+
+    const sway =
+      Math.sin(
+        progress *
+        Math.PI *
+        2 +
+        i * 1.4
+      ) *
+      (
+        3 +
+        progress * 4
+      );
+
+    // 最初と最後はゆっくり透明になる
+    const fadeIn =
+      jdClamp(
+        progress / 0.18,
+        0,
+        1
+      );
+
+    const fadeOut =
+      jdClamp(
+        (
+          1 -
+          progress
+        ) /
+        0.30,
+        0,
+        1
+      );
+
+    const alpha =
+      28 *
+      fadeIn *
+      fadeOut;
+
+    const steamX =
       t.x -
-      15 +
-      i * 15;
+      12 +
+      i * 6 +
+      sway;
 
-    const lowerSway =
-      Math.sin(
-        phase
-      ) * 1.4;
+    const steamY =
+      JD.tableY +
+      54 +
+      rise;
 
-    const middleSway =
-      Math.sin(
-        phase + 0.9
-      ) * 3.0;
-
-    const upperSway =
-      Math.sin(
-        phase + 1.8
-      ) * 4.3;
-
-    jdStroke(
+    jdFill(
       "creamWarm",
-      steamFade -
-      i * 10
+      alpha
     );
 
-    strokeWidth(
-      1.3
+    ellipse(
+      steamX,
+      steamY,
+      11 +
+      progress * 10,
+      7 +
+      progress * 7
     );
 
-    line(
-      baseX +
-      lowerSway,
-      steamBaseY,
-      baseX +
-      middleSway,
-      steamBaseY + 11
+    // 中心にもう一層だけ淡い霞を重ねる
+    jdFill(
+      "highlight",
+      alpha * 0.42
     );
 
-    line(
-      baseX +
-      middleSway,
-      steamBaseY + 11,
-      baseX +
-      upperSway,
-      steamBaseY + 22
+    ellipse(
+      steamX - 1,
+      steamY + 1,
+      6 +
+      progress * 7,
+      4 +
+      progress * 5
     );
   }
 
   noStroke();
 }
+
 
 
 function jdDrawCakeTarget(t) {
@@ -7436,7 +7609,42 @@ function jdDrawLauncherItemTicket() {
 
   // --------------------------------
   // 素材札
+  // 素材本体と同じタイミングで、
+  // わずかに拡大しながら現れる。
   // --------------------------------
+
+  const ticketPop =
+    0.88 +
+    0.12 *
+    (
+      1 +
+      2.35 *
+      Math.pow(
+        appearT - 1,
+        3
+      ) +
+      1.35 *
+      Math.pow(
+        appearT - 1,
+        2
+      )
+    );
+
+  pushMatrix();
+
+  translate(
+    x,
+    y
+  );
+
+  scale(
+    ticketPop
+  );
+
+  translate(
+    -x,
+    -y
+  );
 
   jdFill(
     "shadow",
@@ -7518,6 +7726,8 @@ function jdDrawLauncherItemTicket() {
     y + 3
   );
 
+  popMatrix();
+
   noStroke();
 }
 
@@ -7543,9 +7753,10 @@ function jdDrawPlayUI() {
     rest = 0;
   }
 
+  // 着地時に明度が変わると、結果よりUIへ視線が移るため、
+  // 常に通常時と同じ濃度で表示する。
   const resultMode =
-    JD.food &&
-    JD.food.resolved;
+    false;
 
   const cx =
     JD.LOGICAL_W / 2;
@@ -9976,13 +10187,16 @@ function jdDrawHitZone(t) {
 }
 
 function jdDrawDebugButton() {
-  rectMode(CORNER); noStroke();
-  fill(JD.debugMode ? 70 : 55, JD.debugMode ? 150 : 42, JD.debugMode ? 90 : 36, 220);
-  rect(306, JD.LOGICAL_H - 38, 50, 32);
-  fill(255, 245, 224, 230); font('Courier-Bold'); fontSize(12); textAlign(CENTER); text("DBG", 331, JD.LOGICAL_H - 22);
+  // 公開版では非表示
+  return;
 }
 
-function jdDebugButtonHit(x, y) { return x >= 306 && x <= 356 && y >= JD.LOGICAL_H - 38 && y <= JD.LOGICAL_H - 6; }
+
+function jdDebugButtonHit(_x, _y) {
+  // 非表示ボタンの見えないタップ判定も無効化
+  return false;
+}
+
 
 function jdDrawDebugWorld() {
   if (!JD.debugMode) return;
