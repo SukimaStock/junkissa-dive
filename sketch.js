@@ -8080,10 +8080,10 @@ function jdAimTutorialPose() {
       returnProgress;
   }
 
-  // 正解の角度を教えすぎない、
-  // 小さな左下方向のデモに留める
+  // 実際の操作に合わせて、
+  // 小さな右下方向へ引っ張る
   x =
-    anchorX -
+    anchorX +
     32 *
     pullProgress;
 
@@ -8339,7 +8339,7 @@ function jdDrawAimTutorialWorld(
       );
 
       ellipse(
-        JD.launcher.x -
+        JD.launcher.x +
         32 *
         p,
         JD.launcher.y -
