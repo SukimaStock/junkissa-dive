@@ -31,12 +31,6 @@ function setup() {
   JD.visualStyle =
     "poster";
 
-  JD.styleSettingsOpen =
-    false;
-
-  JD.styleSettingsPressed =
-    false;
-
   // アプリを開いて最初の1投目だけ表示
   JD.tutorialSeen = false;
   JD.tutorialActive = false;
@@ -493,17 +487,12 @@ function jdC(name) {
       255
     );
 
-  const styled =
-    jdStyleColor(
-      name,
-      base
-    );
-
-  return jdFineLineColor(
+  return jdStyleColor(
     name,
-    styled
+    base
   );
 }
+
 
 
 function jdFill(
@@ -4047,10 +4036,6 @@ function jdDrawTitle() {
   jdDrawPosterPrintFinish();
   jdDrawFineLineFinish();
 
-  // タイトル画面の表示スタイル設定
-  jdDrawStyleSettingsButton();
-  jdDrawStyleSettingsPanel();
-
   // タップ後の暗転
   if (
     JD.titleExitTimer > 0
@@ -4159,7 +4144,6 @@ function jdDrawPlay() {
   // 店内全体へ印刷物の質感を重ねる。
   // UI文字の可読性は落とさないよう、UIより先に描く。
   jdDrawPosterPrintFinish();
-  jdDrawFineLineFinish();
 
   jdDrawPlayUI();
   jdDrawShotMeter();
@@ -5968,14 +5952,6 @@ function jdDrawWorld() {
         foodAlpha,
         foodScale
       );
-
-      jdDrawFineFoodOutline(
-        JD.food,
-        fx,
-        fy,
-        foodScale,
-        foodAlpha * 0.88
-      );
     }
 
     if (
@@ -6749,7 +6725,6 @@ function jdDrawTarget(t) {
     jdDrawMelonTarget(t);
   }
 
-  jdDrawFineTargetOutline(t);
 }
 
 
@@ -7457,22 +7432,8 @@ function jdDrawLauncher() {
   }
 }
 
-const jdDrawLauncherBeforeFineOutline =
-  jdDrawLauncher;
-
-jdDrawLauncher =
-  function jdDrawLauncherWithFineOutline() {
-    jdDrawLauncherBeforeFineOutline();
-
-    if (
-      jdIsFineLineStyle()
-    ) {
-      jdDrawFineLauncherOutline(
-        JD.launcher.x,
-        JD.launcher.y
-      );
-    }
-  };
+// 線画比較用の発射台ラッパーは廃止。
+// 正式版では元のjdDrawLauncherをそのまま使用する。
 
 
 
@@ -7508,14 +7469,6 @@ function jdDrawPlacedFoods() {
       f.y,
       f.alpha || 230,
       sc
-    );
-
-    jdDrawFineFoodOutline(
-      f,
-      f.x,
-      f.y,
-      sc,
-      175
     );
   }
 
