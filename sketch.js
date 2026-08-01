@@ -477,6 +477,17 @@ function jdStroke(name, alpha = null) {
   stroke(c.r, c.g, c.b, alpha === null ? c.a : alpha);
 }
 
+function jdJapaneseFont() {
+  font(
+    '"Hiragino Maru Gothic ProN", ' +
+    '"Hiragino Kaku Gothic ProN", ' +
+    '"Yu Gothic", ' +
+    '"Meiryo", ' +
+    'sans-serif'
+  );
+}
+
+
 function jdEnsureAudio() {
   if (
     typeof window === "undefined"
@@ -1680,19 +1691,43 @@ function jdCompleteFortuneSpin() {
 
   jdSetCameraClose(false);
 
-  // 最初の1投目のみ。
-  // 再シフト時はtutorialSeenが維持されるため表示されない。
-  if (
-    !JD.tutorialSeen
-  ) {
-    jdStartAimTutorial();
-  }
+  // チュートリアルはここでは開始しない。
+  // Fortuneの退場完了後に開始する。
 }
 
 
 function jdUpdateFortune(dt) {
-  if (JD.fortunePickedTimer > 0) JD.fortunePickedTimer -= dt;
-  if (JD.gamePhase !== PHASE_FORTUNE) return false;
+  const previousPickedTimer =
+    JD.fortunePickedTimer || 0;
+
+  if (
+    JD.fortunePickedTimer > 0
+  ) {
+    JD.fortunePickedTimer =
+      Math.max(
+        0,
+        JD.fortunePickedTimer - dt
+      );
+  }
+
+  // Fortuneが画面から完全に退場した瞬間に開始
+  if (
+    previousPickedTimer > 0 &&
+    JD.fortunePickedTimer <= 0 &&
+    JD.gamePhase === PHASE_AIM &&
+    JD.food &&
+    !JD.tutorialSeen &&
+    !JD.tutorialActive
+  ) {
+    jdStartAimTutorial();
+  }
+
+  if (
+    JD.gamePhase !==
+    PHASE_FORTUNE
+  ) {
+    return false;
+  }
 
   if (!JD.pendingFood && !JD.fortuneSelected) {
     jdSetGamePhase(PHASE_AIM);
@@ -2995,9 +3030,7 @@ function jdDrawTitle() {
 
   textAlign(CENTER);
 
-  font(
-    '"Hiragino Mincho ProN", "Yu Mincho", serif'
-  );
+  jdJapaneseFont();
 
   fontSize(31);
 
@@ -3028,9 +3061,7 @@ function jdDrawTitle() {
     220
   );
 
-  font(
-    '"Hiragino Mincho ProN", "Yu Mincho", serif'
-  );
+  jdJapaneseFont();
 
   fontSize(12);
 
@@ -3066,9 +3097,7 @@ function jdDrawTitle() {
     pulse
   );
 
-  font(
-    '"Hiragino Mincho ProN", "Yu Mincho", serif'
-  );
+  jdJapaneseFont();
 
   fontSize(15);
 
@@ -3388,9 +3417,7 @@ function jdDrawPlay() {
       alpha
     );
 
-    font(
-      '"Hiragino Mincho ProN", "Yu Mincho", serif'
-    );
+    jdJapaneseFont();
 
     fontSize(25);
 
@@ -3505,9 +3532,7 @@ function jdDrawPlay() {
       235 * alpha
     );
 
-    font(
-      '"Hiragino Mincho ProN", "Yu Mincho", serif'
-    );
+    jdJapaneseFont();
 
     fontSize(17);
 
@@ -8201,9 +8226,7 @@ function jdDrawAimTutorialWorld(
       )
     );
 
-    font(
-      '"Hiragino Mincho ProN", "Yu Mincho", serif'
-    );
+    jdJapaneseFont();
 
     fontSize(11);
 
@@ -8306,9 +8329,7 @@ function jdDrawAimTutorialWorld(
       235 * alpha
     );
 
-    font(
-      '"Hiragino Mincho ProN", "Yu Mincho", serif'
-    );
+    jdJapaneseFont();
 
     fontSize(11);
 
@@ -8416,9 +8437,7 @@ function jdDrawAimTutorialWorld(
       pulse
     );
 
-    font(
-      '"Hiragino Mincho ProN", "Yu Mincho", serif'
-    );
+    jdJapaneseFont();
 
     fontSize(11);
 
@@ -8683,9 +8702,7 @@ function jdDrawPlayUI() {
       190
     );
 
-    font(
-      '"Hiragino Mincho ProN", "Yu Mincho", serif'
-    );
+    jdJapaneseFont();
 
     fontSize(11);
 
