@@ -3916,19 +3916,96 @@ function jdDrawHitEffectWorld() {
 }
 
 function jdDrawTrajectory(pull) {
-  const vx = pull.x * JD.shotPower;
-  const vy = pull.y * JD.shotPower;
-  const g = JD.gravity * ((JD.food && JD.food.gravityScale) || 1);
-  for (let i = 1; i <= 8; i++) {
-    const t = i * 0.055;
-    const px = JD.launcher.x + vx * t;
-    const py = JD.launcher.y + vy * t - 0.5 * g * t * t;
-    if (px > -20 && px < JD.worldW + 20 && py > 0 && py < JD.worldH) {
-      fill(255, 255, 255, Math.max(24, 150 - i * 14));
-      noStroke(); ellipse(px, py, 4);
+  const vx =
+    pull.x * JD.shotPower;
+
+  const vy =
+    pull.y * JD.shotPower;
+
+  const g =
+    JD.gravity *
+    (
+      (
+        JD.food &&
+        JD.food.gravityScale
+      ) ||
+      1
+    );
+
+  const pullRatio =
+    jdClamp(
+      Math.hypot(
+        pull.x,
+        pull.y
+      ) / JD.maxPull,
+      0,
+      1
+    );
+
+  // 弱いショットでも軌道を読みやすくしつつ、
+  // 強いショットでは少し遠くまで見せる
+  const pointCount =
+    9 +
+    Math.round(
+      pullRatio * 3
+    );
+
+  for (
+    let i = 1;
+    i <= pointCount;
+    i++
+  ) {
+    const t =
+      i * 0.052;
+
+    const px =
+      JD.launcher.x +
+      vx * t;
+
+    const py =
+      JD.launcher.y +
+      vy * t -
+      0.5 * g * t * t;
+
+    if (
+      px > -40 &&
+      px < JD.worldW + 40 &&
+      py > -20 &&
+      py < JD.worldH + 40
+    ) {
+      // 発射台に近い点ほど強く、
+      // 遠くなるにつれて静かに消える
+      const progress =
+        i / pointCount;
+
+      const alpha =
+        178 -
+        progress * 126;
+
+      const size =
+        4.4 -
+        progress * 1.7;
+
+      jdFill(
+        "creamWarm",
+        Math.max(
+          38,
+          alpha
+        )
+      );
+
+      ellipse(
+        px,
+        py,
+        Math.max(
+          2.6,
+          size
+        )
+      );
     }
   }
 }
+
 
 function jdDrawLastShotGhost() {
   if (!JD.lastTrail || JD.lastTrail.length < 2) return;
@@ -3999,73 +4076,71 @@ function jdDrawLauncherItemTicket() {
       ElapsedTime * 3.2
     );
 
-  // 発射台の左上へ配置し、
-  // 発射台と視線がひとまとまりになるようにする
-  const x =
-    JD.launcher.x - 34;
-
-  const y =
-    JD.launcher.y + 58;
-
   const itemName =
     f.name || "-";
 
-  // 長い食材名にも対応
+  // 発射台の左上へ少し離して配置。
+  // 食材・台座・引っ張りガイドの周囲に呼吸できる余白を作る。
+  const x =
+    JD.launcher.x - 48;
+
+  const y =
+    JD.launcher.y + 64;
+
+  // 長いSTRAWBERRYでも左右に余白を残す
   const estimatedTextW =
-    itemName.length * 8.2;
+    itemName.length * 8.4;
 
   const ticketW =
     Math.max(
-      firstThrow ? 116 : 98,
-      estimatedTextW + 30
+      firstThrow ? 122 : 108,
+      estimatedTextW + 34
     );
 
   const ticketH =
-    firstThrow ? 48 : 40;
+    firstThrow ? 46 : 40;
 
   rectMode(CENTER);
   noStroke();
   textAlign(CENTER);
 
-  // 発射台との接続線
+  // 発射台との接続線は短く、薄くする
   jdStroke(
     "redDeep",
     firstThrow
-      ? 125 + pulse * 42
-      : 88
+      ? 105 + pulse * 25
+      : 65
   );
 
-  strokeWidth(2);
+  strokeWidth(1.5);
 
   line(
-    x + ticketW * 0.34,
-    y - ticketH * 0.34,
-    JD.launcher.x - 9,
-    JD.launcher.y + 20
+    x + ticketW * 0.36,
+    y - ticketH * 0.31,
+    JD.launcher.x - 14,
+    JD.launcher.y + 21
   );
 
   noStroke();
 
-  // 影
+  // 切り絵風の影
   jdFill(
     "shadow",
-    firstThrow ? 45 : 32
+    firstThrow ? 38 : 28
   );
 
   rect(
-    x + 3,
+    x + 4,
     y - 4,
     ticketW,
     ticketH,
     6
   );
 
-  // 紙
+  // 注文伝票
   jdFill(
     "paper",
-    firstThrow
-      ? 246
-      : 226
+    firstThrow ? 244 : 224
   );
 
   rect(
@@ -4076,52 +4151,44 @@ function jdDrawLauncherItemTicket() {
     6
   );
 
-  // 赤い伝票線
+  // 上部の赤線
   jdFill(
     "redDeep",
-    firstThrow
-      ? 190
-      : 145
+    firstThrow ? 180 : 135
   );
 
   rect(
     x,
     y + ticketH / 2 - 7,
-    ticketW - 16,
+    ticketW - 18,
     3,
     2
   );
 
-  // 食材名を主役にする
-  jdFill("ink", 235);
+  // 食材名
+  jdFill("ink", 238);
   font("Courier-Bold");
 
   fontSize(
-    firstThrow
-      ? 13
-      : 11
+    firstThrow ? 13 : 11
   );
 
   text(
     itemName,
     x,
-    y + 8
+    y + 7
   );
 
   // 操作文
   jdFill(
     "redDeep",
-    firstThrow
-      ? 225
-      : 175
+    firstThrow ? 210 : 160
   );
 
   font("Courier-Bold");
 
   fontSize(
-    firstThrow
-      ? 11
-      : 9
+    firstThrow ? 10 : 8.5
   );
 
   text(
@@ -4130,6 +4197,7 @@ function jdDrawLauncherItemTicket() {
     y - 10
   );
 }
+
 
 
 function jdUpdateFloatTexts(_dt) { JD.floatTexts.length = 0; }
@@ -5263,36 +5331,52 @@ function jdSetCameraClose(instant) {
 }
 
 function jdSetCameraOverview() {
-  const pull = jdGetScreenPull();
+  const pull =
+    jdGetScreenPull();
 
-  const powerRatio = jdClamp(
-    Math.hypot(pull.x, pull.y) / JD.maxPull,
-    0,
-    1
-  );
+  const powerRatio =
+    jdClamp(
+      Math.hypot(
+        pull.x,
+        pull.y
+      ) / JD.maxPull,
+      0,
+      1
+    );
 
-  // 引っ張り量40％で全景へ到達
-  const overviewRatio = jdClamp(
-    powerRatio / 0.40,
-    0,
-    1
-  );
+  // 40％で全景へ到達
+  const overviewRatio =
+    jdClamp(
+      powerRatio / 0.40,
+      0,
+      1
+    );
 
   const t =
     overviewRatio *
     overviewRatio *
-    (3 - 2 * overviewRatio);
+    (
+      3 -
+      2 * overviewRatio
+    );
 
-  const startZoom = 1.02;
-  const endZoom = 0.42;
+  const startZoom =
+    1.02;
+
+  const endZoom =
+    0.42;
 
   const zoom =
     startZoom +
-    (endZoom - startZoom) * t;
+    (
+      endZoom -
+      startZoom
+    ) * t;
 
-  // 発射台を右寄りに固定し、
-  // 左端のメロンソーダにも余白を確保する
-  const launcherScreenX = 300;
+  // 発射台を右側に保ちつつ、
+  // 左端のメロンソーダにも十分な余白を確保
+  const launcherScreenX =
+    296;
 
   JD.cam.tx =
     JD.launcher.x -
@@ -5301,12 +5385,19 @@ function jdSetCameraOverview() {
       JD.camScreenX
     ) / zoom;
 
+  // 全景時に下側へ寄りすぎないよう、
+  // 店内上部とカウンターの余白を均等化
   JD.cam.ty =
     252 +
-    (285 - 252) * t;
+    (
+      280 -
+      252
+    ) * t;
 
-  JD.cam.tz = zoom;
+  JD.cam.tz =
+    zoom;
 }
+
 
 
 
