@@ -565,27 +565,13 @@ function jdStroke(
 function jdVisualStyleNames() {
   return [
     {
-      id: "current",
-      label: "オリジナル",
-      sub: "現在のスタイル"
-    },
-    {
-      id: "fine",
-      label: "極細線画",
-      sub: "淡く、繊細に"
-    },
-    {
-      id: "bold",
-      label: "極太線画",
-      sub: "強く、くっきり"
-    },
-    {
       id: "poster",
       label: "ポスターカラー",
-      sub: "影を減らした色面"
+      sub: "正式ビジュアル"
     }
   ];
 }
+
 
 function jdLoadVisualStyle() {
   return "poster";
@@ -616,59 +602,38 @@ function jdSetVisualStyle(_styleId) {
 
 
 function jdIsPosterStyle() {
-  return (
-    JD.visualStyle ===
-    "poster"
-  );
+  return true;
 }
 
+
 function jdIsFineLineStyle() {
-  return (
-    JD.visualStyle ===
-    "fine"
-  );
+  return false;
 }
+
 
 function jdFineAlpha(
   normalAlpha,
-  fineAlpha
+  _fineAlpha
 ) {
-  return jdIsFineLineStyle()
-    ? fineAlpha
-    : normalAlpha;
+  return normalAlpha;
 }
+
 
 function jdFineStroke(
-  alpha = 205,
-  width = 1.15
+  _alpha = 205,
+  _width = 1.15
 ) {
-  jdStroke(
-    "ink",
-    alpha
-  );
-
-  strokeWidth(
-    width
-  );
-
-  noFill();
+  noStroke();
 }
+
 
 function jdFineAccentStroke(
-  alpha = 185,
-  width = 1.15
+  _alpha = 185,
+  _width = 1.15
 ) {
-  jdStroke(
-    "redDeep",
-    alpha
-  );
-
-  strokeWidth(
-    width
-  );
-
-  noFill();
+  noStroke();
 }
+
 
 
 
@@ -775,51 +740,9 @@ function jdDrawPosterPrintFinish() {
 }
 
 function jdDrawFineLineFinish() {
-  if (
-    !jdIsFineLineStyle()
-  ) {
-    return;
-  }
-
-  rectMode(CORNER);
-  noStroke();
-
-  // 全体を少しだけ紙色へ統一
-  fill(
-    247,
-    240,
-    222,
-    16
-  );
-
-  rect(
-    0,
-    0,
-    JD.LOGICAL_W,
-    JD.LOGICAL_H
-  );
-
-  // 古紙ではなく、上質紙の細い繊維
-  for (
-    let y = 17;
-    y < JD.LOGICAL_H;
-    y += 43
-  ) {
-    fill(
-      116,
-      89,
-      71,
-      3
-    );
-
-    rect(
-      0,
-      y,
-      JD.LOGICAL_W,
-      1
-    );
-  }
+  return;
 }
+
 
 
 
@@ -1273,269 +1196,12 @@ function jdStyleColor(
 }
 
 function jdFineLineColor(
-  name,
+  _name,
   source
 ) {
-  if (
-    !jdIsFineLineStyle()
-  ) {
-    return source;
-  }
-
-  const palette = {
-    page: {
-      r: 242,
-      g: 234,
-      b: 215,
-      a: 255
-    },
-
-    posterBg: {
-      r: 242,
-      g: 233,
-      b: 211,
-      a: 255
-    },
-
-    posterBg2: {
-      r: 234,
-      g: 221,
-      b: 195,
-      a: 255
-    },
-
-    wall: {
-      r: 241,
-      g: 231,
-      b: 207,
-      a: 255
-    },
-
-    wallShade: {
-      r: 224,
-      g: 211,
-      b: 186,
-      a: 255
-    },
-
-    wallLine: {
-      r: 118,
-      g: 91,
-      b: 76,
-      a: 255
-    },
-
-    tableTop: {
-      r: 159,
-      g: 181,
-      b: 160,
-      a: 255
-    },
-
-    tableFront: {
-      r: 177,
-      g: 194,
-      b: 176,
-      a: 255
-    },
-
-    tableLip: {
-      r: 91,
-      g: 116,
-      b: 98,
-      a: 255
-    },
-
-    tableStripe: {
-      r: 206,
-      g: 190,
-      b: 155,
-      a: 255
-    },
-
-    wood: {
-      r: 177,
-      g: 134,
-      b: 107,
-      a: 255
-    },
-
-    woodDark: {
-      r: 91,
-      g: 65,
-      b: 55,
-      a: 255
-    },
-
-    paper: {
-      r: 247,
-      g: 239,
-      b: 218,
-      a: 255
-    },
-
-    cream: {
-      r: 246,
-      g: 238,
-      b: 216,
-      a: 255
-    },
-
-    creamWarm: {
-      r: 247,
-      g: 237,
-      b: 209,
-      a: 255
-    },
-
-    plate: {
-      r: 245,
-      g: 237,
-      b: 216,
-      a: 255
-    },
-
-    ink: {
-      r: 74,
-      g: 55,
-      b: 48,
-      a: 255
-    },
-
-    coffee: {
-      r: 91,
-      g: 57,
-      b: 47,
-      a: 255
-    },
-
-    coffeeLight: {
-      r: 137,
-      g: 104,
-      b: 88,
-      a: 255
-    },
-
-    soda: {
-      r: 127,
-      g: 186,
-      b: 149,
-      a: 255
-    },
-
-    sodaLight: {
-      r: 187,
-      g: 215,
-      b: 188,
-      a: 255
-    },
-
-    sodaDeep: {
-      r: 85,
-      g: 139,
-      b: 106,
-      a: 255
-    },
-
-    cakeCream: {
-      r: 246,
-      g: 236,
-      b: 215,
-      a: 255
-    },
-
-    cakeSponge: {
-      r: 220,
-      g: 183,
-      b: 119,
-      a: 255
-    },
-
-    cakePink: {
-      r: 218,
-      g: 152,
-      b: 157,
-      a: 255
-    },
-
-    red: {
-      r: 181,
-      g: 84,
-      b: 77,
-      a: 255
-    },
-
-    redDeep: {
-      r: 130,
-      g: 63,
-      b: 62,
-      a: 255
-    },
-
-    shadow: {
-      r: 102,
-      g: 82,
-      b: 70,
-      a: 255
-    },
-
-    uiPanel: {
-      r: 241,
-      g: 232,
-      b: 211,
-      a: 255
-    },
-
-    uiText: {
-      r: 76,
-      g: 57,
-      b: 49,
-      a: 255
-    },
-
-    gold: {
-      r: 190,
-      g: 154,
-      b: 91,
-      a: 255
-    },
-
-    glass: {
-      r: 220,
-      g: 232,
-      b: 217,
-      a: 255
-    },
-
-    glassEdge: {
-      r: 113,
-      g: 147,
-      b: 126,
-      a: 255
-    },
-
-    ice: {
-      r: 203,
-      g: 223,
-      b: 205,
-      a: 255
-    },
-
-    highlight: {
-      r: 255,
-      g: 249,
-      b: 232,
-      a: 255
-    }
-  };
-
-  return palette[name] ||
-    jdStyleMixColor(
-      source,
-      palette.paper,
-      0.38
-    );
+  return source;
 }
+
 
 
 function jdStyleAlpha(
@@ -1667,6 +1333,7 @@ function jdDrawStyleSample(
 }
 
 
+
 function jdDrawStyleSettingsPanel() {
   return;
 }
@@ -1678,6 +1345,7 @@ function jdStyleSettingsHit(
 ) {
   return null;
 }
+
 
 
 
@@ -7031,393 +6699,31 @@ function jdDrawCherryGarnish(x, y, sc = 1) {
   popMatrix();
 }
 
-function jdDrawFineTargetOutline(t) {
-  if (
-    !jdIsFineLineStyle() ||
-    !t
-  ) {
-    return;
-  }
-
-  rectMode(CENTER);
-  ellipseMode(CENTER);
-
-  jdFineStroke(
-    205,
-    1.25
-  );
-
-  if (
-    t.kind === "coffee"
-  ) {
-    // カップ
-    rect(
-      t.x,
-      JD.tableY + 29,
-      60,
-      36,
-      11
-    );
-
-    ellipse(
-      t.x,
-      JD.tableY + 43,
-      66,
-      15
-    );
-
-    // 取っ手
-    ellipse(
-      t.x + 35,
-      JD.tableY + 28,
-      18,
-      25
-    );
-
-    ellipse(
-      t.x + 35,
-      JD.tableY + 28,
-      9,
-      16
-    );
-
-    // コーヒー面
-    jdStroke(
-      "coffee",
-      185
-    );
-
-    strokeWidth(1);
-
-    ellipse(
-      t.x,
-      JD.tableY + 43,
-      54,
-      10.5
-    );
-
-  } else if (
-    t.kind === "cake"
-  ) {
-    // ケーキ全体の外郭
-    rect(
-      t.x,
-      JD.tableY + 35,
-      70,
-      56,
-      5
-    );
-
-    // 層を細い横線で表現
-    jdStroke(
-      "wallLine",
-      150
-    );
-
-    strokeWidth(0.9);
-
-    line(
-      t.x - 34,
-      JD.tableY + 29,
-      t.x + 34,
-      JD.tableY + 29
-    );
-
-    line(
-      t.x - 34,
-      JD.tableY + 39,
-      t.x + 34,
-      JD.tableY + 39
-    );
-
-    line(
-      t.x - 34,
-      JD.tableY + 53,
-      t.x + 34,
-      JD.tableY + 53
-    );
-
-    // クリーム飾り
-    jdFineStroke(
-      155,
-      0.9
-    );
-
-    for (
-      const dx of [
-        -22,
-        0,
-        22
-      ]
-    ) {
-      ellipse(
-        t.x + dx,
-        JD.tableY + 67,
-        16,
-        13
-      );
-    }
-
-  } else if (
-    t.kind === "melon"
-  ) {
-    // グラス本体
-    rect(
-      t.x,
-      JD.tableY + 80,
-      66,
-      126,
-      15
-    );
-
-    ellipse(
-      t.x,
-      JD.tableY + 143,
-      62,
-      19
-    );
-
-    // 脚と台
-    rect(
-      t.x,
-      JD.tableY + 25,
-      13,
-      40,
-      6
-    );
-
-    ellipse(
-      t.x,
-      JD.tableY + 5,
-      56,
-      14
-    );
-
-    // ソーダ面
-    jdStroke(
-      "sodaDeep",
-      150
-    );
-
-    strokeWidth(0.9);
-
-    ellipse(
-      t.x,
-      JD.tableY + 122,
-      41,
-      12
-    );
-  }
-
-  noStroke();
+function jdDrawFineTargetOutline(
+  _target
+) {
+  return;
 }
+
 
 function jdDrawFineFoodOutline(
-  f,
-  x,
-  y,
-  scaleValue = 1,
-  alpha = 205
+  _food,
+  _x,
+  _y,
+  _scaleValue = 1,
+  _alpha = 205
 ) {
-  if (
-    !jdIsFineLineStyle() ||
-    !f
-  ) {
-    return;
-  }
-
-  pushMatrix();
-
-  translate(
-    x,
-    y
-  );
-
-  const angle =
-    Number.isFinite(
-      f.visualAngle
-    )
-      ? f.visualAngle
-      : 0;
-
-  rotate(angle);
-  scale(scaleValue);
-
-  rectMode(CENTER);
-  ellipseMode(CENTER);
-
-  jdFineStroke(
-    alpha,
-    1.15
-  );
-
-  if (
-    f.shape === "circle"
-  ) {
-    ellipse(
-      -1,
-      -1,
-      f.r * 1.85,
-      f.r * 1.75
-    );
-
-    // 茎
-    jdStroke(
-      "tableTop",
-      alpha
-    );
-
-    strokeWidth(1.1);
-
-    line(
-      2,
-      8,
-      10,
-      21
-    );
-
-  } else if (
-    f.shape === "rect"
-  ) {
-    rect(
-      0,
-      0,
-      f.w,
-      f.h,
-      3.5
-    );
-
-    // 角砂糖の一面だけ
-    jdStroke(
-      "wallLine",
-      alpha * 0.54
-    );
-
-    strokeWidth(0.75);
-
-    line(
-      -f.w * 0.34,
-      f.h * 0.22,
-      f.w * 0.25,
-      f.h * 0.22
-    );
-
-  } else if (
-    f.shape === "oval"
-  ) {
-    ellipse(
-      -3.5,
-      3,
-      f.w * 0.42,
-      f.h * 0.40
-    );
-
-    ellipse(
-      3.5,
-      3,
-      f.w * 0.42,
-      f.h * 0.40
-    );
-
-    ellipse(
-      0,
-      -3,
-      f.w * 0.62,
-      f.h * 0.60
-    );
-  }
-
-  noStroke();
-  popMatrix();
+  return;
 }
+
 
 function jdDrawFineLauncherOutline(
-  x,
-  y
+  _x,
+  _y
 ) {
-  if (
-    !jdIsFineLineStyle()
-  ) {
-    return;
-  }
-
-  rectMode(CENTER);
-  ellipseMode(CENTER);
-
-  jdFineStroke(
-    210,
-    1.35
-  );
-
-  // 木製台座
-  ellipse(
-    x,
-    y - 7,
-    72,
-    36
-  );
-
-  // 内側の木面
-  jdStroke(
-    "wallLine",
-    125
-  );
-
-  strokeWidth(0.85);
-
-  ellipse(
-    x - 2,
-    y - 3,
-    66,
-    31
-  );
-
-  // 皿
-  jdFineStroke(
-    178,
-    1.0
-  );
-
-  ellipse(
-    x,
-    y + 2,
-    32,
-    14
-  );
-
-  // クリップ
-  rect(
-    x + 20,
-    y + 15,
-    9,
-    24,
-    4
-  );
-
-  rect(
-    x + 20,
-    y - 15,
-    9,
-    24,
-    4
-  );
-
-  ellipse(
-    x + 20,
-    y + 18,
-    13,
-    13
-  );
-
-  ellipse(
-    x + 20,
-    y - 18,
-    13,
-    13
-  );
-
-  noStroke();
+  return;
 }
+
 
 
 
