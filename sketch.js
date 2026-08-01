@@ -4714,19 +4714,21 @@ function jdDrawReceipt() {
 
   // ==================================================
   // レシート本体
+  // 細幅・短め・高密度
   // ==================================================
 
-  const paperW = 226;
-  const paperH = 430;
+  const paperW = 210;
+  const paperH = 330;
 
   const paperX =
     cx - paperW / 2;
 
-  const paperY = 146;
+  const paperY = 190;
 
   const paperTop =
     paperY + paperH;
 
+  // 切り絵影
   jdFill("shadow", 48);
 
   rect(
@@ -4737,6 +4739,7 @@ function jdDrawReceipt() {
     3
   );
 
+  // 感熱紙
   jdFill("paper");
 
   rect(
@@ -4747,6 +4750,7 @@ function jdDrawReceipt() {
     3
   );
 
+  // 紙端
   jdFill("wallShade", 24);
 
   rect(
@@ -4756,7 +4760,7 @@ function jdDrawReceipt() {
     paperH - 8
   );
 
-  jdFill("highlight", 28);
+  jdFill("highlight", 26);
 
   rect(
     paperX + 3,
@@ -4779,8 +4783,8 @@ function jdDrawReceipt() {
     );
 
     for (
-      let x = paperX + 11;
-      x < paperX + paperW - 11;
+      let x = paperX + 9;
+      x < paperX + paperW - 9;
       x += 7
     ) {
       rect(
@@ -4866,7 +4870,7 @@ function jdDrawReceipt() {
 
   jdFill("ink", 245);
   font("Courier-Bold");
-  fontSize(14.5);
+  fontSize(15.5);
 
   text(
     jdT(
@@ -4874,73 +4878,73 @@ function jdDrawReceipt() {
       "JUNKISSA YUMANIWA"
     ),
     cx,
-    paperTop - 20
+    paperTop - 17
   );
 
-  fontSize(9.5);
+  fontSize(10);
 
   text(
     "JUNKISSA DIVE",
     cx,
-    paperTop - 36
+    paperTop - 33
   );
 
   jdFill("ink", 165);
   font("Courier");
-  fontSize(7.2);
+  fontSize(7.5);
 
   text(
     "YUMANIWA-CHO",
     cx,
-    paperTop - 48
+    paperTop - 45
   );
 
   drawReceiptDash(
-    paperTop - 59
+    paperTop - 55
   );
 
-  // 日付と伝票番号
+  // 日時・番号
   textAlign(LEFT);
-  jdFill("ink", 210);
+  jdFill("ink", 215);
   font("Courier");
-  fontSize(7.8);
+  fontSize(8.8);
 
   text(
     dateText,
-    paperX + 11,
-    paperTop - 73
+    paperX + 9,
+    paperTop - 69
   );
 
   text(
     "MONDAY SHIFT",
-    paperX + 11,
-    paperTop - 87
+    paperX + 9,
+    paperTop - 83
   );
 
   textAlign(RIGHT);
 
   text(
     `No.${receiptNo}`,
-    paperX + paperW - 11,
-    paperTop - 87
+    paperX + paperW - 9,
+    paperTop - 83
   );
 
   drawReceiptDash(
-    paperTop - 98
+    paperTop - 92
   );
 
   // ==================================================
   // 商品一覧
+  // 行間を極力削り、文字サイズを優先
   // ==================================================
 
   const resultDelay = 0.22;
   const resultInterval = 0.27;
 
   const resultStartY =
-    paperTop - 115;
+    paperTop - 108;
 
-  // 行間を大きく詰め、文字サイズを優先
-  const resultGap = 17;
+  const resultGap = 14.5;
 
   for (
     let i = 0;
@@ -4986,11 +4990,11 @@ function jdDrawReceipt() {
       r.target ||
       "-";
 
-    // 投擲番号
+    // 番号
     textAlign(LEFT);
-    jdFill("ink", 180);
+    jdFill("ink", 182);
     font("Courier");
-    fontSize(7.8);
+    fontSize(8.5);
 
     text(
       String(
@@ -4999,7 +5003,7 @@ function jdDrawReceipt() {
         2,
         "0"
       ),
-      paperX + 11,
+      paperX + 9,
       y
     );
 
@@ -5009,54 +5013,54 @@ function jdDrawReceipt() {
     ) {
       jdFill(
         "redDeep",
-        220
+        225
       );
     } else {
       jdFill(
         "ink",
-        150
+        155
       );
     }
 
     font("Courier-Bold");
-    fontSize(7.2);
+    fontSize(8);
 
     text(
       status,
-      paperX + 29,
+      paperX + 26,
       y
     );
 
     // 食材と着地点
-    jdFill("ink", 238);
+    jdFill("ink", 240);
     font("Courier-Bold");
-    fontSize(8.8);
+    fontSize(9.6);
 
     const itemText =
       `${item} / ${target}`;
 
     if (
-      itemText.length > 21
+      itemText.length > 18
     ) {
-      fontSize(7.8);
+      fontSize(8.4);
     }
 
     text(
       itemText,
-      paperX + 58,
+      paperX + 52,
       y
     );
 
     // 金額
     textAlign(RIGHT);
     font("Courier-Bold");
-    fontSize(8.8);
+    fontSize(9.6);
 
     text(
       String(
         r.price || 0
       ),
-      paperX + paperW - 11,
+      paperX + paperW - 9,
       y
     );
   }
@@ -5082,7 +5086,7 @@ function jdDrawReceipt() {
     resultStartY -
     JD.results.length *
     resultGap +
-    5;
+    4;
 
   // ==================================================
   // 合計
@@ -5094,7 +5098,7 @@ function jdDrawReceipt() {
   ) {
     drawReceiptDash(
       listBottomY,
-      98
+      100
     );
 
     const totalText =
@@ -5106,30 +5110,30 @@ function jdDrawReceipt() {
       );
 
     const totalY =
-      listBottomY - 18;
+      listBottomY - 16;
 
     textAlign(LEFT);
-    jdFill("ink", 240);
+    jdFill("ink", 242);
     font("Courier-Bold");
-    fontSize(10);
+    fontSize(11);
 
     text(
       jdT(
         "receipt.total",
         "TOTAL"
       ),
-      paperX + 11,
+      paperX + 9,
       totalY
     );
 
     textAlign(RIGHT);
-    jdFill("redDeep", 245);
+    jdFill("redDeep", 248);
     font("Courier-Bold");
-    fontSize(16);
+    fontSize(17);
 
     text(
       `¥${totalText}`,
-      paperX + paperW - 11,
+      paperX + paperW - 9,
       totalY - 1
     );
   }
@@ -5139,7 +5143,7 @@ function jdDrawReceipt() {
   // ==================================================
 
   const rankLineY =
-    listBottomY - 31;
+    listBottomY - 28;
 
   if (
     JD.receiptTimer >=
@@ -5147,32 +5151,32 @@ function jdDrawReceipt() {
   ) {
     drawReceiptDash(
       rankLineY,
-      82
+      84
     );
 
     textAlign(LEFT);
-    jdFill("ink", 175);
+    jdFill("ink", 180);
     font("Courier");
-    fontSize(7.4);
+    fontSize(8);
 
     text(
       jdT(
         "receipt.rank",
         "RANK"
       ),
-      paperX + 11,
-      rankLineY - 13
+      paperX + 9,
+      rankLineY - 12
     );
 
     textAlign(RIGHT);
-    jdFill("redDeep", 225);
+    jdFill("redDeep", 228);
     font("Courier-Bold");
-    fontSize(10.5);
+    fontSize(11);
 
     text(
       jdRankName(),
-      paperX + paperW - 11,
-      rankLineY - 13
+      paperX + paperW - 9,
+      rankLineY - 12
     );
   }
 
@@ -5181,7 +5185,7 @@ function jdDrawReceipt() {
   // ==================================================
 
   const memoLineY =
-    rankLineY - 27;
+    rankLineY - 25;
 
   if (
     JD.receiptTimer >=
@@ -5189,25 +5193,25 @@ function jdDrawReceipt() {
   ) {
     drawReceiptDash(
       memoLineY,
-      76
+      78
     );
 
     textAlign(LEFT);
-    jdFill("ink", 175);
+    jdFill("ink", 180);
     font("Courier");
-    fontSize(7.4);
+    fontSize(8);
 
     text(
       "TENCHO MEMO",
-      paperX + 11,
-      memoLineY - 12
+      paperX + 9,
+      memoLineY - 11
     );
 
     const memo =
       jdManagerCommentShort() ||
       "-";
 
-    const maxChars = 18;
+    const maxChars = 17;
 
     const memoLine1 =
       memo.slice(
@@ -5220,58 +5224,59 @@ function jdDrawReceipt() {
         maxChars
       );
 
-    jdFill("ink", 215);
+    jdFill("ink", 220);
     font("Courier");
-    fontSize(8.5);
+    fontSize(9.2);
 
     text(
       memoLine1,
-      paperX + 11,
-      memoLineY - 27
+      paperX + 9,
+      memoLineY - 25
     );
 
     if (memoLine2) {
       text(
         memoLine2,
-        paperX + 11,
-        memoLineY - 40
+        paperX + 9,
+        memoLineY - 38
       );
     }
   }
 
   // ==================================================
   // フッター
+  // 店長メモのすぐ下へ詰める
   // ==================================================
 
   if (
     JD.receiptTimer >=
     readyAt
   ) {
-    const footerY =
-      paperY + 22;
+    const footerDashY =
+      memoLineY - 56;
 
     drawReceiptDash(
-      footerY + 27,
+      footerDashY,
       70
     );
 
     textAlign(CENTER);
-    jdFill("ink", 170);
+    jdFill("ink", 175);
     font("Courier");
-    fontSize(7.8);
+    fontSize(8.5);
 
     text(
       "THANK YOU",
       cx,
-      footerY + 13
+      footerDashY - 15
     );
 
-    fontSize(6.5);
+    fontSize(7);
 
     text(
       "JUNKISSA DIVE",
       cx,
-      footerY + 1
+      footerDashY - 28
     );
   }
 
@@ -5355,6 +5360,7 @@ function jdDrawReceipt() {
     rectMode(CORNER);
   }
 }
+
 
 
 
