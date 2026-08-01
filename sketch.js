@@ -2724,71 +2724,206 @@ function jdDrawTargetLabel(label, x, y) {
   return;
 }
 
-function jdDrawPlate(x, y, w, h, alpha = 235) {
-  jdFill("shadow", 38);
-  ellipse(x + 6, y - 4, w, h * 0.62);
+function jdDrawPlate(
+  x,
+  y,
+  w,
+  h,
+  alpha = 235
+) {
+  // 右下へ寄せた薄い接地影
+  jdFill("shadow", 34);
+  ellipse(
+    x + 5,
+    y - 3,
+    w,
+    h * 0.68
+  );
+
+  // 皿本体
   jdFill("plate", alpha);
-  ellipse(x, y, w, h);
-  jdFill("highlight", 74);
-  ellipse(x - w * 0.11, y + h * 0.10, w * 0.58, h * 0.36);
+  ellipse(
+    x,
+    y,
+    w,
+    h
+  );
+
+  // 左上だけに共通ハイライト
+  jdFill("highlight", 58);
+  ellipse(
+    x - w * 0.14,
+    y + h * 0.12,
+    w * 0.46,
+    h * 0.28
+  );
 }
+
 
 function jdDrawCoffeeTarget(t) {
-  // Low saucer, then a softer cafe cup. Keep it cup-like, not vase-like.
-  jdDrawPlate(t.x, JD.tableY + 7, 94, 19, 245);
-  jdFill("soda", 56);
-  ellipse(t.x, JD.tableY + 7, 58, 9);
-  jdFill("plate", 238);
-  ellipse(t.x, JD.tableY + 8, 74, 12);
+  // ソーサー
+  jdDrawPlate(
+    t.x,
+    JD.tableY + 7,
+    94,
+    19,
+    245
+  );
 
-  // cup body lowered more clearly so it visibly sits on the saucer
+  // カップ本体
   jdFill("creamWarm", 255);
-  rect(t.x, JD.tableY + 29, 60, 36, 11);
-  jdFill("highlight", 68);
-  rect(t.x - 18, JD.tableY + 29, 7, 24, 4);
+  rect(
+    t.x,
+    JD.tableY + 29,
+    60,
+    36,
+    11
+  );
 
-  // handle: lighter and a touch smaller
-  jdFill("creamWarm", 235);
-  ellipse(t.x + 35, JD.tableY + 28, 18, 25);
+  // 左上の縦ハイライト
+  jdFill("highlight", 62);
+  rect(
+    t.x - 18,
+    JD.tableY + 31,
+    6,
+    22,
+    3
+  );
+
+  // 取っ手
+  jdFill("creamWarm", 240);
+  ellipse(
+    t.x + 35,
+    JD.tableY + 28,
+    18,
+    25
+  );
+
   jdFill("wall", 255);
-  ellipse(t.x + 35, JD.tableY + 28, 9, 16);
+  ellipse(
+    t.x + 35,
+    JD.tableY + 28,
+    9,
+    16
+  );
 
-  // lip and coffee surface: sit directly on the body, with no pinched neck
+  // 飲み口とコーヒー
   jdFill("creamWarm", 255);
-  ellipse(t.x, JD.tableY + 43, 66, 15);
-  jdFill("coffee", 255);
-  ellipse(t.x, JD.tableY + 43, 54, 10.5);
-  jdFill("coffeeLight", 34);
-  ellipse(t.x - 8, JD.tableY + 44, 22, 3.5);
+  ellipse(
+    t.x,
+    JD.tableY + 43,
+    66,
+    15
+  );
 
-  jdDrawTargetLabel(jdT("target.coffee"), t.x, JD.tableY - 23);
+  jdFill("coffee", 255);
+  ellipse(
+    t.x,
+    JD.tableY + 43,
+    54,
+    10.5
+  );
+
+  // コーヒー面の反射も左上へ統一
+  jdFill("coffeeLight", 42);
+  ellipse(
+    t.x - 9,
+    JD.tableY + 44,
+    20,
+    3.5
+  );
 }
+
 
 function jdDrawCakeTarget(t) {
-  jdDrawPlate(t.x, JD.tableY + 7, 102, 20, 242);
+  jdDrawPlate(
+    t.x,
+    JD.tableY + 7,
+    102,
+    20,
+    242
+  );
 
-  // shortcake body lowered more clearly so it reads as resting on the plate
+  // 下段スポンジ
   jdFill("cakeSponge", 250);
-  rect(t.x, JD.tableY + 20, 68, 28, 5);
-  jdFill("cakeCream", 255);
-  rect(t.x, JD.tableY + 34, 68, 8, 4);
-  jdFill("cakePink", 215);
-  rect(t.x, JD.tableY + 29, 68, 7, 3);
-  jdFill("cakeSponge", 245);
-  rect(t.x, JD.tableY + 45, 68, 15, 5);
-  jdFill("cakeCream", 255);
-  rect(t.x, JD.tableY + 57, 68, 9, 5);
+  rect(
+    t.x,
+    JD.tableY + 20,
+    68,
+    28,
+    5
+  );
 
-  // cream dollops only
+  // 苺クリームの細い層
+  jdFill("cakePink", 215);
+  rect(
+    t.x,
+    JD.tableY + 29,
+    68,
+    7,
+    3
+  );
+
+  // 中央クリーム
+  jdFill("cakeCream", 255);
+  rect(
+    t.x,
+    JD.tableY + 34,
+    68,
+    8,
+    4
+  );
+
+  // 上段スポンジ
+  jdFill("cakeSponge", 245);
+  rect(
+    t.x,
+    JD.tableY + 45,
+    68,
+    15,
+    5
+  );
+
+  // 上部クリーム
+  jdFill("cakeCream", 255);
+  rect(
+    t.x,
+    JD.tableY + 57,
+    68,
+    9,
+    5
+  );
+
+  // ケーキ側面にも左上の反射を一本だけ
+  jdFill("highlight", 48);
+  rect(
+    t.x - 27,
+    JD.tableY + 34,
+    5,
+    44,
+    3
+  );
+
+  // クリーム飾りは3個に統一
   for (const dx of [-22, 0, 22]) {
     jdFill("cakeCream", 250);
-    ellipse(t.x + dx, JD.tableY + 67, 16, 13);
-    jdFill("highlight", 82);
-    ellipse(t.x + dx - 4, JD.tableY + 70, 5, 3.5);
-  }
+    ellipse(
+      t.x + dx,
+      JD.tableY + 67,
+      16,
+      13
+    );
 
-  jdDrawTargetLabel(jdT("target.cake"), t.x, JD.tableY - 23);
+    jdFill("highlight", 66);
+    ellipse(
+      t.x + dx - 4,
+      JD.tableY + 70,
+      4.5,
+      3
+    );
+  }
 }
+
 
 function jdDrawSmallStrawberry(x, y, sc = 1) {
   pushMatrix();
@@ -2822,64 +2957,178 @@ function jdDrawSmallStrawberry(x, y, sc = 1) {
 }
 
 function jdDrawMelonTarget(t) {
-  // foot and stem
-  jdFill("shadow", 34);
-  ellipse(t.x + 8, JD.tableY + 1, 72, 13);
+  // グラスの脚と台
+  jdFill("shadow", 32);
+  ellipse(
+    t.x + 5,
+    JD.tableY + 1,
+    72,
+    12
+  );
+
   jdFill("glass", 145);
-  ellipse(t.x, JD.tableY + 5, 56, 14);
+  ellipse(
+    t.x,
+    JD.tableY + 5,
+    56,
+    14
+  );
+
   jdFill("glass", 112);
-  rect(t.x, JD.tableY + 25, 13, 40, 6);
+  rect(
+    t.x,
+    JD.tableY + 25,
+    13,
+    40,
+    6
+  );
+
   jdFill("glass", 160);
-  ellipse(t.x, JD.tableY + 30, 34, 11);
+  ellipse(
+    t.x,
+    JD.tableY + 30,
+    34,
+    11
+  );
 
-  // glass outer silhouette
-  jdFill("glass", 72);
-  rect(t.x, JD.tableY + 80, 66, 126, 15);
-  jdFill("glassEdge", 100);
-  rect(t.x - 29, JD.tableY + 80, 5, 118, 3);
-  jdFill("glassEdge", 115);
-  rect(t.x + 29, JD.tableY + 80, 5, 118, 3);
-  jdFill("glassEdge", 145);
-  ellipse(t.x, JD.tableY + 143, 62, 19);
+  // グラス本体
+  jdFill("glass", 68);
+  rect(
+    t.x,
+    JD.tableY + 80,
+    66,
+    126,
+    15
+  );
 
-  // straw: deeper insertion so it clearly enters the drink
+  // ガラス線は左右両方ではなく、
+  // 左上側の反射を主役にする
+  jdFill("glassEdge", 112);
+  rect(
+    t.x - 29,
+    JD.tableY + 82,
+    5,
+    114,
+    3
+  );
+
+  jdFill("glassEdge", 72);
+  rect(
+    t.x + 29,
+    JD.tableY + 80,
+    4,
+    110,
+    3
+  );
+
+  jdFill("glassEdge", 135);
+  ellipse(
+    t.x,
+    JD.tableY + 143,
+    62,
+    19
+  );
+
+  // ソーダ
+  jdFill("soda", 210);
+  rect(
+    t.x,
+    JD.tableY + 76,
+    42,
+    92,
+    9
+  );
+
+  // 左側だけに明るい色面を置く
+  jdFill("sodaLight", 72);
+  rect(
+    t.x - 11,
+    JD.tableY + 78,
+    11,
+    78,
+    6
+  );
+
+  jdFill("sodaLight", 145);
+  ellipse(
+    t.x,
+    JD.tableY + 122,
+    41,
+    12
+  );
+
+  jdFill("highlight", 64);
+  ellipse(
+    t.x - 10,
+    JD.tableY + 116,
+    13,
+    5
+  );
+
+  // 氷は3個から2個へ整理
+  jdDrawIceCube(
+    t.x - 11,
+    JD.tableY + 91,
+    16,
+    -16,
+    96
+  );
+
+  jdDrawIceCube(
+    t.x + 8,
+    JD.tableY + 69,
+    17,
+    11,
+    78
+  );
+
+  // 気泡も4個から2個へ
+  jdFill("highlight", 170);
+  ellipse(
+    t.x - 13,
+    JD.tableY + 62,
+    3.5,
+    3.5
+  );
+
+  ellipse(
+    t.x + 12,
+    JD.tableY + 94,
+    3,
+    3
+  );
+
+  // アイス
+  jdFill("creamWarm", 252);
+  ellipse(
+    t.x,
+    JD.tableY + 123,
+    46,
+    33
+  );
+
+  jdFill("highlight", 112);
+  ellipse(
+    t.x - 10,
+    JD.tableY + 130,
+    16,
+    7
+  );
+
+  // ストローはソーダの内部から外へ
   jdStroke("redDeep", 210);
   strokeWidth(2.2);
-  line(t.x + 5, JD.tableY + 86, t.x + 30, JD.tableY + 204);
+
+  line(
+    t.x + 5,
+    JD.tableY + 86,
+    t.x + 30,
+    JD.tableY + 204
+  );
+
   noStroke();
-
-  // soda body: lifted more clearly so the fill sits higher in the glass
-  jdFill("soda", 210);
-  rect(t.x, JD.tableY + 76, 42, 92, 9);
-  jdFill("sodaDeep", 60);
-  rect(t.x + 9, JD.tableY + 72, 16, 82, 7);
-  jdFill("sodaLight", 150);
-  ellipse(t.x, JD.tableY + 122, 41, 12);
-  jdFill("highlight", 68);
-  ellipse(t.x - 10, JD.tableY + 116, 14, 6);
-
-  // ice cubes, simplified and contained
-  jdDrawIceCube(t.x - 12, JD.tableY + 94, 16, -18, 105);
-  jdDrawIceCube(t.x + 9, JD.tableY + 75, 18, 12, 88);
-  jdDrawIceCube(t.x - 3, JD.tableY + 56, 16, 6, 66);
-
-  // bubbles
-  jdFill("highlight", 185);
-  ellipse(t.x - 16, JD.tableY + 59, 3.5, 3.5);
-  ellipse(t.x + 15, JD.tableY + 83, 3, 3);
-  ellipse(t.x + 6, JD.tableY + 99, 4, 4);
-  ellipse(t.x - 4, JD.tableY + 116, 3, 3);
-
-  // ice cream: resting on the soda, not floating above it
-  jdFill("creamWarm", 252);
-  ellipse(t.x, JD.tableY + 123, 46, 33);
-  jdFill("highlight", 130);
-  ellipse(t.x - 10, JD.tableY + 130, 17, 8);
-  jdFill("plate", 80);
-  ellipse(t.x + 7, JD.tableY + 117, 22, 9);
-
-  jdDrawTargetLabel(jdT("target.melon"), t.x, JD.tableY - 23);
 }
+
 
 function jdDrawIceCube(x, y, size, deg, alpha) {
   pushMatrix();
@@ -2914,17 +3163,20 @@ function jdDrawTarget(t) {
   rectMode(CENTER);
   ellipseMode(CENTER);
   noStroke();
-  jdFill("shadow", 38);
-  ellipse(t.x + 5, JD.tableY + 1, t.w + 26, 13);
 
+  // 各オブジェクト側で接地影を描くため、
+  // ここにあった共通の大きな影は削除
   if (t.kind === "coffee") {
     jdDrawCoffeeTarget(t);
+
   } else if (t.kind === "cake") {
     jdDrawCakeTarget(t);
+
   } else if (t.kind === "melon") {
     jdDrawMelonTarget(t);
   }
 }
+
 
 function jdDrawFood(
   f,
@@ -3181,23 +3433,111 @@ function jdDrawObstacle(o) {
   rectMode(CENTER);
   ellipseMode(CENTER);
   noStroke();
+
   if (o.kind === "spoon") {
-    jdStroke("highlight", 215); strokeWidth(5); line(o.x - 32, o.y, o.x + 28, o.y + 3);
-    noStroke(); jdFill("highlight", 215); ellipse(o.x + 36, o.y + 5, 24, 10);
-    jdFill("shadow", 36); ellipse(o.x + 5, o.y - 5, 76, 6);
+    // 接地影を先に描く
+    jdFill("shadow", 28);
+    ellipse(
+      o.x + 5,
+      o.y - 4,
+      77,
+      6
+    );
+
+    // 柄
+    jdStroke("highlight", 210);
+    strokeWidth(5);
+
+    line(
+      o.x - 32,
+      o.y,
+      o.x + 28,
+      o.y + 3
+    );
+
+    noStroke();
+
+    // 先端
+    jdFill("highlight", 215);
+    ellipse(
+      o.x + 36,
+      o.y + 5,
+      24,
+      10
+    );
+
+    // 左上の小さな反射
+    jdFill("creamWarm", 72);
+    ellipse(
+      o.x + 31,
+      o.y + 7,
+      10,
+      3
+    );
+
   } else if (o.kind === "ticket") {
-    jdFill("woodDark", 90); rect(o.x, JD.tableY + 10, 38, 8, 2);
-    jdFill("paper"); rect(o.x, o.y, o.w, o.h, 3);
-    jdFill("red", 60); rect(o.x, o.y + 15, o.w - 5, 4, 2);
+    jdFill("shadow", 30);
+    rect(
+      o.x + 3,
+      o.y - 3,
+      o.w,
+      o.h,
+      3
+    );
+
+    jdFill("paper");
+    rect(
+      o.x,
+      o.y,
+      o.w,
+      o.h,
+      3
+    );
+
+    jdFill("red", 60);
+    rect(
+      o.x,
+      o.y + 15,
+      o.w - 5,
+      4,
+      2
+    );
+
   } else if (o.kind === "coaster") {
-    // small wooden coaster between melon soda and cake
-    jdFill("shadow", 32); ellipse(o.x + 4, o.y - 3, o.r * 2.3, o.r * 0.58);
-    jdFill("wood", 230); ellipse(o.x, o.y, o.r * 2.05, o.r * 0.62);
-    jdFill("woodDark", 120); ellipse(o.x, o.y + 1, o.r * 1.42, o.r * 0.34);
-    jdFill("highlight", 44); ellipse(o.x - 4, o.y + 3, o.r * 1.1, o.r * 0.18);
-    jdFill("redDeep", 70); ellipse(o.x + 1, o.y + 1, o.r * 0.64, o.r * 0.16);
+    jdFill("shadow", 30);
+    ellipse(
+      o.x + 4,
+      o.y - 3,
+      o.r * 2.05,
+      o.r * 0.62
+    );
+
+    jdFill("wood", 230);
+    ellipse(
+      o.x,
+      o.y,
+      o.r * 2.05,
+      o.r * 0.62
+    );
+
+    jdFill("woodDark", 115);
+    ellipse(
+      o.x,
+      o.y + 1,
+      o.r * 1.42,
+      o.r * 0.34
+    );
+
+    jdFill("highlight", 42);
+    ellipse(
+      o.x - 4,
+      o.y + 3,
+      o.r * 0.92,
+      o.r * 0.15
+    );
   }
 }
+
 
 function jdDrawLauncher() {
   const x = JD.launcher.x;
