@@ -679,40 +679,19 @@ function jdDrawPosterPrintFinish() {
   rectMode(CORNER);
   noStroke();
 
-  // ごく薄い暖色の刷り重ね
-  fill(
-    130,
-    63,
-    39,
-    7
-  );
-
-  rect(
-    0,
-    0,
-    JD.LOGICAL_W,
-    JD.LOGICAL_H
-  );
-
-  // 規則的すぎない長い印刷筋
+  // 全体を黄変させる色ベールは使用しない。
+  // 紙の繊維を思わせる固定の横筋だけを薄く重ねる。
   fill(
     255,
-    236,
-    190,
-    8
+    248,
+    228,
+    3
   );
 
-  const drift =
-    Math.floor(
-      ElapsedTime * 0.15
-    ) % 19;
-
   for (
-    let y =
-      -drift;
-    y <
-      JD.LOGICAL_H;
-    y += 19
+    let y = 11;
+    y < JD.LOGICAL_H;
+    y += 34
   ) {
     rect(
       0,
@@ -722,42 +701,71 @@ function jdDrawPosterPrintFinish() {
     );
   }
 
-  // 四隅に古い印刷物らしい登録点
-  jdFill(
-    "redDeep",
-    48
+  // 刷りムラを数本だけ、不規則な位置へ置く
+  fill(
+    80,
+    53,
+    43,
+    2
   );
 
-  ellipse(
-    13,
-    13,
-    3,
-    3
+  rect(
+    0,
+    177,
+    JD.LOGICAL_W,
+    1
   );
 
-  ellipse(
-    JD.LOGICAL_W - 13,
-    13,
-    3,
-    3
+  rect(
+    0,
+    431,
+    JD.LOGICAL_W,
+    1
   );
 
-  ellipse(
-    13,
-    JD.LOGICAL_H - 13,
-    3,
-    3
-  );
+  // 登録点はポスターそのものに見える
+  // タイトル画面だけに限定
+  if (
+    JD.state ===
+    STATE_TITLE
+  ) {
+    jdFill(
+      "redDeep",
+      42
+    );
 
-  ellipse(
-    JD.LOGICAL_W - 13,
-    JD.LOGICAL_H - 13,
-    3,
-    3
-  );
+    ellipse(
+      13,
+      13,
+      3,
+      3
+    );
+
+    ellipse(
+      JD.LOGICAL_W - 13,
+      13,
+      3,
+      3
+    );
+
+    ellipse(
+      13,
+      JD.LOGICAL_H - 13,
+      3,
+      3
+    );
+
+    ellipse(
+      JD.LOGICAL_W - 13,
+      JD.LOGICAL_H - 13,
+      3,
+      3
+    );
+  }
 
   noStroke();
 }
+
 
 
 
@@ -953,65 +961,67 @@ function jdStyleColor(
       },
 
       posterBg: {
-        r: 226,
-        g: 190,
-        b: 132,
+        r: 220,
+        g: 193,
+        b: 151,
         a: 255
       },
 
       posterBg2: {
-        r: 193,
-        g: 132,
-        b: 77,
+        r: 185,
+        g: 143,
+        b: 102,
         a: 255
       },
 
+      // 黄土色ではなく、少し灰色を含む古い漆喰壁
       wall: {
-        r: 222,
-        g: 185,
-        b: 127,
+        r: 215,
+        g: 188,
+        b: 149,
         a: 255
       },
 
       wallShade: {
-        r: 201,
-        g: 150,
-        b: 91,
+        r: 187,
+        g: 151,
+        b: 112,
         a: 255
       },
 
       wallLine: {
-        r: 139,
-        g: 72,
-        b: 48,
+        r: 125,
+        g: 78,
+        b: 59,
         a: 255
       },
 
+      // 少し青みを含む、夜の深緑
       tableTop: {
         r: 43,
-        g: 83,
-        b: 61,
+        g: 76,
+        b: 62,
         a: 255
       },
 
       tableFront: {
-        r: 29,
-        g: 67,
-        b: 50,
+        r: 30,
+        g: 62,
+        b: 52,
         a: 255
       },
 
       tableLip: {
-        r: 25,
-        g: 48,
-        b: 39,
+        r: 24,
+        g: 45,
+        b: 40,
         a: 255
       },
 
       tableStripe: {
-        r: 217,
-        g: 180,
-        b: 119,
+        r: 205,
+        g: 179,
+        b: 137,
         a: 255
       },
 
@@ -1029,24 +1039,25 @@ function jdStyleColor(
         a: 255
       },
 
+      // 壁より明るくし、紙UIを明確に分離
       paper: {
-        r: 244,
-        g: 220,
-        b: 169,
+        r: 240,
+        g: 225,
+        b: 193,
         a: 255
       },
 
       cream: {
-        r: 246,
-        g: 222,
-        b: 173,
+        r: 243,
+        g: 229,
+        b: 199,
         a: 255
       },
 
       creamWarm: {
-        r: 249,
-        g: 226,
-        b: 174,
+        r: 247,
+        g: 232,
+        b: 199,
         a: 255
       },
 
@@ -1093,16 +1104,16 @@ function jdStyleColor(
       },
 
       cakeCream: {
-        r: 247,
-        g: 224,
-        b: 181,
+        r: 246,
+        g: 229,
+        b: 199,
         a: 255
       },
 
       cakeSponge: {
-        r: 213,
-        g: 148,
-        b: 59,
+        r: 205,
+        g: 151,
+        b: 78,
         a: 255
       },
 
@@ -1156,37 +1167,38 @@ function jdStyleColor(
       },
 
       glass: {
-        r: 184,
+        r: 187,
         g: 215,
-        b: 179,
-        a: 255
-      },
-
-      glassEdge: {
-        r: 222,
-        g: 232,
         b: 195,
         a: 255
       },
 
+      glassEdge: {
+        r: 224,
+        g: 233,
+        b: 213,
+        a: 255
+      },
+
       ice: {
-        r: 159,
+        r: 166,
         g: 207,
-        b: 166,
+        b: 184,
         a: 255
       },
 
       plate: {
-        r: 239,
-        g: 213,
-        b: 165,
+        r: 240,
+        g: 225,
+        b: 194,
         a: 255
       },
 
+      // 黄色い光ではなく乳白色の照明
       highlight: {
         r: 255,
-        g: 232,
-        b: 178,
+        g: 244,
+        b: 218,
         a: 255
       }
     };
@@ -1256,27 +1268,29 @@ function jdStyleAlpha(
     if (
       name === "shadow"
     ) {
-      result *= 0.03;
+      // ドロップシャドウはほぼ使用しない
+      result *= 0.025;
 
     } else if (
       name === "highlight"
     ) {
-      result *= 0.10;
+      // ランプ・ガラス・液面の光だけは残す
+      result *= 0.30;
 
     } else if (
       name === "wallLine"
     ) {
-      result *= 0.48;
+      result *= 0.38;
 
     } else if (
       name === "woodDark"
     ) {
-      result *= 0.72;
+      result *= 0.68;
 
     } else if (
       name === "glassEdge"
     ) {
-      result *= 0.42;
+      result *= 0.58;
     }
   }
 
