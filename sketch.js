@@ -5943,10 +5943,12 @@ function jdDrawWorld() {
       JD.food.resolved &&
       JD.food.label
     ) {
-      jdFill(
-        "highlight",
-        230
-      );
+      const isFloor =
+        JD.food.label ===
+        jdT(
+          "result.floor",
+          "FLOOR"
+        );
 
       font(
         "Courier-Bold"
@@ -5958,13 +5960,42 @@ function jdDrawWorld() {
       // FLOORは食材や皿と重なりやすいため、
       // カウンター前面の緑色部分へ表示する。
       const resultLabelY =
-        JD.food.label ===
-        jdT(
-          "result.floor",
-          "FLOOR"
-        )
+        isFloor
           ? JD.tableY - 12
           : JD.food.y + 34;
+
+      if (
+        isFloor
+      ) {
+        // 薄い影ではなく、印刷の版ずれとして濃茶を添える。
+        fill(
+          74,
+          45,
+          38,
+          165
+        );
+
+        text(
+          JD.food.label,
+          JD.food.x + 1.2,
+          resultLabelY - 1
+        );
+
+        // ポスター版のhighlight補正を通さない、
+        // 完全不透明の明るいクリーム色。
+        fill(
+          255,
+          247,
+          220,
+          255
+        );
+
+      } else {
+        jdFill(
+          "highlight",
+          230
+        );
+      }
 
       text(
         JD.food.label,
@@ -9002,15 +9033,15 @@ function jdDrawLauncherItemTicket() {
 
   const ticketW =
     jdClamp(
-      54 +
+      62 +
       name.length *
-      7.4,
-      96,
-      142
+      7.8,
+      108,
+      150
     );
 
   const ticketH =
-    34;
+    40;
 
   const targetX =
     JD.launcher.x -
@@ -9208,7 +9239,7 @@ function jdDrawLauncherItemTicket() {
     ticketH / 2 -
     5,
     ticketW -
-    16,
+    22,
     3,
     1.5
   );
@@ -9244,7 +9275,7 @@ function jdDrawLauncherItemTicket() {
   text(
     name,
     x,
-    y + 3
+    y - 2
   );
 
   popMatrix();
@@ -9799,7 +9830,7 @@ function jdDrawPlayUI() {
   const w =
     JD.LOGICAL_W - 32;
 
-  const h = 34;
+  const h = 40;
 
   const panelAlpha =
     255;
@@ -9909,7 +9940,7 @@ function jdDrawPlayUI() {
   text(
     "WORK TICKET",
     82,
-    cy + 7
+    cy + 5
   );
 
   font("Courier-Bold");
@@ -9921,7 +9952,7 @@ function jdDrawPlayUI() {
       "MONDAY SHIFT"
     ),
     82,
-    cy - 6
+    cy - 8
   );
 
   // --------------------------------
@@ -9937,7 +9968,7 @@ function jdDrawPlayUI() {
       "SALES"
     ),
     187,
-    cy + 7
+    cy + 5
   );
 
   font("Courier-Bold");
@@ -9949,7 +9980,7 @@ function jdDrawPlayUI() {
       "YEN"
     )}`,
     187,
-    cy - 6
+    cy - 8
   );
 
   // --------------------------------
@@ -9965,7 +9996,7 @@ function jdDrawPlayUI() {
       "REST"
     ),
     292,
-    cy + 7
+    cy + 5
   );
 
   font("Courier-Bold");
@@ -9974,7 +10005,7 @@ function jdDrawPlayUI() {
   text(
     String(rest),
     292,
-    cy - 6
+    cy - 8
   );
 
   // --------------------------------
