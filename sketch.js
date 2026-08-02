@@ -487,11 +487,75 @@ function jdC(name) {
       255
     );
 
-  return jdStyleColor(
-    name,
-    base
-  );
+  const styled =
+    jdStyleColor(
+      name,
+      base
+    );
+
+  // ポストカードの中で、
+  // フルーツとアクセントだけ少しインクを濃くする。
+  if (
+    name === "red"
+  ) {
+    return {
+      r: jdClamp(
+        styled.r * 1.08 + 5,
+        0,
+        255
+      ),
+
+      g: jdClamp(
+        styled.g * 0.96,
+        0,
+        255
+      ),
+
+      b: jdClamp(
+        styled.b * 0.95,
+        0,
+        255
+      ),
+
+      a:
+        styled.a === undefined
+          ? 255
+          : styled.a
+    };
+  }
+
+  if (
+    name === "redDeep"
+  ) {
+    return {
+      r: jdClamp(
+        styled.r * 1.07 + 3,
+        0,
+        255
+      ),
+
+      g: jdClamp(
+        styled.g * 0.97,
+        0,
+        255
+      ),
+
+      b: jdClamp(
+        styled.b * 0.97,
+        0,
+        255
+      ),
+
+      a:
+        styled.a === undefined
+          ? 255
+          : styled.a
+    };
+  }
+
+  return styled;
 }
+
 
 
 
@@ -551,43 +615,13 @@ function jdStroke(
 }
 
 
-function jdVisualStyleNames() {
-  return [
-    {
-      id: "poster",
-      label: "ポスターカラー",
-      sub: "正式ビジュアル"
-    }
-  ];
-}
 
 
-function jdLoadVisualStyle() {
-  return "poster";
-}
 
 
-function jdSetVisualStyle(_styleId) {
-  JD.visualStyle =
-    "poster";
 
-  JD.styleSettingsOpen =
-    false;
 
-  // 以前の比較用設定が残らないよう削除する。
-  if (
-    typeof localStorage !==
-    "undefined"
-  ) {
-    try {
-      localStorage.removeItem(
-        "junkissa_visual_style"
-      );
-    } catch (_error) {
-      // 保存領域へアクセスできなくてもゲームは続行
-    }
-  }
-}
+
 
 
 function jdIsPosterStyle() {
@@ -595,33 +629,16 @@ function jdIsPosterStyle() {
 }
 
 
-function jdIsFineLineStyle() {
-  return false;
-}
 
 
-function jdFineAlpha(
-  normalAlpha,
-  _fineAlpha
-) {
-  return normalAlpha;
-}
 
 
-function jdFineStroke(
-  _alpha = 205,
-  _width = 1.15
-) {
-  noStroke();
-}
 
 
-function jdFineAccentStroke(
-  _alpha = 185,
-  _width = 1.15
-) {
-  noStroke();
-}
+
+
+
+
 
 
 
@@ -728,9 +745,7 @@ function jdDrawPosterPrintFinish() {
   rectMode(CORNER);
 }
 
-function jdDrawFineLineFinish() {
-  return;
-}
+
 
 
 
@@ -1184,12 +1199,7 @@ function jdStyleColor(
   return source;
 }
 
-function jdFineLineColor(
-  _name,
-  source
-) {
-  return source;
-}
+
 
 
 
@@ -1308,32 +1318,17 @@ function jdStyleAlpha(
 
 
 
-function jdDrawStyleSettingsButton() {
-  return;
-}
-
-
-function jdDrawStyleSample(
-  _styleId,
-  _x,
-  _y
-) {
-  return;
-}
 
 
 
-function jdDrawStyleSettingsPanel() {
-  return;
-}
 
 
-function jdStyleSettingsHit(
-  _x,
-  _y
-) {
-  return null;
-}
+
+
+
+
+
+
 
 
 
@@ -3079,6 +3074,15 @@ function jdResolve(t, missType) {
       t.kind,
       cakeSasari
     );
+
+    // 成功した瞬間だけ、
+    // 白いインクが数粒ふわっと弾ける。
+    jdSpawnPostcardSuccessInk(
+      f.x,
+      f.y,
+      t.kind
+    );
+
     if (
       cakeSasari
     ) {
@@ -6675,30 +6679,13 @@ function jdDrawCherryGarnish(x, y, sc = 1) {
   popMatrix();
 }
 
-function jdDrawFineTargetOutline(
-  _target
-) {
-  return;
-}
 
 
-function jdDrawFineFoodOutline(
-  _food,
-  _x,
-  _y,
-  _scaleValue = 1,
-  _alpha = 205
-) {
-  return;
-}
 
 
-function jdDrawFineLauncherOutline(
-  _x,
-  _y
-) {
-  return;
-}
+
+
+
 
 
 
@@ -7448,14 +7435,22 @@ function jdDrawPlacedFoods() {
 
     let sc = 1;
 
-    if (age < 0.32) {
+    if (
+      age >= 0 &&
+      age < 0.24
+    ) {
+      const breatheT =
+        age /
+        0.24;
+
+      // 1.00 → 1.035 → 1.00
       sc =
         1 +
         Math.sin(
-          (age / 0.32) *
+          breatheT *
           Math.PI
         ) *
-        0.26;
+        0.035;
     }
 
     // 古い設置データでも安全に描画できるよう補完
@@ -7807,34 +7802,58 @@ function jdDrawHitEffectWorld() {
 
   noStroke();
 
-  fill(
-    255,
-    255,
-    255,
-    alpha
-  );
-
   font(
     "Courier-Bold"
   );
 
-  fontSize(
+  const postcardLabelSize =
     labelSize *
+    1.08 *
     (
       0.92 +
       settle *
       0.08
-    )
+    );
+
+  fontSize(
+    postcardLabelSize
+  );
+
+  const labelY =
+    y +
+    42 +
+    pop *
+    5;
+
+  // 印刷物らしい、ごく小さな版ずれ。
+  // 影ではなく、濃茶のインクが1pxずれた表現。
+  fill(
+    86,
+    52,
+    43,
+    alpha * 0.28
+  );
+
+  text(
+    JD.hitEffectLabel ||
+    "GOOD!",
+    x + 1.2,
+    labelY - 1.1
+  );
+
+  // 本体は白ではなく、紙に馴染む明るいクリーム。
+  fill(
+    255,
+    252,
+    235,
+    alpha
   );
 
   text(
     JD.hitEffectLabel ||
     "GOOD!",
     x,
-    y +
-    42 +
-    pop *
-    5
+    labelY
   );
 
   if (
@@ -7844,10 +7863,10 @@ function jdDrawHitEffectWorld() {
 
     fill(
       255,
-      245,
-      210,
+      251,
+      231,
       alpha *
-      0.82
+      0.90
     );
 
     text(
@@ -8220,6 +8239,57 @@ function jdDrawParticles() {
         p.size * life,
         p.size * 0.62 * life,
         1
+      );
+
+    // --------------------------------
+    // 成功時の白いインク粒
+    // --------------------------------
+
+    } else if (
+      p.kind ===
+      "postcardInk"
+    ) {
+      const size =
+        p.size *
+        (
+          0.55 +
+          life * 0.45
+        );
+
+      // 外側の紙白
+      fill(
+        255,
+        250,
+        232,
+        alpha * 0.96
+      );
+
+      ellipse(
+        0,
+        0,
+        size * 1.18,
+        size * 0.82
+      );
+
+      // 一点だけ明るい芯を残す
+      fill(
+        255,
+        255,
+        246,
+        alpha * 0.70
+      );
+
+      ellipse(
+        -size * 0.16,
+        size * 0.10,
+        Math.max(
+          1,
+          size * 0.34
+        ),
+        Math.max(
+          1,
+          size * 0.26
+        )
       );
 
     // --------------------------------
@@ -8651,6 +8721,105 @@ function jdSpawnSplash(
     });
   }
 }
+
+function jdSpawnPostcardSuccessInk(
+  x,
+  y,
+  targetKind
+) {
+  if (
+    !Array.isArray(
+      JD.particles
+    )
+  ) {
+    JD.particles = [];
+  }
+
+  const whiteInk = {
+    r: 255,
+    g: 250,
+    b: 232
+  };
+
+  const count =
+    targetKind === "melon"
+      ? 6
+      : 5;
+
+  for (
+    let i = 0;
+    i < count;
+    i++
+  ) {
+    const angle =
+      Math.PI * 0.18 +
+      (
+        i /
+        Math.max(
+          1,
+          count - 1
+        )
+      ) *
+      Math.PI *
+      0.64;
+
+    const speed =
+      34 +
+      Math.random() *
+      30;
+
+    JD.particles.push({
+      kind: "postcardInk",
+
+      x:
+        x -
+        4 +
+        Math.random() *
+        8,
+
+      y:
+        y +
+        Math.random() *
+        4,
+
+      vx:
+        Math.cos(angle) *
+        speed,
+
+      vy:
+        Math.sin(angle) *
+        speed,
+
+      // 少し浮いたあと、静かに落ちる
+      gravity:
+        105,
+
+      drag:
+        0.972,
+
+      life:
+        0.48 +
+        Math.random() *
+        0.16,
+
+      decay:
+        1.55 +
+        Math.random() *
+        0.22,
+
+      size:
+        2.4 +
+        Math.random() *
+        2.3,
+
+      age: 0,
+
+      col:
+        whiteInk
+    });
+  }
+}
+
 
 
 function jdUpdateParticles(dt) {
