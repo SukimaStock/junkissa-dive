@@ -4318,6 +4318,483 @@ function jdDrawTitle() {
   }
 }
 
+function jdDrawTitleIlluminatedSign(
+  cx,
+  cy,
+  signW,
+  signH
+) {
+  rectMode(CENTER);
+  ellipseMode(CENTER);
+  textAlign(CENTER);
+  noStroke();
+
+  // 約3.2秒周期の静かな呼吸
+  const breathe =
+    0.5 +
+    0.5 *
+    Math.sin(
+      ElapsedTime *
+      Math.PI *
+      2 /
+      3.2
+    );
+
+  // 古い蛍光灯がわずかに揺れる程度。
+  // 大きく点滅はさせない。
+  const flicker =
+    Math.sin(
+      ElapsedTime *
+      17.3
+    ) *
+    0.5 +
+    Math.sin(
+      ElapsedTime *
+      29.7
+    ) *
+    0.5;
+
+  const glowStrength =
+    jdClamp(
+      breathe +
+      flicker *
+      0.035,
+      0,
+      1
+    );
+
+  // ==================================================
+  // 背後の光
+  //
+  // グローではなく、紙へ刷られた淡い光の層。
+  // ==================================================
+
+  fill(
+    246,
+    202,
+    126,
+    20 +
+    glowStrength *
+    24
+  );
+
+  rect(
+    cx,
+    cy,
+    signW + 34,
+    signH + 30,
+    31
+  );
+
+  fill(
+    255,
+    222,
+    151,
+    16 +
+    glowStrength *
+    18
+  );
+
+  rect(
+    cx,
+    cy,
+    signW + 20,
+    signH + 18,
+    27
+  );
+
+  // ==================================================
+  // 版ずれのような背面
+  // ==================================================
+
+  fill(
+    65,
+    37,
+    31,
+    255
+  );
+
+  rect(
+    cx + 5,
+    cy - 6,
+    signW,
+    signH,
+    23
+  );
+
+  // ==================================================
+  // 太い外枠
+  // ==================================================
+
+  fill(
+    92,
+    29,
+    27,
+    255
+  );
+
+  rect(
+    cx,
+    cy,
+    signW,
+    signH,
+    23
+  );
+
+  // 外枠の赤い正面
+  fill(
+    139,
+    39,
+    35,
+    255
+  );
+
+  rect(
+    cx,
+    cy + 2,
+    signW - 9,
+    signH - 9,
+    20
+  );
+
+  // ==================================================
+  // 内照面
+  //
+  // 現段階では深い赤地＋生成り文字。
+  // ==================================================
+
+  fill(
+    126 +
+    glowStrength * 8,
+    35 +
+    glowStrength * 4,
+    32 +
+    glowStrength * 3,
+    255
+  );
+
+  rect(
+    cx,
+    cy + 2,
+    signW - 25,
+    signH - 25,
+    14
+  );
+
+  // 内側にごく薄い橙色を重ね、
+  // 赤い板そのものが光っている印象にする。
+  fill(
+    225,
+    126,
+    66,
+    8 +
+    glowStrength * 13
+  );
+
+  rect(
+    cx,
+    cy + 2,
+    signW - 31,
+    signH - 31,
+    12
+  );
+
+  // ==================================================
+  // 看板内の微かな光ムラ
+  // ==================================================
+
+  fill(
+    255,
+    216,
+    144,
+    8 +
+    glowStrength * 10
+  );
+
+  ellipse(
+    cx - signW * 0.20,
+    cy + signH * 0.19,
+    signW * 0.42,
+    signH * 0.40
+  );
+
+  fill(
+    255,
+    225,
+    167,
+    5 +
+    glowStrength * 8
+  );
+
+  ellipse(
+    cx + signW * 0.23,
+    cy - signH * 0.18,
+    signW * 0.34,
+    signH * 0.33
+  );
+
+  // ==================================================
+  // 仮タイトル
+  //
+  // 3/8で文字組みを詳しく調整する。
+  // 最終的に「ダイヴ」は専用ロゴへ差し替える。
+  // ==================================================
+
+  jdDrawTitleDiveLogo(
+    cx,
+    cy,
+    glowStrength
+  );
+
+  // ==================================================
+  // 小さな英字
+  // ==================================================
+
+  fill(
+    255,
+    232,
+    185,
+    220 +
+    glowStrength * 35
+  );
+
+  font(
+    "Courier-Bold"
+  );
+
+  fontSize(9.5);
+
+  text(
+    "JUNKISSA DIVE",
+    cx,
+    cy - 57
+  );
+}
+
+
+// =====================================================
+// 2. 将来差し替えるタイトルロゴ関数
+//
+// 現在は通常文字で仮描画。
+// 最終段階ではこの関数だけを交換する。
+// =====================================================
+
+function jdDrawTitleDiveLogo(
+  cx,
+  cy,
+  glowStrength = 0
+) {
+  textAlign(CENTER);
+
+  // 背後の淡い発光文字
+  fill(
+    255,
+    215,
+    142,
+    22 +
+    glowStrength * 28
+  );
+
+  jdJapaneseFont();
+
+  fontSize(21);
+
+  text(
+    "純喫茶",
+    cx + 1,
+    cy + 26
+  );
+
+  fontSize(33);
+
+  text(
+    "ダイヴ",
+    cx + 1,
+    cy - 20
+  );
+
+  // 本体文字
+  fill(
+    255,
+    239,
+    199,
+    242 +
+    glowStrength * 13
+  );
+
+  jdJapaneseFont();
+
+  fontSize(21);
+
+  text(
+    "純喫茶",
+    cx,
+    cy + 26
+  );
+
+  fontSize(33);
+
+  text(
+    "ダイヴ",
+    cx,
+    cy - 20
+  );
+
+  // 下側へわずかな印刷の溜まりを置く
+  fill(
+    255,
+    218,
+    156,
+    38 +
+    glowStrength * 20
+  );
+
+  rectMode(CENTER);
+
+  rect(
+    cx,
+    cy - 44,
+    84,
+    1.5,
+    0.75
+  );
+}
+
+
+// =====================================================
+// 3. jdDrawTitle内の仮看板を新しい看板へ置換
+// =====================================================
+
+// [REPLACE_EXACT: replace temporary title sign with illuminated sign]
+// [FIND]
+  // ==================================================
+  // 6. 中央の仮看板
+  //
+  // 発光・フレームの詳細は2/8で実装する。
+  // ==================================================
+
+  const signX = cx;
+  const signY = 350;
+  const signW = 264;
+  const signH = 150;
+
+  rectMode(CENTER);
+
+  // 仮の背面
+  fill(
+    69,
+    39,
+    32,
+    255
+  );
+
+  rect(
+    signX + 4,
+    signY - 5,
+    signW,
+    signH,
+    22
+  );
+
+  // 仮看板
+  fill(
+    132,
+    42,
+    37,
+    255
+  );
+
+  rect(
+    signX,
+    signY,
+    signW,
+    signH,
+    22
+  );
+
+  // 仮の内側面
+  fill(
+    238,
+    211,
+    163,
+    255
+  );
+
+  rect(
+    signX,
+    signY,
+    signW - 18,
+    signH - 18,
+    15
+  );
+
+  // ==================================================
+  // 7. 仮タイトル
+  //
+  // 文字領域の確認用。
+  // 正式な組み方は3/8で調整する。
+  // ==================================================
+
+  fill(
+    67,
+    43,
+    35,
+    255
+  );
+
+  jdJapaneseFont();
+  fontSize(22);
+
+  text(
+    "純喫茶",
+    cx,
+    signY + 24
+  );
+
+  fontSize(31);
+
+  text(
+    "ダイヴ",
+    cx,
+    signY - 22
+  );
+
+  fill(
+    121,
+    45,
+    39,
+    255
+  );
+
+  font(
+    "Courier-Bold"
+  );
+
+  fontSize(10);
+
+  text(
+    "JUNKISSA DIVE",
+    cx,
+    signY - 57
+  );
+// [REPLACE]
+  // ==================================================
+  // 6. 中央の内照式看板
+  // ==================================================
+
+  const signX = cx;
+  const signY = 350;
+  const signW = 264;
+  const signH = 150;
+
+  jdDrawTitleIlluminatedSign(
+    signX,
+    signY,
+    signW,
+    signH
+  );
+
+
 
 function jdDrawStyleSettingsButton() {
   return;
