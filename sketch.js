@@ -4078,6 +4078,15 @@ function jdDrawTitle() {
   }
 }
 
+function jdDrawStyleSettingsButton() {
+  return;
+}
+
+function jdDrawStyleSettingsPanel() {
+  return;
+}
+
+
 
 function jdDrawTinyCafePreview() {
   rectMode(CENTER);
