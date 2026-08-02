@@ -6991,36 +6991,22 @@ function jdDrawObstacle(o) {
   noStroke();
 
   if (o.kind === "spoon") {
-    // 接地影はごく薄く残す
+    // 接地影だけでカウンターとの位置関係を示す。
+    // スプーン本体には輪郭線を付けない。
     jdFill(
       "shadow",
-      24
+      20
     );
 
     ellipse(
       o.x + 5,
       o.y - 4,
-      77,
-      6
+      75,
+      5
     );
 
-    // 柄の外側。
-    // 輪郭を先に太く描き、その上へ本体色を重ねる。
-    jdStroke(
-      "woodDark",
-      135
-    );
-
-    strokeWidth(6.5);
-
-    line(
-      o.x - 32,
-      o.y,
-      o.x + 28,
-      o.y + 3
-    );
-
-    // 不透明なクリーム色の柄
+    // 柄の本体。
+    // ほかの食器と同じ、不透明なクリーム色の面で描く。
     stroke(
       255,
       247,
@@ -7028,7 +7014,7 @@ function jdDrawObstacle(o) {
       255
     );
 
-    strokeWidth(4.5);
+    strokeWidth(5);
 
     line(
       o.x - 32,
@@ -7037,22 +7023,26 @@ function jdDrawObstacle(o) {
       o.y + 3
     );
 
+    // 柄の上側に、ごく薄い色差だけを添える。
+    stroke(
+      255,
+      252,
+      235,
+      205
+    );
+
+    strokeWidth(1.4);
+
+    line(
+      o.x - 30,
+      o.y + 1,
+      o.x + 26,
+      o.y + 4
+    );
+
     noStroke();
 
-    // 先端の薄い輪郭
-    jdFill(
-      "woodDark",
-      135
-    );
-
-    ellipse(
-      o.x + 36,
-      o.y + 5,
-      26,
-      12
-    );
-
-    // 不透明な先端
+    // 先端も輪郭なしの一枚の色面。
     fill(
       255,
       247,
@@ -7063,16 +7053,16 @@ function jdDrawObstacle(o) {
     ellipse(
       o.x + 36,
       o.y + 5,
-      23,
-      9
+      24,
+      10
     );
 
-    // 左上の小さな反射
+    // 印刷面のわずかな明るさの差。
     fill(
       255,
       253,
       238,
-      255
+      210
     );
 
     ellipse(
@@ -7081,6 +7071,8 @@ function jdDrawObstacle(o) {
       9,
       2.5
     );
+
+    noStroke();
 
   } else if (o.kind === "ticket") {
     jdFill("shadow", 30);
@@ -8107,10 +8099,24 @@ function jdDrawLastShotGhost() {
       startWeight * 28
     );
 
+    // 印刷時のインク圧の揺れ。
+    // 規則的な点線には見えない程度に、ごく小さく変化させる。
+    const underprintPressure =
+      Math.sin(
+        i * 1.47
+      ) * 0.14 +
+      Math.sin(
+        i * 0.63
+      ) * 0.08;
+
     strokeWidth(
-      2.0 +
-      centerWeight * 0.8 +
-      startWeight * 0.5
+      Math.max(
+        1.7,
+        2.0 +
+        centerWeight * 0.8 +
+        startWeight * 0.5 +
+        underprintPressure
+      )
     );
 
     line(
@@ -8200,10 +8206,24 @@ function jdDrawLastShotGhost() {
       floorFade
     );
 
+    // 均一なベクター線ではなく、
+// 一筆で描いたような小さな筆圧差を加える。
+    const handPressure =
+      Math.sin(
+        i * 1.63
+      ) * 0.20 +
+      Math.sin(
+        i * 0.71
+      ) * 0.10;
+
     strokeWidth(
-      2.15 +
-      centerWeight * 1.55 +
-      startWeight * 0.65
+      Math.max(
+        1.85,
+        2.15 +
+        centerWeight * 1.55 +
+        startWeight * 0.65 +
+        handPressure
+      )
     );
 
     line(
