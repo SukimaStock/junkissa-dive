@@ -6010,22 +6010,24 @@ function jdDrawPlate(
   h,
   alpha = 235
 ) {
-  if (
-    !jdIsFineLineStyle()
-  ) {
-    jdFill(
-      "shadow",
-      34
-    );
+  ellipseMode(CENTER);
+  noStroke();
 
-    ellipse(
-      x + 5,
-      y - 3,
-      w,
-      h * 0.68
-    );
-  }
+  // ポスター版では落ち影をほぼ使わないが、
+  // ごく薄い接地面だけ残して皿を背景から分離する。
+  jdFill(
+    "shadow",
+    24
+  );
 
+  ellipse(
+    x + 4,
+    y - 2,
+    w,
+    h * 0.62
+  );
+
+  // 皿本体
   jdFill(
     "plate",
     alpha
@@ -6038,53 +6040,23 @@ function jdDrawPlate(
     h
   );
 
-  if (
-    jdIsFineLineStyle()
-  ) {
-    jdFineStroke(
-      178,
-      1.05
-    );
+  // 左上の乳白色反射。
+  // 立体感ではなく、印刷面の明るい差として控えめに残す。
+  jdFill(
+    "highlight",
+    42
+  );
 
-    ellipse(
-      x,
-      y,
-      w,
-      h
-    );
+  ellipse(
+    x - w * 0.14,
+    y + h * 0.12,
+    w * 0.42,
+    h * 0.25
+  );
 
-    // 皿の内側を一本だけ描く
-    jdStroke(
-      "wallLine",
-      105
-    );
-
-    strokeWidth(0.8);
-    noFill();
-
-    ellipse(
-      x,
-      y + 1,
-      w * 0.70,
-      h * 0.48
-    );
-
-    noStroke();
-
-  } else {
-    jdFill(
-      "highlight",
-      58
-    );
-
-    ellipse(
-      x - w * 0.14,
-      y + h * 0.12,
-      w * 0.46,
-      h * 0.28
-    );
-  }
+  noStroke();
 }
+
 
 
 
