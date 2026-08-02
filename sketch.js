@@ -4421,7 +4421,7 @@ function jdDrawPlay() {
 
     jdFill(
       "paper",
-      244 * alpha
+      255 * alpha
     );
 
     rect(
@@ -4434,7 +4434,7 @@ function jdDrawPlay() {
 
     jdFill(
       "redDeep",
-      185 * alpha
+      255 * alpha
     );
 
     rect(
@@ -4442,7 +4442,7 @@ function jdDrawPlay() {
       cardY + 70,
       cardW - 18,
       3,
-      2
+      1.5
     );
 
     jdFill(
@@ -7252,7 +7252,12 @@ function jdDrawLauncher() {
   );
 
   // 待機中のゴム
-  if (!JD.dragging) {
+  // チュートリアル中は専用の案内ゴムを描くため、
+  // 通常の待機ゴムは非表示にする。
+  if (
+    !JD.dragging &&
+    !JD.tutorialActive
+  ) {
     const breathe =
       ready && firstThrow
         ? pulse * 3
@@ -9175,9 +9180,10 @@ function jdDrawLauncherItemTicket() {
     6
   );
 
+  // 注文票と同じ、完全不透明の生成り紙
   jdFill(
     "paper",
-    238 *
+    255 *
     appearEase
   );
 
@@ -9186,31 +9192,31 @@ function jdDrawLauncherItemTicket() {
     y,
     ticketW,
     ticketH,
-    6
+    7
   );
 
-  // 上線ではなく下線
+  // 上端の赤線
   jdFill(
     "redDeep",
-    175 *
+    255 *
     appearEase
   );
 
   rect(
     x,
-    y -
-    ticketH / 2 +
-    6,
+    y +
+    ticketH / 2 -
+    5,
     ticketW -
     16,
     3,
-    2
+    1.5
   );
 
   // 素材名だけを大きく表示
   jdFill(
     "ink",
-    238 *
+    255 *
     appearEase
   );
 
@@ -9796,14 +9802,10 @@ function jdDrawPlayUI() {
   const h = 34;
 
   const panelAlpha =
-    resultMode
-      ? 118
-      : 224;
+    255;
 
   const textAlpha =
-    resultMode
-      ? 145
-      : 245;
+    245;
 
   if (
     jdIsPosterStyle()
@@ -9976,45 +9978,25 @@ function jdDrawPlayUI() {
   );
 
   // --------------------------------
-  // 下線
-  // 一枚の長い線ではなく、
-  // 3つの情報ごとに短く区切る
+  // 注文票と共通の上端赤線
   // --------------------------------
 
   jdFill(
     "redDeep",
-    resultMode
-      ? 80
-      : 165
+    255
   );
 
-  const underlineY =
-    cy -
-    h / 2 +
+  const topLineY =
+    cy +
+    h / 2 -
     5;
 
   rect(
-    82,
-    underlineY,
-    86,
+    cx,
+    topLineY,
+    w - 18,
     2.5,
-    1
-  );
-
-  rect(
-    187,
-    underlineY,
-    82,
-    2.5,
-    1
-  );
-
-  rect(
-    292,
-    underlineY,
-    58,
-    2.5,
-    1
+    1.5
   );
 
   // Fortune回転中の補助表示
@@ -10639,9 +10621,10 @@ function jdDrawFortuneMachine() {
     nameSize = 15;
   }
 
+  // 注文票と同じ、完全不透明の生成り紙
   jdFill(
     "paper",
-    252 *
+    255 *
     visibility
   );
 
@@ -10650,12 +10633,30 @@ function jdDrawFortuneMachine() {
     paperY,
     paperW,
     paperH,
-    9
+    7
   );
 
+  // 上端の赤線
   jdFill(
     "redDeep",
-    230 *
+    255 *
+    visibility
+  );
+
+  rect(
+    cx,
+    paperY +
+    paperH / 2 -
+    5,
+    paperW - 16,
+    3,
+    1.5
+  );
+
+  // 確定した素材名
+  jdFill(
+    "redDeep",
+    255 *
     visibility
   );
 
@@ -10670,7 +10671,7 @@ function jdDrawFortuneMachine() {
   text(
     showName,
     cx,
-    paperY - 1
+    paperY - 3
   );
 
   popMatrix();
