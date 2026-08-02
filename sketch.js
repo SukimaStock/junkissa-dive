@@ -493,68 +493,67 @@ function jdC(name) {
       base
     );
 
-  // ポストカードの中で、
-  // フルーツとアクセントだけ少しインクを濃くする。
+  // フルーツとアクセント用の赤だけ、
+  // ポスターの印刷インクらしく少し鮮やかにする。
   if (
     name === "red"
   ) {
-    return {
-      r: jdClamp(
+    return color(
+      jdClamp(
         styled.r * 1.08 + 5,
         0,
         255
       ),
 
-      g: jdClamp(
+      jdClamp(
         styled.g * 0.96,
         0,
         255
       ),
 
-      b: jdClamp(
+      jdClamp(
         styled.b * 0.95,
         0,
         255
       ),
 
-      a:
-        styled.a === undefined
-          ? 255
-          : styled.a
-    };
+      styled.a === undefined
+        ? 255
+        : styled.a
+    );
   }
 
   if (
     name === "redDeep"
   ) {
-    return {
-      r: jdClamp(
+    return color(
+      jdClamp(
         styled.r * 1.07 + 3,
         0,
         255
       ),
 
-      g: jdClamp(
+      jdClamp(
         styled.g * 0.97,
         0,
         255
       ),
 
-      b: jdClamp(
+      jdClamp(
         styled.b * 0.97,
         0,
         255
       ),
 
-      a:
-        styled.a === undefined
-          ? 255
-          : styled.a
-    };
+      styled.a === undefined
+        ? 255
+        : styled.a
+    );
   }
 
   return styled;
 }
+
 
 
 
