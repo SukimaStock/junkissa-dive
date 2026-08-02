@@ -3831,9 +3831,22 @@ function jdAppDraw() {
 function jdDrawTitle() {
   rectMode(CORNER);
   ellipseMode(CENTER);
+  textAlign(CENTER);
   noStroke();
 
-  jdFill("posterBg");
+  const cx =
+    JD.LOGICAL_W / 2;
+
+  // ==================================================
+  // 1. 画面外側
+  // ==================================================
+
+  fill(
+    48,
+    34,
+    29,
+    255
+  );
 
   rect(
     0,
@@ -3842,177 +3855,431 @@ function jdDrawTitle() {
     JD.LOGICAL_H
   );
 
-  jdFill(
-    "posterBg2",
-    70
+  // ==================================================
+  // 2. ポストカード本体
+  // ==================================================
+
+  const cardX = 12;
+  const cardY = 14;
+  const cardW =
+    JD.LOGICAL_W - 24;
+  const cardH =
+    JD.LOGICAL_H - 28;
+
+  // 紙面のごく薄い接地影
+  fill(
+    40,
+    28,
+    23,
+    72
   );
 
   rect(
-    0,
-    0,
-    JD.LOGICAL_W,
-    148
-  );
-
-  jdFill(
-    "tableTop",
-    235
-  );
-
-  rect(
-    0,
-    0,
-    JD.LOGICAL_W,
-    138
-  );
-
-  jdFill(
-    "tableLip",
-    235
-  );
-
-  rect(
-    0,
-    134,
-    JD.LOGICAL_W,
-    9
-  );
-
-  jdFill(
-    "red",
-    230
-  );
-
-  rect(
-    0,
-    458,
-    JD.LOGICAL_W,
-    10
-  );
-
-  jdFill(
-    "wood",
-    85
-  );
-
-  rect(
-    0,
-    470,
-    JD.LOGICAL_W,
+    cardX + 4,
+    cardY - 4,
+    cardW,
+    cardH,
     4
   );
 
-  // ポスターの登録点
-  jdFill(
-    "redDeep",
-    175
+  // 生成りの紙
+  fill(
+    228,
+    202,
+    158,
+    255
   );
 
-  ellipse(
-    38,
-    532,
-    8,
-    8
+  rect(
+    cardX,
+    cardY,
+    cardW,
+    cardH,
+    3
   );
 
-  ellipse(
-    JD.LOGICAL_W - 38,
-    532,
-    8,
-    8
+  // 上側だけごく淡く明るくし、
+  // 一枚の紙に印刷された面を作る。
+  fill(
+    247,
+    225,
+    184,
+    54
   );
 
-  jdDrawTinyCafePreview();
+  rect(
+    cardX,
+    cardY + cardH * 0.43,
+    cardW,
+    cardH * 0.57,
+    3
+  );
+
+  // ==================================================
+  // 3. 二重枠
+  // ==================================================
+
+  noFill();
+
+  // 外側の赤茶枠
+  stroke(
+    121,
+    45,
+    39,
+    255
+  );
+
+  strokeWidth(3.2);
+
+  rect(
+    cardX + 8,
+    cardY + 8,
+    cardW - 16,
+    cardH - 16,
+    2
+  );
+
+  // 内側の濃茶枠
+  stroke(
+    75,
+    48,
+    39,
+    255
+  );
+
+  strokeWidth(1.2);
+
+  rect(
+    cardX + 14,
+    cardY + 14,
+    cardW - 28,
+    cardH - 28,
+    1
+  );
+
+  noStroke();
+
+  // ==================================================
+  // 4. 四隅の印刷マーク
+  // ==================================================
+
+  const markInset = 22;
 
   fill(
-    60,
-    42,
-    31,
-    245
+    121,
+    45,
+    39,
+    215
   );
 
-  textAlign(CENTER);
+  ellipse(
+    cardX + markInset,
+    cardY + markInset,
+    5,
+    5
+  );
+
+  ellipse(
+    cardX + cardW - markInset,
+    cardY + markInset,
+    5,
+    5
+  );
+
+  ellipse(
+    cardX + markInset,
+    cardY + cardH - markInset,
+    5,
+    5
+  );
+
+  ellipse(
+    cardX + cardW - markInset,
+    cardY + cardH - markInset,
+    5,
+    5
+  );
+
+  // ==================================================
+  // 5. 紙面の薄い印刷線
+  //
+  // 背景を描き込みすぎず、
+  // 中央の余白を保つ。
+  // ==================================================
+
+  fill(
+    121,
+    45,
+    39,
+    54
+  );
+
+  rect(
+    cardX + 26,
+    498,
+    cardW - 52,
+    1.2
+  );
+
+  rect(
+    cardX + 26,
+    146,
+    cardW - 52,
+    1.2
+  );
+
+  // ==================================================
+  // 6. 中央の仮看板
+  //
+  // 発光・フレームの詳細は2/8で実装する。
+  // ==================================================
+
+  const signX = cx;
+  const signY = 350;
+  const signW = 264;
+  const signH = 150;
+
+  rectMode(CENTER);
+
+  // 仮の背面
+  fill(
+    69,
+    39,
+    32,
+    255
+  );
+
+  rect(
+    signX + 4,
+    signY - 5,
+    signW,
+    signH,
+    22
+  );
+
+  // 仮看板
+  fill(
+    132,
+    42,
+    37,
+    255
+  );
+
+  rect(
+    signX,
+    signY,
+    signW,
+    signH,
+    22
+  );
+
+  // 仮の内側面
+  fill(
+    238,
+    211,
+    163,
+    255
+  );
+
+  rect(
+    signX,
+    signY,
+    signW - 18,
+    signH - 18,
+    15
+  );
+
+  // ==================================================
+  // 7. 仮タイトル
+  //
+  // 文字領域の確認用。
+  // 正式な組み方は3/8で調整する。
+  // ==================================================
+
+  fill(
+    67,
+    43,
+    35,
+    255
+  );
 
   jdJapaneseFont();
+  fontSize(22);
+
+  text(
+    "純喫茶",
+    cx,
+    signY + 24
+  );
 
   fontSize(31);
 
   text(
-    "純喫茶ダイヴ",
-    JD.LOGICAL_W / 2,
-    414
-  );
-
-  jdFill(
-    "redDeep",
-    230
-  );
-
-  font("Courier-Bold");
-  fontSize(16);
-
-  text(
-    "JUNKISSA DIVE",
-    JD.LOGICAL_W / 2,
-    382
+    "ダイヴ",
+    cx,
+    signY - 22
   );
 
   fill(
-    84,
-    62,
-    48,
-    220
+    121,
+    45,
+    39,
+    255
+  );
+
+  font(
+    "Courier-Bold"
+  );
+
+  fontSize(10);
+
+  text(
+    "JUNKISSA DIVE",
+    cx,
+    signY - 57
+  );
+
+  // ==================================================
+  // 8. 仮キャッチコピー
+  // ==================================================
+
+  fill(
+    82,
+    58,
+    46,
+    225
   );
 
   jdJapaneseFont();
-
   fontSize(12);
 
   text(
     "喫茶店の一日を、指先で。",
-    JD.LOGICAL_W / 2,
-    356
+    cx,
+    236
   );
+
+  // ==================================================
+  // 9. 仮の開店札
+  //
+  // 札の正式デザインとアニメーションは4/8。
+  // ==================================================
 
   const pulse =
-    150 +
+    0.96 +
     Math.sin(
-      ElapsedTime * 4.6
-    ) * 48;
+      ElapsedTime * 3.2
+    ) *
+    0.015;
 
-  jdFill(
-    "uiPanel",
-    218
+  pushMatrix();
+
+  translate(
+    cx,
+    92
   );
 
-  rectMode(CENTER);
-
-  rect(
-    JD.LOGICAL_W / 2,
-    104,
-    182,
-    40,
-    18
-  );
-
-  jdFill(
-    "uiText",
+  scale(
+    pulse,
     pulse
   );
 
-  jdJapaneseFont();
+  // 接地影
+  fill(
+    59,
+    39,
+    32,
+    65
+  );
 
+  rect(
+    3,
+    -3,
+    180,
+    48,
+    9
+  );
+
+  // 紙札
+  fill(
+    244,
+    220,
+    177,
+    255
+  );
+
+  rect(
+    0,
+    0,
+    180,
+    48,
+    9
+  );
+
+  // 上端の赤線
+  fill(
+    121,
+    45,
+    39,
+    255
+  );
+
+  rect(
+    0,
+    17,
+    158,
+    3,
+    1.5
+  );
+
+  fill(
+    67,
+    43,
+    35,
+    255
+  );
+
+  jdJapaneseFont();
   fontSize(15);
 
   text(
-    "タップして開店",
-    JD.LOGICAL_W / 2,
-    104
+    "開店する",
+    0,
+    -5
   );
 
+  popMatrix();
+
+  // ==================================================
+  // 10. 下部の小さな印刷表記
+  // ==================================================
+
+  fill(
+    83,
+    57,
+    45,
+    175
+  );
+
+  font(
+    "Courier"
+  );
+
+  fontSize(8);
+
+  text(
+    "JUNKISSA YUMANIWA  /  2026",
+    cx,
+    40
+  );
+
+  // ポスター版の印刷仕上げ
   jdDrawPosterPrintFinish();
 
-  // タップ後の暗転
+  // ==================================================
+  // 11. 既存のタイトル退出暗転
+  // ==================================================
+
   if (
     JD.titleExitTimer > 0
   ) {
@@ -4050,6 +4317,7 @@ function jdDrawTitle() {
     );
   }
 }
+
 
 function jdDrawStyleSettingsButton() {
   return;
