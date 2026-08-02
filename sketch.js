@@ -1357,33 +1357,7 @@ function jdStyleAlpha(
 
 
 */
-// =====================================================
-// 3. 既存の色取得へスタイル変換を挟む
-// =====================================================
-
-// [PATCH: jdC]
-function jdC(name) {
-  if (
-    !JD.visual
-  ) {
-    jdInitVisualTheme();
-  }
-
-  const base =
-    JD.visual[name] ||
-    color(
-      255,
-      255,
-      255
-    );
-
-  return jdStyleColor(
-    name,
-    base
-  );
-}
-
-
+// ポスター版の色取得は、ファイル前半にある正式なjdCへ統一。
 function jdJapaneseFont() {
   font(
     '"Hiragino Maru Gothic ProN", ' +
@@ -4037,7 +4011,6 @@ function jdDrawTitle() {
   );
 
   jdDrawPosterPrintFinish();
-  jdDrawFineLineFinish();
 
   // タップ後の暗転
   if (
