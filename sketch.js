@@ -6991,8 +6991,12 @@ function jdDrawObstacle(o) {
   noStroke();
 
   if (o.kind === "spoon") {
-    // 接地影を先に描く
-    jdFill("shadow", 28);
+    // 接地影はごく薄く残す
+    jdFill(
+      "shadow",
+      24
+    );
+
     ellipse(
       o.x + 5,
       o.y - 4,
@@ -7000,9 +7004,31 @@ function jdDrawObstacle(o) {
       6
     );
 
-    // 柄
-    jdStroke("highlight", 210);
-    strokeWidth(5);
+    // 柄の外側。
+    // 輪郭を先に太く描き、その上へ本体色を重ねる。
+    jdStroke(
+      "woodDark",
+      135
+    );
+
+    strokeWidth(6.5);
+
+    line(
+      o.x - 32,
+      o.y,
+      o.x + 28,
+      o.y + 3
+    );
+
+    // 不透明なクリーム色の柄
+    stroke(
+      255,
+      247,
+      220,
+      255
+    );
+
+    strokeWidth(4.5);
 
     line(
       o.x - 32,
@@ -7013,22 +7039,47 @@ function jdDrawObstacle(o) {
 
     noStroke();
 
-    // 先端
-    jdFill("highlight", 215);
+    // 先端の薄い輪郭
+    jdFill(
+      "woodDark",
+      135
+    );
+
     ellipse(
       o.x + 36,
       o.y + 5,
-      24,
-      10
+      26,
+      12
+    );
+
+    // 不透明な先端
+    fill(
+      255,
+      247,
+      220,
+      255
+    );
+
+    ellipse(
+      o.x + 36,
+      o.y + 5,
+      23,
+      9
     );
 
     // 左上の小さな反射
-    jdFill("creamWarm", 72);
+    fill(
+      255,
+      253,
+      238,
+      255
+    );
+
     ellipse(
       o.x + 31,
       o.y + 7,
-      10,
-      3
+      9,
+      2.5
     );
 
   } else if (o.kind === "ticket") {
@@ -7969,15 +8020,439 @@ function jdDrawTrajectory(pull) {
 
 
 function jdDrawLastShotGhost() {
-  if (!JD.lastTrail || JD.lastTrail.length < 2) return;
-  noFill(); stroke(255, 242, 215, 62); strokeWidth(3);
-  for (let i = 1; i < JD.lastTrail.length; i++) {
-    const a = JD.lastTrail[i - 1];
-    const b = JD.lastTrail[i];
-    line(a.x, a.y, b.x, b.y);
+  const trail =
+    JD.lastTrail;
+
+  if (
+    !trail ||
+    trail.length < 2
+  ) {
+    return;
   }
+
+  const count =
+    trail.length;
+
+  const result =
+    JD.lastTrailResult ||
+    "-";
+
+  noFill();
+
+  // ==================================================
+  // 1. 赤茶の版ずれ
+  //
+  // 影ではなく、印刷がわずかにずれたように
+  // 主線の右下へ細く残す。
+  // ==================================================
+
+  for (
+    let i = 1;
+    i < count;
+    i++
+  ) {
+    const a =
+      trail[i - 1];
+
+    const b =
+      trail[i];
+
+    const t =
+      i /
+      Math.max(
+        1,
+        count - 1
+      );
+
+    // 数か所だけ小さく欠けさせ、
+    // 完全なデジタル線に見えないようにする。
+    if (
+      i > 2 &&
+      i < count - 2 &&
+      i % 8 === 0
+    ) {
+      continue;
+    }
+
+    const centerWeight =
+      Math.sin(
+        t *
+        Math.PI
+      );
+
+    stroke(
+      118,
+      58,
+      50,
+      58 +
+      centerWeight *
+      34
+    );
+
+    strokeWidth(
+      2.2 +
+      centerWeight *
+      0.9
+    );
+
+    line(
+      a.x + 1.4,
+      a.y - 1.2,
+      b.x + 1.4,
+      b.y - 1.2
+    );
+  }
+
+  // ==================================================
+  // 2. 紙白の主線
+  //
+  // 発射直後と終点は細く、
+  // 画面中央を通る部分だけ少し太くする。
+  // ==================================================
+
+  for (
+    let i = 1;
+    i < count;
+    i++
+  ) {
+    const a =
+      trail[i - 1];
+
+    const b =
+      trail[i];
+
+    const t =
+      i /
+      Math.max(
+        1,
+        count - 1
+      );
+
+    if (
+      i > 2 &&
+      i < count - 2 &&
+      i % 8 === 0
+    ) {
+      continue;
+    }
+
+    const centerWeight =
+      Math.sin(
+        t *
+        Math.PI
+      );
+
+    const endFade =
+      0.72 +
+      centerWeight *
+      0.28;
+
+    stroke(
+      255,
+      248,
+      222,
+      175 +
+      endFade *
+      62
+    );
+
+    strokeWidth(
+      2.2 +
+      centerWeight *
+      1.7
+    );
+
+    line(
+      a.x,
+      a.y,
+      b.x,
+      b.y
+    );
+  }
+
+  noStroke();
+  ellipseMode(CENTER);
+
+  // ==================================================
+  // 3. 軌道後半の印刷粒
+  //
+  // 線がほどけて着地点へ向かう印象。
+  // 毎フレーム位置が変わらない固定配置にする。
+  // ==================================================
+
+  for (
+    let i = Math.floor(
+      count * 0.58
+    );
+    i < count - 1;
+    i += 3
+  ) {
+    const p =
+      trail[i];
+
+    const t =
+      i /
+      Math.max(
+        1,
+        count - 1
+      );
+
+    const seed =
+      (
+        i * 17 +
+        count * 7
+      ) % 11;
+
+    const offsetX =
+      (
+        seed - 5
+      ) * 0.42;
+
+    const offsetY =
+      (
+        (
+          i * 13
+        ) % 9 -
+        4
+      ) * 0.48;
+
+    const particleSize =
+      2.2 +
+      t *
+      1.7;
+
+    // 小さな版ずれ
+    fill(
+      118,
+      58,
+      50,
+      70
+    );
+
+    ellipse(
+      p.x +
+      offsetX +
+      1.1,
+      p.y +
+      offsetY -
+      1,
+      particleSize +
+      0.7,
+      particleSize *
+      0.68
+    );
+
+    // 紙白の粒
+    fill(
+      255,
+      249,
+      225,
+      220
+    );
+
+    ellipse(
+      p.x +
+      offsetX,
+      p.y +
+      offsetY,
+      particleSize,
+      particleSize *
+      0.72
+    );
+  }
+
+  // ==================================================
+  // 4. 終点の印
+  //
+  // 成功：小さな印刷リング
+  // FLOOR：横へ広がるインク溜まり
+  // OUT：開いたまま画面外へ抜ける印
+  // ==================================================
+
+  const end =
+    trail[count - 1];
+
+  const beforeEnd =
+    trail[
+      Math.max(
+        0,
+        count - 2
+      )
+    ];
+
+  const dx =
+    end.x -
+    beforeEnd.x;
+
+  const dy =
+    end.y -
+    beforeEnd.y;
+
+  const length =
+    Math.max(
+      0.001,
+      Math.hypot(
+        dx,
+        dy
+      )
+    );
+
+  const nx =
+    dx /
+    length;
+
+  const ny =
+    dy /
+    length;
+
+  if (
+    result === "FLOOR"
+  ) {
+    // 床へ落ちた線は、
+    // 最後に横長のインク溜まりとして残す。
+    fill(
+      118,
+      58,
+      50,
+      90
+    );
+
+    ellipse(
+      end.x + 1.5,
+      end.y - 1,
+      18,
+      5.5
+    );
+
+    fill(
+      255,
+      248,
+      222,
+      235
+    );
+
+    ellipse(
+      end.x,
+      end.y,
+      15,
+      4
+    );
+
+    fill(
+      255,
+      252,
+      236,
+      245
+    );
+
+    ellipse(
+      end.x - 3,
+      end.y + 1,
+      3.2,
+      2.2
+    );
+
+  } else if (
+    result === "OUT"
+  ) {
+    // 線がそのまま外へ抜けていく、小さな二本線。
+    stroke(
+      118,
+      58,
+      50,
+      90
+    );
+
+    strokeWidth(2.4);
+
+    line(
+      end.x + 1,
+      end.y - 1,
+      end.x +
+      nx * 11 +
+      1,
+      end.y +
+      ny * 11 -
+      1
+    );
+
+    stroke(
+      255,
+      248,
+      222,
+      225
+    );
+
+    strokeWidth(2.2);
+
+    line(
+      end.x,
+      end.y,
+      end.x +
+      nx * 11,
+      end.y +
+      ny * 11
+    );
+
+    noStroke();
+
+  } else {
+    // 成功時は小さなリング。
+    // 的の記号ではなく、ポストカードの印刷マーク。
+    noFill();
+
+    stroke(
+      118,
+      58,
+      50,
+      105
+    );
+
+    strokeWidth(3.2);
+
+    ellipse(
+      end.x + 1.3,
+      end.y - 1.1,
+      12,
+      12
+    );
+
+    stroke(
+      255,
+      249,
+      226,
+      245
+    );
+
+    strokeWidth(2.2);
+
+    ellipse(
+      end.x,
+      end.y,
+      11,
+      11
+    );
+
+    noStroke();
+
+    fill(
+      255,
+      252,
+      236,
+      245
+    );
+
+    ellipse(
+      end.x,
+      end.y,
+      3.5,
+      3.5
+    );
+  }
+
   noStroke();
 }
+
 
 function jdDrawParticles() {
   ellipseMode(CENTER);
