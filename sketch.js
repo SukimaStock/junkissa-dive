@@ -3,7 +3,30 @@
 // Goal: improve motif recognition while keeping gameplay and hit logic intact.
 
 const JD = {};
-const JD_WEB_PORT_VERSION = "Final Integrated Build v1";
+const JD_WEB_PORT_VERSION = "Variable Receipt + Unified Type v1";
+
+// 端末内蔵フォントへ依存せず、PCとスマートフォンで同じ字形を使う。
+// 真夜中コーラと同じ三層構成にそろえ、役割ごとの個性を保つ。
+// ・看板、商品名、店名：昭和の印刷物になじむ Kaisei Decol
+// ・説明、操作、通常UI：読みやすい Zen Kaku Gothic New
+// ・判定語、素材名、伝票英数字：活字らしい Courier Prime
+const JD_FONT_TITLE =
+  '"Kaisei Decol", ' +
+  '"Yu Mincho", ' +
+  '"Hiragino Mincho ProN", ' +
+  'serif';
+
+const JD_FONT_PRIMARY =
+  '"Zen Kaku Gothic New", ' +
+  '"Hiragino Sans", ' +
+  '"Noto Sans JP", ' +
+  'sans-serif';
+
+const JD_FONT_RECEIPT =
+  '"Courier Prime", ' +
+  '"Courier New", ' +
+  'Courier, ' +
+  'monospace';
 
 const STATE_TITLE = 0;
 const STATE_PLAY = 1;
@@ -29,6 +52,19 @@ const JD_POSTER_PREVIEW_KIND = "coffee";
 const JD_POSTER_TITLE_TRACKING = 4.2;
 const JD_POSTER_TITLE_SCALE_X = 1.05;
 
+// ポスター内の小見出しと店名は、スマートフォンでも印刷物の
+// 階層が一目で読める大きさに固定する。組み立て・静止・撤収で共有。
+const JD_POSTER_SPECIAL_SIZE_JP = 10.5;
+const JD_POSTER_SPECIAL_SIZE_EN = 9.5;
+const JD_POSTER_SPECIAL_ALPHA = 205;
+const JD_POSTER_BRAND_SIZE = 9.5;
+const JD_POSTER_BRAND_ALPHA = 205;
+
+// 外側の太線と内側の細線を組み合わせ、昭和の印刷ポスターらしい
+// 二重罫にする。演出中も同じ比率を保つ。
+const JD_POSTER_FRAME_OUTER_WEIGHT = 2.4;
+const JD_POSTER_FRAME_INNER_WEIGHT = 0.75;
+
 const PHASE_SHIFT_START = "SHIFT_START";
 const PHASE_FORTUNE = "FORTUNE";
 const PHASE_AIM = "AIM";
@@ -40,6 +76,7 @@ function setup() {
   JD.LOGICAL_W = 360;
   JD.LOGICAL_H = 640;
 
+  jdInstallWebFonts();
   jdInitText();
   jdInitVisualTheme();
   jdReadWebOptions();
@@ -62,6 +99,7 @@ function setup() {
 
 function draw() {
   let pushed = false;
+  let logicalClipContext = null;
 
   try {
     // 完成ポスター静止中は、論理画面の外側も朱色で埋める。
@@ -117,6 +155,12 @@ function draw() {
     }
 
     jdUpdateScale();
+
+    // 背景や軌道はカメラ用に論理画面より広く描いている。
+    // その余白を削らず、最終表示だけを360×640へ切り抜くことで、
+    // PCの左右余白へ店内や投擲ガイドが漏れないようにする。
+    logicalClipContext =
+      jdBeginLogicalViewportClip();
 
     pushMatrix();
     pushed = true;
@@ -189,6 +233,11 @@ function draw() {
     popMatrix();
     pushed = false;
 
+    jdEndLogicalViewportClip(
+      logicalClipContext
+    );
+    logicalClipContext = null;
+
     // 保存ボタンはキャンバスの外に置き、書き出すPNGには含めない。
     jdSyncPosterSaveButton();
   } catch (error) {
@@ -199,7 +248,69 @@ function draw() {
       }
     }
 
+    jdEndLogicalViewportClip(
+      logicalClipContext
+    );
+    logicalClipContext = null;
+
     jdShowRuntimeError(error, "draw");
+  }
+}
+
+function jdBeginLogicalViewportClip() {
+  if (
+    typeof document === "undefined"
+  ) {
+    return null;
+  }
+
+  const canvas =
+    jdFindGameCanvas();
+
+  if (
+    !canvas ||
+    typeof canvas.getContext !== "function"
+  ) {
+    return null;
+  }
+
+  const context =
+    canvas.getContext("2d");
+
+  if (!context) {
+    return null;
+  }
+
+  try {
+    context.save();
+    context.beginPath();
+    context.rect(
+      JD.offsetX,
+      JD.offsetY,
+      JD.LOGICAL_W * JD.scale,
+      JD.LOGICAL_H * JD.scale
+    );
+    context.clip();
+    return context;
+
+  } catch (_error) {
+    try {
+      context.restore();
+    } catch (_restoreError) {
+    }
+
+    return null;
+  }
+}
+
+function jdEndLogicalViewportClip(
+  context
+) {
+  if (!context) return;
+
+  try {
+    context.restore();
+  } catch (_error) {
   }
 }
 
@@ -1462,14 +1573,321 @@ function jdStyleAlpha(
 
 
 // ポスター版の色取得は、ファイル前半にある正式なjdCへ統一。
-function jdJapaneseFont() {
-  font(
-    '"Hiragino Maru Gothic ProN", ' +
-    '"Hiragino Kaku Gothic ProN", ' +
-    '"Yu Gothic", ' +
-    '"Meiryo", ' +
-    'sans-serif'
+function jdInstallWebFonts() {
+  JD.webFontsReady = false;
+
+  if (
+    typeof document === "undefined" ||
+    !document.head
+  ) {
+    return;
+  }
+
+  const stylesheetId =
+    "jd-junkissa-webfonts";
+  const fontHref =
+    "https://fonts.googleapis.com/css2" +
+    "?family=Kaisei+Decol:wght@400;500;700" +
+    "&family=Courier+Prime:wght@400;700" +
+    "&family=Zen+Kaku+Gothic+New:wght@400;500;700" +
+    "&display=block";
+
+  // Canvasは読み込み前の代替書体で一度描かれると、その字形が一瞬見える。
+  // 真夜中コーラと同じく、三書体の準備が終わるまでCanvasを隠しておく。
+  const revealCanvas =
+    jdStartWebFontGate();
+
+  const warmFonts = () => {
+    if (
+      !document.fonts ||
+      typeof document.fonts.load !== "function"
+    ) {
+      revealCanvas();
+      return;
+    }
+
+    Promise.all([
+      document.fonts.load(
+        '400 16px "Kaisei Decol"',
+        "純喫茶 ダイヴ"
+      ),
+      document.fonts.load(
+        '500 16px "Kaisei Decol"',
+        "メロンソーダ"
+      ),
+      document.fonts.load(
+        '700 16px "Kaisei Decol"',
+        "ショートケーキ"
+      ),
+      document.fonts.load(
+        '400 16px "Zen Kaku Gothic New"',
+        "本日のご注文"
+      ),
+      document.fonts.load(
+        '500 16px "Zen Kaku Gothic New"',
+        "あと一回"
+      ),
+      document.fonts.load(
+        '700 16px "Zen Kaku Gothic New"',
+        "レシートを見る"
+      ),
+      document.fonts.load(
+        '400 16px "Courier Prime"',
+        "CHERRY SUGAR 0123456789"
+      ),
+      document.fonts.load(
+        '700 16px "Courier Prime"',
+        "DIVE NOKKARI KANTSU TOBIDASHI"
+      )
+    ]).then(() => {
+      JD.webFontsReady = true;
+      // SafariのCanvas描画キャッシュへ一拍だけ渡してから表示する。
+      setTimeout(revealCanvas, 32);
+    }).catch(() => {
+      // 読み込みに失敗しても、下記の端末フォントへ安全に戻す。
+      JD.webFontsReady = false;
+      revealCanvas();
+    });
+  };
+
+  const existingStylesheet =
+    document.getElementById(stylesheetId);
+
+  if (existingStylesheet) {
+    const existingHref =
+      String(existingStylesheet.href || "");
+
+    if (existingHref !== fontHref) {
+      existingStylesheet.addEventListener(
+        "load",
+        warmFonts,
+        { once: true }
+      );
+      existingStylesheet.addEventListener(
+        "error",
+        revealCanvas,
+        { once: true }
+      );
+      existingStylesheet.href = fontHref;
+    } else {
+      warmFonts();
+    }
+
+    return;
+  }
+
+  const preconnectApi =
+    document.createElement("link");
+  preconnectApi.rel = "preconnect";
+  preconnectApi.href =
+    "https://fonts.googleapis.com";
+
+  const preconnectStatic =
+    document.createElement("link");
+  preconnectStatic.rel = "preconnect";
+  preconnectStatic.href =
+    "https://fonts.gstatic.com";
+  preconnectStatic.crossOrigin =
+    "anonymous";
+
+  const stylesheet =
+    document.createElement("link");
+  stylesheet.id = stylesheetId;
+  stylesheet.rel = "stylesheet";
+  stylesheet.href = fontHref;
+  stylesheet.addEventListener(
+    "load",
+    warmFonts,
+    { once: true }
   );
+  stylesheet.addEventListener(
+    "error",
+    revealCanvas,
+    { once: true }
+  );
+
+  document.head.appendChild(
+    preconnectApi
+  );
+  document.head.appendChild(
+    preconnectStatic
+  );
+  document.head.appendChild(
+    stylesheet
+  );
+}
+
+function jdFontGateCanvas() {
+  if (
+    typeof CodeaLite !== "undefined" &&
+    CodeaLite.state &&
+    CodeaLite.state.ctx &&
+    CodeaLite.state.ctx.canvas
+  ) {
+    return CodeaLite.state.ctx.canvas;
+  }
+
+  return jdFindGameCanvas();
+}
+
+function jdStartWebFontGate() {
+  const root =
+    typeof globalThis !== "undefined"
+      ? globalThis
+      : (
+          typeof window !== "undefined"
+            ? window
+            : {}
+        );
+
+  if (root.__junkissaDiveFontGateReveal) {
+    return root.__junkissaDiveFontGateReveal;
+  }
+
+  if (typeof document === "undefined") {
+    return function() {};
+  }
+
+  const canvas = jdFontGateCanvas();
+  if (!canvas || !canvas.style) {
+    return function() {};
+  }
+
+  const body = document.body;
+  const documentRoot = document.documentElement;
+
+  if (body) {
+    body.style.backgroundColor = "rgb(27, 20, 18)";
+  }
+
+  if (documentRoot) {
+    documentRoot.style.backgroundColor = "rgb(27, 20, 18)";
+  }
+
+  const previousPointerEvents =
+    canvas.style.pointerEvents || "auto";
+
+  canvas.style.transition = "none";
+  canvas.style.opacity = "0";
+  canvas.style.pointerEvents = "none";
+
+  // opacity:0を先に確定し、実フォントがそろった時だけフェードインする。
+  void canvas.offsetWidth;
+  canvas.style.transition = "opacity 0.26s ease";
+
+  let revealed = false;
+  const startedAt = Date.now();
+
+  const revealCanvas = function() {
+    if (revealed) return;
+    revealed = true;
+
+    const elapsed = Date.now() - startedAt;
+    const remaining = Math.max(0, 80 - elapsed);
+
+    setTimeout(function() {
+      const show = function() {
+        canvas.style.opacity = "1";
+        canvas.style.pointerEvents = previousPointerEvents;
+      };
+
+      if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(show);
+      } else {
+        show();
+      }
+    }, remaining);
+  };
+
+  root.__junkissaDiveFontGateReveal = revealCanvas;
+
+  // 回線不調でもタイトル画面を閉じたままにしない。
+  setTimeout(revealCanvas, 3200);
+
+  return revealCanvas;
+}
+
+function jdApplyTextWeight(
+  weight = "regular"
+) {
+  if (
+    typeof textStyle !== "function"
+  ) {
+    return;
+  }
+
+  const isBold =
+    weight === "bold" ||
+    weight === "black";
+
+  const styleValue = isBold
+    ? (
+        typeof BOLD !== "undefined"
+          ? BOLD
+          : "bold"
+      )
+    : (
+        typeof NORMAL !== "undefined"
+          ? NORMAL
+          : "normal"
+      );
+
+  try {
+    textStyle(styleValue);
+  } catch (_error) {
+  }
+}
+
+function jdSetRuntimeFontStack(stack) {
+  // Codea Liteはfont()に加えてstate.fontNameを参照する版があるため、
+  // 真夜中コーラと同じ経路にも書体を渡して端末差をなくす。
+  if (
+    typeof CodeaLite !== "undefined" &&
+    CodeaLite.state
+  ) {
+    CodeaLite.state.fontName = stack;
+  }
+
+  if (typeof font === "function") {
+    font(stack);
+  }
+}
+
+function jdTitleFont(
+  weight = "regular"
+) {
+  jdSetRuntimeFontStack(JD_FONT_TITLE);
+  jdApplyTextWeight(weight);
+}
+
+function jdPrimaryFont(
+  weight = "regular"
+) {
+  jdSetRuntimeFontStack(JD_FONT_PRIMARY);
+  jdApplyTextWeight(weight);
+}
+
+function jdReceiptFont(
+  weight = "regular"
+) {
+  jdSetRuntimeFontStack(JD_FONT_RECEIPT);
+  jdApplyTextWeight(weight);
+}
+
+function jdReceiptLocalizedFont(
+  weight = "regular"
+) {
+  if (jdIsEnglish()) {
+    jdReceiptFont(weight);
+  } else {
+    jdPrimaryFont(weight);
+  }
+}
+
+function jdJapaneseFont(
+  weight = "regular"
+) {
+  jdPrimaryFont(weight);
 }
 
 
@@ -2263,11 +2681,9 @@ function jdIsEnglish() {
 }
 
 function jdFontForLanguage(weight = "regular") {
-  if (jdIsEnglish()) {
-    font(weight === "bold" ? "Courier-Bold" : "Courier");
-  } else {
-    jdJapaneseFont();
-  }
+  // 操作説明と本文はJP/ENとも同じUI書体にそろえる。
+  // 見出しと判定語は、用途側から専用ヘルパーを明示して切り替える。
+  jdPrimaryFont(weight);
 }
 
 function jdNormalizeLanguage(value) {
@@ -2393,7 +2809,7 @@ function jdDrawLanguageToggle() {
     4.4
   );
 
-  font("Courier");
+  jdPrimaryFont();
   fontSize(10);
   fill(244, 223, 183, isEnglish ? 132 : 238);
   text("JP", bounds.x + 21, bounds.y + 10.5);
@@ -2549,7 +2965,7 @@ function jdEnsurePosterSaveButton() {
   button.style.borderRadius = "7px";
   button.style.background = "rgba(53,31,27,0.84)";
   button.style.color = "rgb(248,232,197)";
-  button.style.fontFamily = '"Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif';
+  button.style.fontFamily = JD_FONT_PRIMARY;
   button.style.fontWeight = "700";
   button.style.letterSpacing = "0.04em";
   button.style.boxShadow = "0 2px 8px rgba(0,0,0,0.24)";
@@ -2595,69 +3011,212 @@ function jdSyncPosterSaveButton() {
 
   // ポスター右上の余白へ置き、タイトル・主役・価格から離す。
   const logicalX = 242;
-  const logicalY = 582;
+  // 上辺の内側罫とほぼ同じ高さへ合わせ、ポスターの角に収める。
+  const logicalY = 596;
   const logicalW = 104;
   const logicalH = 27;
-  const scaleX = rect.width / JD.LOGICAL_W;
-  const scaleY = rect.height / JD.LOGICAL_H;
+  const canvasCoordinateW =
+    typeof WIDTH === "number" && WIDTH > 0
+      ? WIDTH
+      : (canvas.width || JD.LOGICAL_W);
+  const canvasCoordinateH =
+    typeof HEIGHT === "number" && HEIGHT > 0
+      ? HEIGHT
+      : (canvas.height || JD.LOGICAL_H);
+  const coordinateToCssX = rect.width / canvasCoordinateW;
+  const coordinateToCssY = rect.height / canvasCoordinateH;
+  const logicalScaleX = JD.scale * coordinateToCssX;
+  const logicalScaleY = JD.scale * coordinateToCssY;
+  const viewportLeft = rect.left + JD.offsetX * coordinateToCssX;
+  const viewportTop = rect.top +
+    (
+      canvasCoordinateH -
+      JD.offsetY -
+      JD.LOGICAL_H * JD.scale
+    ) * coordinateToCssY;
 
-  button.style.left = `${rect.left + logicalX * scaleX}px`;
-  button.style.top = `${rect.top + (JD.LOGICAL_H - logicalY - logicalH) * scaleY}px`;
-  button.style.width = `${logicalW * scaleX}px`;
-  button.style.height = `${logicalH * scaleY}px`;
-  button.style.fontSize = `${Math.max(10, 9.5 * Math.min(scaleX, scaleY))}px`;
+  // PCの余白を含むCanvasでも、360×640のポスター右上へ固定する。
+  button.style.left = `${viewportLeft + logicalX * logicalScaleX}px`;
+  button.style.top = `${viewportTop + (JD.LOGICAL_H - logicalY - logicalH) * logicalScaleY}px`;
+  button.style.width = `${logicalW * logicalScaleX}px`;
+  button.style.height = `${logicalH * logicalScaleY}px`;
+  button.style.fontSize = `${Math.max(10, 9.5 * Math.min(logicalScaleX, logicalScaleY))}px`;
   button.textContent = jdPosterSaveButtonText();
   button.style.display = "block";
 }
 
-function jdDataUrlToPngFile(dataUrl, fileName) {
-  if (typeof File === "undefined" || typeof atob !== "function") {
+function jdCreatePosterCaptureCanvas(canvas) {
+  if (
+    !canvas ||
+    typeof document === "undefined" ||
+    typeof document.createElement !== "function"
+  ) {
+    return null;
+  }
+
+  const canvasCoordinateW =
+    typeof WIDTH === "number" && WIDTH > 0
+      ? WIDTH
+      : (canvas.width || JD.LOGICAL_W);
+  const canvasCoordinateH =
+    typeof HEIGHT === "number" && HEIGHT > 0
+      ? HEIGHT
+      : (canvas.height || JD.LOGICAL_H);
+  const backingScaleX = canvas.width / canvasCoordinateW;
+  const backingScaleY = canvas.height / canvasCoordinateH;
+  const viewportTop =
+    canvasCoordinateH -
+    JD.offsetY -
+    JD.LOGICAL_H * JD.scale;
+
+  const sourceX = Math.max(
+    0,
+    JD.offsetX * backingScaleX
+  );
+  const sourceY = Math.max(
+    0,
+    viewportTop * backingScaleY
+  );
+  const sourceW = Math.min(
+    canvas.width - sourceX,
+    JD.LOGICAL_W * JD.scale * backingScaleX
+  );
+  const sourceH = Math.min(
+    canvas.height - sourceY,
+    JD.LOGICAL_H * JD.scale * backingScaleY
+  );
+
+  if (!(sourceW > 0 && sourceH > 0)) {
+    return null;
+  }
+
+  const captureCanvas =
+    document.createElement("canvas");
+  captureCanvas.width = Math.max(
+    1,
+    Math.round(sourceW)
+  );
+  captureCanvas.height = Math.max(
+    1,
+    Math.round(sourceH)
+  );
+
+  const context =
+    captureCanvas.getContext("2d");
+  if (!context) return null;
+
+  // PCの左右・上下余白を除き、ゲームの論理画面だけをPNGへ写す。
+  context.drawImage(
+    canvas,
+    sourceX,
+    sourceY,
+    sourceW,
+    sourceH,
+    0,
+    0,
+    captureCanvas.width,
+    captureCanvas.height
+  );
+
+  return captureCanvas;
+}
+
+function jdDataUrlToPngBlob(dataUrl) {
+  if (
+    typeof Blob === "undefined" ||
+    typeof atob !== "function"
+  ) {
     return null;
   }
 
   const base64 = String(dataUrl || "").split(",")[1];
   if (!base64) return null;
 
-  const binary = atob(base64);
+  let binary;
+
+  try {
+    binary = atob(base64);
+  } catch (_error) {
+    return null;
+  }
+
   const bytes = new Uint8Array(binary.length);
 
   for (let i = 0; i < binary.length; i += 1) {
     bytes[i] = binary.charCodeAt(i);
   }
 
-  return new File(
+  return new Blob(
     [bytes],
-    fileName,
     { type: "image/png" }
   );
 }
 
+function jdNamePosterPngBlob(blob, fileName) {
+  if (!blob) return null;
+
+  if (typeof File === "function") {
+    try {
+      return new File(
+        [blob],
+        fileName,
+        { type: "image/png" }
+      );
+    } catch (_error) {
+    }
+  }
+
+  try {
+    blob.name = fileName;
+  } catch (_error) {
+  }
+
+  return blob;
+}
+
 async function jdSavePosterImage() {
   const canvas = jdFindGameCanvas();
-  if (!canvas || typeof canvas.toDataURL !== "function") {
+  if (!canvas) {
     jdSetPosterSaveStatus("unavailable");
     return;
   }
 
-  let dataUrl;
+  const captureCanvas =
+    jdCreatePosterCaptureCanvas(canvas);
+  if (
+    !captureCanvas ||
+    typeof captureCanvas.toDataURL !== "function"
+  ) {
+    jdSetPosterSaveStatus("unavailable");
+    return;
+  }
+
+  let dataUrl = "";
 
   try {
     jdSetPosterSaveStatus("preparing", 3);
-    dataUrl = canvas.toDataURL("image/png");
+    dataUrl = captureCanvas.toDataURL("image/png");
   } catch (_error) {
     jdSetPosterSaveStatus("unavailable");
     return;
   }
 
   const fileName = jdBuildPosterImageFileName();
-  const imageFile = jdDataUrlToPngFile(
-    dataUrl,
+  const imageBlob = jdDataUrlToPngBlob(
+    dataUrl
+  );
+  const imageFile = jdNamePosterPngBlob(
+    imageBlob,
     fileName
   );
 
+  if (!imageFile) {
+    jdSetPosterSaveStatus("unavailable");
+    return;
+  }
+
   try {
     if (
-      imageFile &&
       typeof navigator !== "undefined" &&
       typeof navigator.share === "function" &&
       (
@@ -2667,7 +3226,7 @@ async function jdSavePosterImage() {
     ) {
       await navigator.share({
         files: [imageFile],
-        title: "JUNKISSA DIVE"
+        title: jdT("receipt.shop", "JUNKISSA DIVE")
       });
 
       jdSetPosterSaveStatus("saved");
@@ -2683,14 +3242,30 @@ async function jdSavePosterImage() {
   }
 
   try {
+    if (
+      typeof document === "undefined" ||
+      typeof URL === "undefined" ||
+      typeof URL.createObjectURL !== "function"
+    ) {
+      throw new Error("Object URL unavailable");
+    }
+
+    const objectUrl =
+      URL.createObjectURL(imageFile);
     const link = document.createElement("a");
-    link.href = dataUrl;
+    link.href = objectUrl;
     link.download = fileName;
+    link.rel = "noopener";
     link.style.display = "none";
     document.body.appendChild(link);
     link.click();
     link.remove();
-    jdSetPosterSaveStatus("openImage");
+
+    setTimeout(function() {
+      URL.revokeObjectURL(objectUrl);
+    }, 1200);
+
+    jdSetPosterSaveStatus("saved");
   } catch (_error) {
     jdSetPosterSaveStatus("unavailable");
   }
@@ -3135,13 +3710,15 @@ function jdStartPlay() {
   // 長い商品名だけは各描画箇所で描画幅に合わせて縮小する。
   JD.typeScale = {
     hero: 36,
-    result: 22,
+    result: 25,
     cardMain: 16,
     cardSub: 10,
     receiptShop: 13.5,
-    receiptBrand: 10,
+    receiptBrand: 9.5,
     receiptItem: 9.5,
-    receiptMeta: 8
+    receiptMeta: 9.5,
+    receiptTotal: 15,
+    receiptFooter: 7.5
   };
 
   // 開店導入
@@ -4473,8 +5050,8 @@ function jdResolve(t, missType) {
       : 260;
     f.outEffectScreenX = jdClamp(
       outScreenX,
-      84,
-      JD.LOGICAL_W - 84
+      88,
+      JD.LOGICAL_W - 88
     );
     f.outEffectScreenY = jdClamp(
       outScreenY,
@@ -5510,7 +6087,9 @@ function jdDrawNextThrowBeat() {
   const cx = JD.LOGICAL_W / 2;
   // 結果を見ている視線を動かさないよう、札自体は上下させず
   // 透明度と小さなポヨンだけで入場させる。
-  const y = 503;
+  // Kaisei Decolへ変えた文字の重心に合わせ、札全体を8px上へ置く。
+  // 結果位置から大きく跳ばず、上部伝票との余白も残す。
+  const y = 511;
   const remaining = Math.max(
     0,
     Math.floor(JD.resultBeatRemaining || 0)
@@ -5554,12 +6133,12 @@ function jdDrawNextThrowBeat() {
   jdFontForLanguage();
   fontSize(typeScale.cardSub);
   // 主見出しとの間に3pxだけ余白を足し、二行を読み分けやすくする。
-  text(remainingText, cx, y - 16);
+  text(remainingText, cx, y - 13);
 
   jdFill("redDeep", 242 * alpha / 255);
   jdFontForLanguage("bold");
   fontSize(typeScale.cardMain);
-  text(jdT("beat.next", "NEXT!"), cx, y + 1);
+  text(jdT("beat.next", "NEXT!"), cx, y + 4);
 
   popMatrix();
 
@@ -5568,8 +6147,112 @@ function jdDrawNextThrowBeat() {
   textAlign(CENTER);
 }
 
-// 場外へ出た方向の画面端で、NOKKARIと同系統のポップ文字を描く。
-// 紙札や輪っかは使わず、TOBIDASHIの文字だけを軽く弾ませる。
+// 判定語はゲームの「決まった瞬間」そのものなので、移動で追わせず、
+// 一度押し込む→少し大きく跳ねる→定位置へ吸い付く活字の動きにする。
+function jdResultImpactStampScale(progress) {
+  const t = jdClamp(progress, 0, 1);
+
+  if (t < 0.43) {
+    const growT = jdClamp(t / 0.43, 0, 1);
+    const growEase = 1 - Math.pow(1 - growT, 3);
+    return 0.78 + (1.15 - 0.78) * growEase;
+  }
+
+  if (t < 0.73) {
+    const pressT = jdClamp((t - 0.43) / 0.30, 0, 1);
+    const pressEase = pressT * pressT * (3 - 2 * pressT);
+    return 1.15 + (0.975 - 1.15) * pressEase;
+  }
+
+  const settleT = jdClamp((t - 0.73) / 0.27, 0, 1);
+  const settleEase = settleT * settleT * (3 - 2 * settleT);
+  return 0.975 + (1 - 0.975) * settleEase;
+}
+
+function jdDrawResultImpactLabel(
+  value,
+  x,
+  y,
+  progress,
+  perfect = false
+) {
+  const t = jdClamp(progress, 0, 1);
+  const label = String(value || "GOOD!");
+  const resultBaseSize =
+    JD.typeScale && Number.isFinite(JD.typeScale.result)
+      ? JD.typeScale.result
+      : 25;
+  const lengthScale = label.length >= 10
+    ? 0.94
+    : 1;
+  const labelSize =
+    (resultBaseSize + (perfect ? 2 : 0)) *
+    1.08 *
+    lengthScale;
+  const fadeT = jdClamp((t - 0.80) / 0.20, 0, 1);
+  const fadeEase = fadeT * fadeT * (3 - 2 * fadeT);
+  const alpha = 248 * (1 - fadeEase);
+
+  if (alpha <= 0.5) return 0;
+
+  textAlign(CENTER);
+  noStroke();
+  jdReceiptFont("bold");
+  fontSize(labelSize);
+
+  // 最初の約0.16秒だけ、赤い版が外へ抜ける残像を置く。
+  // 円形エフェクトを使わず、TOBIDASHIにも同じ気持ちよさを渡す。
+  const echoT = jdClamp(t / 0.22, 0, 1);
+  const echoEase = 1 - Math.pow(1 - echoT, 3);
+  const echoAlpha =
+    (perfect ? 132 : 106) *
+    (1 - echoT);
+
+  if (echoAlpha > 0.5) {
+    pushMatrix();
+    translate(x, y);
+    scale(
+      0.94 + echoEase * 0.16,
+      0.90 + echoEase * 0.12
+    );
+    fill(151, 48, 42, echoAlpha);
+    text(label, 0, 0);
+    popMatrix();
+  }
+
+  const stampT = jdClamp(t / 0.36, 0, 1);
+  const stampScale = jdResultImpactStampScale(stampT);
+  const squashT = jdClamp(t / 0.14, 0, 1);
+  const squashEase = 1 - Math.pow(1 - squashT, 3);
+  const scaleX = stampScale * (0.86 + squashEase * 0.14);
+  const scaleY = stampScale * (1.12 - squashEase * 0.12);
+  const freshInk = 1 - jdClamp(t / 0.32, 0, 1);
+
+  pushMatrix();
+  translate(x, y);
+  scale(scaleX, scaleY);
+
+  // 濃茶と赤茶の二版をわずかにずらし、背景を選ばず読める厚みを作る。
+  fill(70, 42, 36, alpha * 0.66);
+  text(label, 1.35, -1.15);
+
+  fill(
+    151,
+    48,
+    42,
+    alpha * (0.20 + freshInk * 0.24)
+  );
+  text(label, -0.8, 0.55);
+
+  fill(255, 252, 235, alpha);
+  text(label, 0, 0);
+
+  popMatrix();
+  return alpha;
+}
+
+// 場外へ出た方向の画面端で、NOKKARIと同系統の判定語を描く。
+// 紙札や輪っかは使わず、共通の押印ポヨンだけを適用する。
 function jdDrawOutResultEffect() {
   const food = JD.food;
   if (
@@ -5606,35 +6289,16 @@ function jdDrawOutResultEffect() {
   textAlign(CENTER);
   noStroke();
 
-  const pop = Math.sin(
-    Math.min(1, t * 1.55) * Math.PI
-  );
-  const settle = 1 - Math.pow(
-    1 - jdClamp(t / 0.24, 0, 1),
-    3
-  );
-  const resultBaseSize =
-    JD.typeScale && Number.isFinite(JD.typeScale.result)
-      ? JD.typeScale.result
-      : 22;
-  const labelSize = (resultBaseSize + pop * 6) *
-    1.08 * (0.92 + settle * 0.08);
-  const alpha = Math.max(
-    0,
-    240 * (1 - Math.max(0, t - 0.76) / 0.24)
-  );
   const label = food.resultLabel || jdT("result.out", "TOBIDASHI");
-  const labelY = y + 42 + pop * 5;
+  const labelY = y + 44;
 
-  noStroke();
-  font("Courier-Bold");
-  fontSize(labelSize);
-
-  // NOKKARIと同じ、わずかな版ずれとクリーム色の本体。
-  fill(86, 52, 43, alpha * 0.28);
-  text(label, x + 1.2, labelY - 1.1);
-  fill(255, 252, 235, alpha);
-  text(label, x, labelY);
+  jdDrawResultImpactLabel(
+    label,
+    x,
+    labelY,
+    t,
+    false
+  );
 
   noStroke();
   textAlign(CENTER);
@@ -5666,7 +6330,7 @@ function jdDrawTitleDiveLogoPlaceholder(
     );
 
   // 店種表示。
-  jdFontForLanguage("bold");
+  jdTitleFont("bold");
   fontSize(jdIsEnglish() ? 16 : 18);
 
   fill(
@@ -5707,7 +6371,7 @@ function jdDrawTitleDiveLogoPlaceholder(
 
   // 看板の「ダイヴ」。
   // 光る文字ではなく、発光面へ刷られた濃い赤茶として扱う。
-  jdFontForLanguage("bold");
+  jdTitleFont("bold");
   fontSize(jdIsEnglish() ? 31 : 37);
 
   fill(
@@ -7301,7 +7965,9 @@ function jdDrawPlay() {
         enterT
       ) * 16;
 
-    const cardW = 218;
+    // 高さと情報量は変えず、左右の余白だけを詰めて
+    // 注文票らしい引き締まった比率にする。
+    const cardW = 200;
     const cardH = 184;
     const cardScale =
       jdCardPopScale(enterT);
@@ -7377,7 +8043,7 @@ function jdDrawPlay() {
     );
 
     jdFontForLanguage();
-    fontSize(8);
+    fontSize(9);
 
     text(
       jdT("intro.mondayShift", "MONDAY SHIFT"),
@@ -7413,7 +8079,7 @@ function jdDrawPlay() {
     );
 
     jdFontForLanguage("bold");
-    fontSize(jdIsEnglish() ? 10 : 11);
+    fontSize(jdIsEnglish() ? 11 : 12);
 
     // 食品名は注文票の中央軸へ寄せ、三品を一つのまとまりにする。
     const orderListX =
@@ -8037,7 +8703,7 @@ function jdDrawCafeWideBackdrop() {
   textAlign(CENTER);
 
   jdFill("creamWarm", 220);
-  font("Courier-Bold");
+  jdReceiptFont("bold");
   fontSize(18);
 
   text(
@@ -8047,7 +8713,7 @@ function jdDrawCafeWideBackdrop() {
   );
 
   jdFill("creamWarm", 165);
-  font("Courier");
+  jdReceiptFont();
   fontSize(12);
 
   text(
@@ -8069,7 +8735,7 @@ function jdDrawCafeWideBackdrop() {
   );
 
   jdFill("red", 190);
-  font("Courier-Bold");
+  jdReceiptFont("bold");
   fontSize(11);
 
   text(
@@ -8877,9 +9543,7 @@ function jdDrawWorld() {
           "FLOOR"
         );
 
-      font(
-        "Courier-Bold"
-      );
+      jdReceiptFont("bold");
 
       fontSize(23);
       textAlign(CENTER);
@@ -10489,8 +11153,12 @@ function jdDrawLauncher() {
     firstThrow
   );
 
-  // 発射台から右下へ伸びる操作ガイド
-  if (ready) {
+  // 発射台から伸びる操作ガイドは、最初のチュートリアル中だけ表示する。
+  // 通常プレイでは右端へ矢印が残らず、二連波紋だけで操作を促す。
+  if (
+    ready &&
+    JD.tutorialActive
+  ) {
     const guideAlpha =
       firstThrow
         ? 92 + pulse * 92
@@ -10890,131 +11558,38 @@ function jdDrawHitEffectWorld() {
 
   // ==================================================
   // 成功テキスト
-  // 一度縮んでから、短くポップする
+  // 衝突位置から動かさず、押印→ポヨン→定着の活字演出に統一する。
   // ==================================================
 
-  const pop =
-    Math.sin(
-      Math.min(
-        1,
-        t *
-        1.55
-      ) *
-      Math.PI
-    );
-
-  const settle =
-    1 -
-    Math.pow(
-      1 -
-      jdClamp(
-        t / 0.24,
-        0,
-        1
-      ),
-      3
-    );
-
-  const resultBaseSize =
-    JD.typeScale &&
-    Number.isFinite(JD.typeScale.result)
-      ? JD.typeScale.result
-      : 22;
-
-  const labelSize =
-    (
-      perfect
-        ? resultBaseSize + 2
-        : resultBaseSize
-    ) +
-    pop *
-    (
-      perfect
-        ? 8
-        : 6
-    );
-
-  const alpha =
-    Math.max(
-      0,
-      240 *
-      (
-        1 -
-        Math.max(
-          0,
-          t - 0.76
-        ) /
-        0.24
-      )
-    );
-
-  noStroke();
-
-  font(
-    "Courier-Bold"
-  );
-
-  const postcardLabelSize =
-    labelSize *
-    1.08 *
-    (
-      0.92 +
-      settle *
-      0.08
-    );
-
-  fontSize(
-    postcardLabelSize
-  );
-
-  const labelY =
-    y +
-    42 +
-    pop *
-    5;
-
-  // 印刷物らしい、ごく小さな版ずれ。
-  // 影ではなく、濃茶のインクが1pxずれた表現。
-  fill(
-    86,
-    52,
-    43,
-    alpha * 0.28
-  );
-
-  text(
-    JD.hitEffectLabel ||
-    "GOOD!",
-    x + 1.2,
-    labelY - 1.1
-  );
-
-  // 本体は白ではなく、紙に馴染む明るいクリーム。
-  fill(
-    255,
-    252,
-    235,
-    alpha
-  );
-
-  text(
-    JD.hitEffectLabel ||
-    "GOOD!",
+  const labelY = y + 44;
+  const alpha = jdDrawResultImpactLabel(
+    JD.hitEffectLabel || "GOOD!",
     x,
-    labelY
+    labelY,
+    t,
+    perfect
   );
 
   if (
-    perfect
+    perfect &&
+    alpha > 0
   ) {
-    fontSize(10);
+    const perfectEnter = jdClamp(
+      (t - 0.12) / 0.18,
+      0,
+      1
+    );
+
+    jdReceiptFont("bold");
+    fontSize(10.5);
 
     fill(
       255,
       251,
       231,
       alpha *
-      0.90
+      0.90 *
+      perfectEnter
     );
 
     text(
@@ -11023,10 +11598,7 @@ function jdDrawHitEffectWorld() {
         "PERFECT CENTER"
       ),
       x,
-      y +
-      66 +
-      pop *
-      5
+      y + 68
     );
   }
 
@@ -13183,9 +13755,7 @@ function jdDrawLauncherItemTicket() {
     appearEase
   );
 
-  font(
-    "Courier-Bold"
-  );
+  jdReceiptFont("bold");
 
   let nameSize = 13;
 
@@ -13438,6 +14008,21 @@ function jdDrawAimTutorialWorld(
   const lowerAnchorY =
     JD.launcher.y - 18;
 
+  // 待機ゴムと引っ張りゴムの接続点を同じ補間値でつなぐ。
+  // pullProgress=0では通常待機ゴムと完全に一致し、
+  // pullProgress=1では従来のチュートリアル終端へ一致する。
+  const rubberPull = jdClamp(
+    pose.pullProgress || 0,
+    0,
+    1
+  );
+  const rubberEndX =
+    foodX + 5 - rubberPull * 2;
+  const rubberUpperEndY =
+    foodY + 6 - rubberPull;
+  const rubberLowerEndY =
+    foodY - 6 + rubberPull;
+
   rectMode(CENTER);
   ellipseMode(CENTER);
   textAlign(CENTER);
@@ -13532,56 +14117,53 @@ function jdDrawAimTutorialWorld(
 
   // ==================================================
   // ゴム
-  // 引っ張り開始後だけ表示
+  // チュートリアル開始から通常操作へ戻る瞬間まで常時表示する。
+  // 表示条件で切り替えず、接続点だけを滑らかに補間する。
   // ==================================================
 
-  if (
-    pose.pullProgress > 0.01
-  ) {
-    jdStroke(
-      "redDeep",
-      215
-    );
+  jdStroke(
+    "redDeep",
+    215
+  );
 
-    strokeWidth(5);
+  strokeWidth(5);
 
-    line(
-      anchorX,
-      upperAnchorY,
-      foodX + 3,
-      foodY + 5
-    );
+  line(
+    anchorX,
+    upperAnchorY,
+    rubberEndX,
+    rubberUpperEndY
+  );
 
-    line(
-      anchorX,
-      lowerAnchorY,
-      foodX + 3,
-      foodY - 5
-    );
+  line(
+    anchorX,
+    lowerAnchorY,
+    rubberEndX,
+    rubberLowerEndY
+  );
 
-    jdStroke(
-      "red",
-      125
-    );
+  jdStroke(
+    "red",
+    125
+  );
 
-    strokeWidth(1.4);
+  strokeWidth(1.4);
 
-    line(
-      anchorX,
-      upperAnchorY + 1,
-      foodX + 3,
-      foodY + 6
-    );
+  line(
+    anchorX,
+    upperAnchorY + 1,
+    rubberEndX,
+    rubberUpperEndY + 1
+  );
 
-    line(
-      anchorX,
-      lowerAnchorY + 1,
-      foodX + 3,
-      foodY - 4
-    );
+  line(
+    anchorX,
+    lowerAnchorY + 1,
+    rubberEndX,
+    rubberLowerEndY + 1
+  );
 
-    noStroke();
-  }
+  noStroke();
 
   // ==================================================
   // ひっぱる
@@ -14359,9 +14941,7 @@ function jdDrawFortuneMachine() {
     visibility
   );
 
-  font(
-    "Courier-Bold"
-  );
+  jdTitleFont("bold");
 
   fontSize(10);
 
@@ -14484,7 +15064,7 @@ function jdDrawFortuneMachine() {
     visibility
   );
 
-  font("Courier-Bold");
+  jdReceiptFont("bold");
 
   fontSize(5.8);
 
@@ -14689,7 +15269,7 @@ function jdDrawFortuneMachine() {
     visibility
   );
 
-  font("Courier-Bold");
+  jdReceiptFont("bold");
 
   fontSize(
     nameSize
@@ -14843,6 +15423,31 @@ function jdDrawPosterFocusIntro() {
 // ・商品：店内位置からポスター位置へ移動・拡大
 // ・文字：最後に短くフェードイン
 // =====================================================
+
+function jdDrawPosterDoubleFrame(
+  W,
+  H,
+  alpha,
+  outerWeight = JD_POSTER_FRAME_OUTER_WEIGHT,
+  innerWeight = JD_POSTER_FRAME_INNER_WEIGHT
+) {
+  const frameAlpha = jdClamp(alpha, 0, 255);
+
+  noFill();
+
+  // 外側は輪郭として効く太線。
+  stroke(248, 232, 197, frameAlpha);
+  strokeWidth(outerWeight);
+  rect(12, 66, W - 24, H - 78, 1);
+
+  // 4px内側へ、少し淡い細線を重ねる。
+  // 下部情報面では同系色に溶け、商品面では二重罫として見える。
+  stroke(248, 232, 197, frameAlpha * 0.72);
+  strokeWidth(innerWeight);
+  rect(16, 70, W - 32, H - 86, 1);
+
+  noStroke();
+}
 
 function jdDrawPosterBackgroundWipe() {
   const W = JD.LOGICAL_W;
@@ -15012,18 +15617,30 @@ function jdDrawPosterBackgroundWipe() {
     // 下辺を含む四辺が完全に画面外にある大きさから開始する。
     const frameScale = jdPosterLerp(1.34, 1, frameT);
     const frameAlpha = 205 * jdClamp(frameT, 0, 1);
-    const frameWeight = jdPosterLerp(3.2, 1.5, jdClamp(frameT, 0, 1));
+    const frameProgress = jdClamp(frameT, 0, 1);
+    const outerFrameWeight = jdPosterLerp(
+      4,
+      JD_POSTER_FRAME_OUTER_WEIGHT,
+      frameProgress
+    );
+    const innerFrameWeight = jdPosterLerp(
+      1.5,
+      JD_POSTER_FRAME_INNER_WEIGHT,
+      frameProgress
+    );
 
     pushMatrix();
     translate(W / 2, H / 2);
     scale(frameScale, frameScale);
     translate(-W / 2, -H / 2);
 
-    noFill();
-    stroke(248, 232, 197, frameAlpha);
-    strokeWidth(frameWeight);
-    rect(12, 66, W - 24, H - 78, 1);
-    noStroke();
+    jdDrawPosterDoubleFrame(
+      W,
+      H,
+      frameAlpha,
+      outerFrameWeight,
+      innerFrameWeight
+    );
 
     popMatrix();
   }
@@ -15103,8 +15720,12 @@ function jdDrawPosterBackgroundWipe() {
   if (textT > 0) {
     textAlign(LEFT);
     jdFontForLanguage("bold");
-    fontSize(jdIsEnglish() ? 8 : 8);
-    fill(248, 232, 197, 148 * textT);
+    fontSize(
+      jdIsEnglish()
+        ? JD_POSTER_SPECIAL_SIZE_EN
+        : JD_POSTER_SPECIAL_SIZE_JP
+    );
+    fill(248, 232, 197, JD_POSTER_SPECIAL_ALPHA * textT);
     text(jdT("poster.special", "TODAY'S SPECIAL"), 24, 611);
 
     jdDrawPosterRetroJapanese(
@@ -15135,13 +15756,13 @@ function jdDrawPosterBackgroundWipe() {
     fill(70, 40, 31, 225 * textT);
     text(item.description, 24, 89);
 
-    font("Courier-Bold");
-    fontSize(7.5);
-    fill(126, 67, 51, 160 * textT);
+    jdReceiptFont("bold");
+    fontSize(JD_POSTER_BRAND_SIZE);
+    fill(126, 67, 51, JD_POSTER_BRAND_ALPHA * textT);
     text("JUNKISSA DIVE", 24, 72);
 
     textAlign(RIGHT);
-    font("Courier-Bold");
+    jdReceiptFont("bold");
     fontSize(25);
     fill(151, 48, 42, 255 * textT);
     text(`¥${item.price}`, 332, 101);
@@ -15464,11 +16085,7 @@ function jdDrawCompletionPosterLayout(options = {}) {
     scale(frameScale, frameScale);
     translate(-W / 2, -H / 2);
 
-    noFill();
-    stroke(248, 232, 197, 205 * frameAlpha);
-    strokeWidth(1.5);
-    rect(12, 66, W - 24, H - 78, 1);
-    noStroke();
+    jdDrawPosterDoubleFrame(W, H, 205 * frameAlpha);
 
     popMatrix();
   }
@@ -15480,8 +16097,17 @@ function jdDrawCompletionPosterLayout(options = {}) {
   if (textAlpha > 0.001) {
     textAlign(LEFT);
     jdFontForLanguage("bold");
-    fontSize(8);
-    fill(248, 232, 197, 148 * textAlpha);
+    fontSize(
+      jdIsEnglish()
+        ? JD_POSTER_SPECIAL_SIZE_EN
+        : JD_POSTER_SPECIAL_SIZE_JP
+    );
+    fill(
+      248,
+      232,
+      197,
+      JD_POSTER_SPECIAL_ALPHA * textAlpha
+    );
     text(jdT("poster.special", "TODAY'S SPECIAL"), 24, 611);
 
     jdDrawPosterRetroJapanese(
@@ -15582,13 +16208,18 @@ function jdDrawCompletionPosterLayout(options = {}) {
     fill(70, 40, 31, 225 * textAlpha);
     text(item.description, 24, 89);
 
-    font("Courier-Bold");
-    fontSize(7.5);
-    fill(126, 67, 51, 160 * textAlpha);
+    jdReceiptFont("bold");
+    fontSize(JD_POSTER_BRAND_SIZE);
+    fill(
+      126,
+      67,
+      51,
+      JD_POSTER_BRAND_ALPHA * textAlpha
+    );
     text("JUNKISSA DIVE", 24, 72);
 
     textAlign(RIGHT);
-    font("Courier-Bold");
+    jdReceiptFont("bold");
     fontSize(25);
     fill(151, 48, 42, 255 * textAlpha);
     text(`¥${item.price}`, 332, 101);
@@ -16808,7 +17439,7 @@ function jdDrawPosterRetroJapanese(
   scale(scaleX, 1);
 
   textAlign(LEFT);
-  jdFontForLanguage("bold");
+  jdTitleFont("bold");
   fontSize(glyphSize);
 
   for (let i = 0; i < chars.length; i += 1) {
@@ -17777,6 +18408,75 @@ function jdDrawPosterCafeHold() {
 }
 
 
+// 商品数・失敗記録・店長メモの行数から、レシートの下端を決める。
+// 上端を固定することで、落下演出とヘッダーの視線位置は変えない。
+function jdGetReceiptPaperMetrics(
+  receiptLayout = jdGetReceiptLayout()
+) {
+  const menuEntries = Array.isArray(receiptLayout.menuEntries)
+    ? receiptLayout.menuEntries
+    : [];
+
+  const lossLines = Array.isArray(receiptLayout.lossLines)
+    ? receiptLayout.lossLines
+    : [];
+
+  const paperTop = 520;
+  const resultStartY = paperTop - 108;
+  const resultGap = 14.5;
+
+  const listBottomY =
+    resultStartY -
+    menuEntries.length * resultGap +
+    4;
+
+  const lossStartY = listBottomY - 29;
+
+  const rankLineY = lossLines.length > 0
+    ? lossStartY - lossLines.length * 12 - 10
+    : listBottomY - 28;
+
+  const memoLineY = rankLineY - 25;
+  const memo = jdManagerCommentShort() || "-";
+  const maxChars = jdIsEnglish() ? 30 : 17;
+  const memoLine1 = memo.slice(0, maxChars);
+  const memoLine2 = memo.slice(maxChars);
+
+  // 二行メモの時だけ一行分を追加し、余白だけが残らないようにする。
+  const footerDashY =
+    memoLineY -
+    (memoLine2 ? 56 : 43);
+
+  const footerBrandY = footerDashY - 28;
+  const desiredPaperBottom = footerBrandY - 15;
+
+  // 現在の最大3商品＋2種類の失敗記録を収めつつ、
+  // 将来行が増えても再プレイボタンへ重ならない範囲に制限する。
+  const paperH = Math.max(
+    260,
+    Math.min(
+      370,
+      paperTop - desiredPaperBottom
+    )
+  );
+
+  return {
+    paperTop,
+    paperH,
+    paperY: paperTop - paperH,
+    resultStartY,
+    resultGap,
+    listBottomY,
+    lossStartY,
+    rankLineY,
+    memoLineY,
+    footerDashY,
+    memoLine1,
+    memoLine2
+  };
+}
+
+
 function jdDrawReceipt() {
   rectMode(CORNER);
   ellipseMode(CENTER);
@@ -18042,16 +18742,39 @@ function jdDrawReceipt() {
     receiptOffsetY
   );
 
+  const receiptLayout = jdGetReceiptLayout();
+  const menuEntries = receiptLayout.menuEntries;
+  const lossLines = receiptLayout.lossLines;
+  const resultDelay = receiptLayout.resultDelay;
+  const resultInterval = receiptLayout.resultInterval;
+  const totalAt = receiptLayout.totalAt;
+  const lossDelay = receiptLayout.lossDelay;
+  const lossInterval = receiptLayout.lossInterval;
+  const rankAt = receiptLayout.rankAt;
+  const memoAt = receiptLayout.memoAt;
+  const readyAt = receiptLayout.readyAt;
+
+  const receiptPaper =
+    jdGetReceiptPaperMetrics(receiptLayout);
+
   const paperW = 210;
-  const paperH = 330;
+  const paperH = receiptPaper.paperH;
 
   const paperX =
     cx - paperW / 2;
 
-  const paperY = 190;
+  const paperY = receiptPaper.paperY;
 
-  const paperTop =
-    paperY + paperH;
+  const paperTop = receiptPaper.paperTop;
+  const resultStartY = receiptPaper.resultStartY;
+  const resultGap = receiptPaper.resultGap;
+  const listBottomY = receiptPaper.listBottomY;
+  const lossStartY = receiptPaper.lossStartY;
+  const rankLineY = receiptPaper.rankLineY;
+  const memoLineY = receiptPaper.memoLineY;
+  const footerDashY = receiptPaper.footerDashY;
+  const memoLine1 = receiptPaper.memoLine1;
+  const memoLine2 = receiptPaper.memoLine2;
 
   // 同じギザギザ形状の影
   drawZigzagPaper(
@@ -18172,9 +18895,11 @@ function jdDrawReceipt() {
 
   const receiptType = JD.typeScale || {
     receiptShop: 13.5,
-    receiptBrand: 10,
+    receiptBrand: 9.5,
     receiptItem: 9.5,
-    receiptMeta: 8
+    receiptMeta: 9.5,
+    receiptTotal: 15,
+    receiptFooter: 7.5
   };
 
   textAlign(CENTER);
@@ -18184,7 +18909,7 @@ function jdDrawReceipt() {
     245
   );
 
-  jdFontForLanguage("bold");
+  jdTitleFont("bold");
 
   fontSize(receiptType.receiptShop);
 
@@ -18200,7 +18925,7 @@ function jdDrawReceipt() {
   // 日本語版だけ、店名の下へ英字ロゴを添える。
   // 英語版は同じ文字を重ねず、一行の店名として見せる。
   if (!jdIsEnglish()) {
-    font("Courier-Bold");
+    jdReceiptFont("bold");
     fontSize(receiptType.receiptBrand);
     text("JUNKISSA DIVE", cx, paperTop - 33);
   }
@@ -18211,25 +18936,28 @@ function jdDrawReceipt() {
     paperTop - 47
   );
 
-  // 日時・番号
-  textAlign(LEFT);
+  // 日付はレシート右端へ。下段のシフト名と伝票番号は
+  // 同じ文字サイズで左右にそろえる。
+  textAlign(RIGHT);
 
   jdFill(
     "ink",
     215
   );
 
-  font(
-    "Courier"
-  );
+  jdReceiptFont();
 
-  fontSize(8.8);
+  fontSize(receiptType.receiptMeta);
 
   text(
     dateText,
-    paperX + 9,
+    paperX + paperW - 9,
     paperTop - 69
   );
+
+  textAlign(LEFT);
+  jdReceiptLocalizedFont();
+  fontSize(receiptType.receiptMeta);
 
   text(
     jdT("receipt.shift", "MONDAY SHIFT"),
@@ -18238,6 +18966,9 @@ function jdDrawReceipt() {
   );
 
   textAlign(RIGHT);
+
+  jdReceiptFont();
+  fontSize(receiptType.receiptMeta);
 
   text(
     `No.${receiptNo}`,
@@ -18254,23 +18985,6 @@ function jdDrawReceipt() {
   // ==================================================
   // 商品一覧
   // ==================================================
-
-  const receiptLayout = jdGetReceiptLayout();
-  const menuEntries = receiptLayout.menuEntries;
-  const lossLines = receiptLayout.lossLines;
-  const resultDelay = receiptLayout.resultDelay;
-  const resultInterval = receiptLayout.resultInterval;
-  const totalAt = receiptLayout.totalAt;
-  const lossDelay = receiptLayout.lossDelay;
-  const lossInterval = receiptLayout.lossInterval;
-  const rankAt = receiptLayout.rankAt;
-  const memoAt = receiptLayout.memoAt;
-  const readyAt = receiptLayout.readyAt;
-
-  const resultStartY =
-    paperTop - 108;
-
-  const resultGap = 14.5;
 
   for (
     let i = 0;
@@ -18299,6 +19013,14 @@ function jdDrawReceipt() {
         r
       );
 
+    const itemText = menuName;
+
+    // 長い正式名を縮める場合も、番号・品名・金額を同じ大きさにする。
+    const rowFontSize =
+      itemText.length > 18
+        ? receiptType.receiptItem - 1
+        : receiptType.receiptItem;
+
     // 番号
     textAlign(LEFT);
 
@@ -18307,11 +19029,9 @@ function jdDrawReceipt() {
       182
     );
 
-    font(
-      "Courier"
-    );
+    jdReceiptFont();
 
-    fontSize(receiptType.receiptMeta);
+    fontSize(rowFontSize);
 
     text(
       String(
@@ -18330,18 +19050,8 @@ function jdDrawReceipt() {
       240
     );
 
-    const itemText = menuName;
-
     jdFontForLanguage("bold");
-    fontSize(receiptType.receiptItem);
-
-    if (
-      itemText.length > 18
-    ) {
-      fontSize(
-        receiptType.receiptItem - 1.0
-      );
-    }
+    fontSize(rowFontSize);
 
     text(
       itemText,
@@ -18352,11 +19062,9 @@ function jdDrawReceipt() {
     // 金額
     textAlign(RIGHT);
 
-    font(
-      "Courier-Bold"
-    );
+    jdReceiptFont("bold");
 
-    fontSize(receiptType.receiptItem);
+    fontSize(rowFontSize);
 
     text(
       String(
@@ -18366,12 +19074,6 @@ function jdDrawReceipt() {
       y
     );
   }
-
-  const listBottomY =
-    resultStartY -
-    menuEntries.length *
-    resultGap +
-    4;
 
   // ==================================================
   // 合計
@@ -18406,11 +19108,9 @@ function jdDrawReceipt() {
       242
     );
 
-    font(
-      "Courier-Bold"
-    );
+    jdReceiptLocalizedFont("bold");
 
-    fontSize(11);
+    fontSize(receiptType.receiptTotal);
 
     text(
       jdT(
@@ -18428,25 +19128,20 @@ function jdDrawReceipt() {
       248
     );
 
-    font(
-      "Courier-Bold"
-    );
+    jdReceiptFont("bold");
 
-    fontSize(17);
+    fontSize(receiptType.receiptTotal);
 
     text(
       `¥${totalText}`,
       paperX + paperW - 9,
-      totalY - 1
+      totalY
     );
   }
 
   // ==================================================
   // 合計直後の小さな失敗記録
   // ==================================================
-
-  const lossStartY =
-    listBottomY - 29;
 
   for (
     let i = 0;
@@ -18474,10 +19169,6 @@ function jdDrawReceipt() {
   // ランク
   // ==================================================
 
-  const rankLineY = lossLines.length > 0
-    ? lossStartY - lossLines.length * 12 - 10
-    : listBottomY - 28;
-
   if (
     JD.receiptTimer >=
     rankAt
@@ -18496,11 +19187,9 @@ function jdDrawReceipt() {
       180
     );
 
-    font(
-      "Courier"
-    );
+    jdReceiptLocalizedFont();
 
-    fontSize(8);
+    fontSize(receiptType.receiptMeta);
 
     text(
       jdT(
@@ -18518,11 +19207,9 @@ function jdDrawReceipt() {
       228
     );
 
-    font(
-      "Courier-Bold"
-    );
+    jdReceiptLocalizedFont("bold");
 
-    fontSize(11);
+    fontSize(receiptType.receiptMeta);
 
     text(
       jdRankName(),
@@ -18534,9 +19221,6 @@ function jdDrawReceipt() {
   // ==================================================
   // 店長メモ
   // ==================================================
-
-  const memoLineY =
-    rankLineY - 25;
 
   if (
     JD.receiptTimer >=
@@ -18558,30 +19242,13 @@ function jdDrawReceipt() {
 
     jdFontForLanguage();
 
-    fontSize(jdIsEnglish() ? 7.4 : 8);
+    fontSize(receiptType.receiptMeta);
 
     text(
       jdT("receipt.memo", "MANAGER MEMO"),
       paperX + 9,
       memoLineY - 11
     );
-
-    const memo =
-      jdManagerCommentShort() ||
-      "-";
-
-    const maxChars = jdIsEnglish() ? 30 : 17;
-
-    const memoLine1 =
-      memo.slice(
-        0,
-        maxChars
-      );
-
-    const memoLine2 =
-      memo.slice(
-        maxChars
-      );
 
     jdFill(
       "ink",
@@ -18590,7 +19257,7 @@ function jdDrawReceipt() {
 
     jdFontForLanguage();
 
-    fontSize(jdIsEnglish() ? 7.2 : 9.2);
+    fontSize(receiptType.receiptMeta);
 
     text(
       memoLine1,
@@ -18617,9 +19284,6 @@ function jdDrawReceipt() {
     JD.receiptTimer >=
     readyAt
   ) {
-    const footerDashY =
-      memoLineY - 56;
-
     drawReceiptDash(
       paperX,
       paperW,
@@ -18636,7 +19300,7 @@ function jdDrawReceipt() {
 
     jdFontForLanguage();
 
-    fontSize(jdIsEnglish() ? 8.5 : 7.5);
+    fontSize(receiptType.receiptMeta);
 
     text(
       jdT("receipt.thanks", "THANK YOU"),
@@ -18644,7 +19308,8 @@ function jdDrawReceipt() {
       footerDashY - 15
     );
 
-    fontSize(7);
+    jdReceiptFont();
+    fontSize(receiptType.receiptFooter);
 
     text(
       "JUNKISSA DIVE",
@@ -18786,8 +19451,8 @@ function jdDrawReceipt() {
       0.15
   ) {
     printLineY =
-      memoLineY -
-      72;
+      footerDashY -
+      16;
 
     printLineAge =
       (
@@ -18981,9 +19646,7 @@ function jdDrawReceipt() {
 
     textAlign(CENTER);
 
-    font(
-      "Courier-Bold"
-    );
+    jdFontForLanguage("bold");
 
     fontSize(12);
 
@@ -19225,14 +19888,14 @@ function jdDebugButtonHit(_x, _y) {
 
 function jdDrawDebugWorld() {
   if (!JD.debugMode) return;
-  fill(255, 245, 224, 180); font('Courier-Bold'); fontSize(9); textAlign(CENTER);
+  fill(255, 245, 224, 180); jdReceiptFont("bold"); fontSize(9); textAlign(CENTER);
   text(`PHASE ${JD.gamePhase}`, JD.cam.x, JD.cam.y + 210);
 }
 
 function jdDrawDebugScreen() {
   if (!JD.debugMode) return;
   rectMode(CORNER); noStroke(); fill(28, 18, 14, 175); rect(16, 144, 328, 92);
-  fill(255, 245, 224, 220); font('Courier-Bold'); fontSize(10); textAlign(LEFT);
+  fill(255, 245, 224, 220); jdReceiptFont("bold"); fontSize(10); textAlign(LEFT);
   text(`SCENE PLAY  PHASE ${JD.gamePhase}`, 26, 216);
   text(`${JD.webPortVersion || "WEB"}`, 26, 154);
   if (JD.food) {
