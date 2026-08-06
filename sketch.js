@@ -3,7 +3,7 @@
 // Goal: improve motif recognition while keeping gameplay and hit logic intact.
 
 const JD = {};
-const JD_WEB_PORT_VERSION = "Variable Receipt + Unified Type v1";
+const JD_WEB_PORT_VERSION = "Title Logo v1";
 
 // 端末内蔵フォントへ依存せず、PCとスマートフォンで同じ字形を使う。
 // 真夜中コーラと同じ三層構成にそろえ、役割ごとの個性を保つ。
@@ -55,18 +55,40 @@ const JD_POSTER_TITLE_SCALE_X = 1.05;
 // ポスター内の小見出しと店名は、スマートフォンでも印刷物の
 // 階層が一目で読める大きさに固定する。組み立て・静止・撤収で共有。
 const JD_POSTER_SPECIAL_SIZE_JP = 10.5;
-const JD_POSTER_SPECIAL_SIZE_EN = 9.5;
+const JD_POSTER_SPECIAL_SIZE_EN = 10.5;
 const JD_POSTER_SPECIAL_ALPHA = 205;
-const JD_POSTER_BRAND_SIZE = 9.5;
+const JD_POSTER_BRAND_SIZE = 10.5;
 const JD_POSTER_BRAND_ALPHA = 205;
+
+// 下部の情報面は、モック画像寄りのやわらかな生成りへ寄せる。
+// タイトル文字のクリーム色とは分け、紙らしい少し落ち着いた色にする。
+const JD_POSTER_INFO_PAPER = [235, 225, 205];
+
+const JD_POSTER_DESCRIPTION_SIZE_JP = 11;
+const JD_POSTER_DESCRIPTION_SIZE_EN_MAX = 9.5;
+const JD_POSTER_DESCRIPTION_SIZE_EN_MIN = 8.5;
+const JD_POSTER_DESCRIPTION_MAX_WIDTH = 224;
+const JD_POSTER_VIEW_RECEIPT_SIZE_JP = 15;
+const JD_POSTER_VIEW_RECEIPT_SIZE_EN = 14;
+
+// 商品名は日本語を主役に固定し、その下へ英語名を小さく添える。
+const JD_POSTER_SUBTITLE_SIZE_MAX = 14.5;
+const JD_POSTER_SUBTITLE_SIZE_MIN = 11;
+const JD_POSTER_SUBTITLE_MAX_WIDTH = 286;
+const JD_POSTER_SUBTITLE_Y = 497;
 
 // 外側の太線と内側の細線を組み合わせ、昭和の印刷ポスターらしい
 // 二重罫にする。演出中も同じ比率を保つ。
 const JD_POSTER_FRAME_OUTER_WEIGHT = 2.4;
 const JD_POSTER_FRAME_INNER_WEIGHT = 0.75;
 
+const PHASE_OPENING_MONOLOGUE = "OPENING_MONOLOGUE";
 const PHASE_SHIFT_START = "SHIFT_START";
 const PHASE_FORTUNE = "FORTUNE";
+
+const JD_OPENING_MONOLOGUE_FADE_IN = 0.48;
+const JD_OPENING_MONOLOGUE_FADE_OUT = 0.42;
+const JD_OPENING_MONOLOGUE_DURATIONS = [4.2, 2.8, 3.8, 2.7];
 const PHASE_AIM = "AIM";
 const PHASE_AIMING = "AIMING";
 const PHASE_FLYING = "FLYING";
@@ -500,6 +522,21 @@ function touched(touch) {
         JD.state !==
         STATE_PLAY
       ) {
+        return;
+      }
+
+      // 初回プレイ時のモノローグ。
+      if (
+        JD.gamePhase ===
+        PHASE_OPENING_MONOLOGUE
+      ) {
+        if (
+          touch.state ===
+          ENDED
+        ) {
+          jdTapOpeningMonologue();
+        }
+
         return;
       }
 
@@ -2063,6 +2100,325 @@ function jdPlayTone(options = {}) {
   );
 }
 
+const JD_SOUND_FILE_CONFIG = {
+  directory: "./Sound/",
+  sources: {
+    open: "sfx_start.ogg",
+    fortune_in: "sfx_fortune_in.ogg",
+    fortune_pick: "sfx_fortune_pick.ogg",
+    ticket: "sfx_material_popup.ogg",
+    launch: "sfx_launcher_release.ogg",
+    hit_coffee: "sfx_land_coffee.ogg",
+    hit_cake: "sfx_land_cake.ogg",
+    hit_melon: "sfx_land_soda.ogg",
+    hit_stab: "sfx_hit_stab.ogg",
+    drop: "sfx_bounce_soft.ogg",
+    out: "sfx_out.ogg",
+    receipt_drop: "sfx_delivery_setdown.ogg",
+    receipt_print: "sfx_receipt_print.ogg",
+    receipt_finish: "sfx_finish_chime.ogg",
+    poster_ink: "sfx_poster_print.ogg",
+    poster_stamp: "sfx_label_paste.ogg",
+    poster_ready: "sfx_poster_reveal.ogg",
+    poster_turn: "sfx_paper_swish.ogg",
+    button_ready: "sfx_button_ready.ogg"
+  },
+  volumes: {
+    open: 0.52,
+    fortune_in: 0.40,
+    fortune_pick: 0.42,
+    ticket: 0.30,
+    launch: 0.50,
+    hit_coffee: 0.38,
+    hit_cake: 0.36,
+    hit_melon: 0.38,
+    hit_stab: 0.34,
+    drop: 0.36,
+    out: 0.34,
+    receipt_drop: 0.34,
+    receipt_print: 0.24,
+    receipt_finish: 0.42,
+    poster_ink: 0.22,
+    poster_stamp: 0.34,
+    poster_ready: 0.40,
+    poster_turn: 0.30,
+    button_ready: 0.32
+  },
+  cooldowns: {
+    open: 0.08,
+    fortune_in: 0.10,
+    fortune_pick: 0.10,
+    ticket: 0.08,
+    launch: 0.08,
+    hit_coffee: 0.10,
+    hit_cake: 0.10,
+    hit_melon: 0.10,
+    hit_stab: 0.08,
+    drop: 0.10,
+    out: 0.12,
+    receipt_drop: 0.18,
+    receipt_print: 0.07,
+    receipt_finish: 0.14,
+    poster_ink: 0.08,
+    poster_stamp: 0.12,
+    poster_ready: 0.14,
+    poster_turn: 0.10,
+    button_ready: 0.08
+  },
+  warmupIds: [
+    "open",
+    "launch",
+    "ticket",
+    "hit_coffee",
+    "hit_cake",
+    "hit_melon",
+    "receipt_print",
+    "receipt_finish",
+    "poster_turn",
+    "button_ready"
+  ]
+};
+
+function jdInitSoundFileState() {
+  if (JD.soundFileState) {
+    return JD.soundFileState;
+  }
+
+  JD.soundFileState = {
+    buffers: {},
+    loading: {},
+    failed: {},
+    warmupRequested: false,
+    warmupQueue: [],
+    warmupTimer: null,
+    debugLastError: ""
+  };
+
+  return JD.soundFileState;
+}
+
+function jdDecodeSoundFileData(ctx, data) {
+  return new Promise(function(resolve, reject) {
+    let settled = false;
+
+    function resolveOnce(buffer) {
+      if (settled) return;
+      settled = true;
+      resolve(buffer);
+    }
+
+    function rejectOnce(error) {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    }
+
+    try {
+      const result = ctx.decodeAudioData(
+        data,
+        resolveOnce,
+        rejectOnce
+      );
+
+      if (
+        result &&
+        typeof result.then === "function"
+      ) {
+        result.then(resolveOnce).catch(rejectOnce);
+      }
+    } catch (error) {
+      rejectOnce(error);
+    }
+  });
+}
+
+function jdPrepareSoundFile(name) {
+  const state = jdInitSoundFileState();
+  const filename = JD_SOUND_FILE_CONFIG.sources[name];
+
+  if (!filename) {
+    return Promise.resolve(null);
+  }
+
+  if (state.buffers[name]) {
+    return Promise.resolve(state.buffers[name]);
+  }
+
+  if (state.loading[name]) {
+    return state.loading[name];
+  }
+
+  if (state.failed[name]) {
+    return Promise.resolve(null);
+  }
+
+  const ctx = jdEnsureAudio();
+
+  if (!ctx || typeof fetch !== "function") {
+    state.failed[name] = true;
+    return Promise.resolve(null);
+  }
+
+  const url =
+    JD_SOUND_FILE_CONFIG.directory +
+    filename;
+
+  const task = fetch(
+    url,
+    { cache: "force-cache" }
+  ).then(function(response) {
+    if (!response.ok) {
+      throw new Error(
+        "Sound load failed: " +
+          name +
+          " (" +
+          String(response.status) +
+          ")"
+      );
+    }
+
+    return response.arrayBuffer();
+  }).then(function(data) {
+    return jdDecodeSoundFileData(
+      ctx,
+      data
+    );
+  }).then(function(buffer) {
+    state.buffers[name] = buffer || null;
+    delete state.loading[name];
+    return buffer || null;
+  }).catch(function(error) {
+    state.failed[name] = true;
+    state.debugLastError = String(
+      error && error.message
+        ? error.message
+        : error
+    );
+    delete state.loading[name];
+    return null;
+  });
+
+  state.loading[name] = task;
+  return task;
+}
+
+function jdScheduleNextSoundWarmup(delay) {
+  const state = jdInitSoundFileState();
+
+  if (state.warmupQueue.length <= 0) {
+    state.warmupTimer = null;
+    return;
+  }
+
+  const wait =
+    typeof delay === "number"
+      ? delay
+      : 84;
+
+  state.warmupTimer = setTimeout(
+    function() {
+      const nextName =
+        state.warmupQueue.shift();
+
+      if (!nextName) {
+        jdScheduleNextSoundWarmup(84);
+        return;
+      }
+
+      jdPrepareSoundFile(nextName).then(
+        function() {
+          jdScheduleNextSoundWarmup(84);
+        }
+      );
+    },
+    Math.max(0, wait)
+  );
+}
+
+function jdRequestSoundWarmup() {
+  const state = jdInitSoundFileState();
+
+  if (state.warmupRequested) {
+    return;
+  }
+
+  state.warmupRequested = true;
+  state.warmupQueue =
+    JD_SOUND_FILE_CONFIG.warmupIds.slice();
+
+  jdScheduleNextSoundWarmup(120);
+}
+
+function jdPlayBufferedSound(name, options = {}) {
+  const state = jdInitSoundFileState();
+  const buffer = state.buffers[name];
+
+  if (!buffer) {
+    if (
+      !state.loading[name] &&
+      !state.failed[name]
+    ) {
+      jdPrepareSoundFile(name);
+    }
+
+    return false;
+  }
+
+  const ctx = jdEnsureAudio();
+
+  if (!ctx || !JD.audioMaster) {
+    return false;
+  }
+
+  try {
+    const source =
+      ctx.createBufferSource();
+    const gain =
+      ctx.createGain();
+
+    source.buffer = buffer;
+    source.playbackRate.value =
+      Number.isFinite(options.playbackRate) &&
+      options.playbackRate > 0
+        ? options.playbackRate
+        : 1;
+
+    const configuredVolume =
+      Number.isFinite(
+        JD_SOUND_FILE_CONFIG.volumes[name]
+      )
+        ? JD_SOUND_FILE_CONFIG.volumes[name]
+        : 0.34;
+
+    gain.gain.value = Math.max(
+      0,
+      Number.isFinite(options.volume)
+        ? options.volume
+        : configuredVolume
+    );
+
+    source.connect(gain);
+    gain.connect(JD.audioMaster);
+
+    source.start(
+      ctx.currentTime +
+        Math.max(
+          0,
+          options.delay || 0
+        )
+    );
+
+    return true;
+  } catch (error) {
+    state.debugLastError = String(
+      error && error.message
+        ? error.message
+        : error
+    );
+    return false;
+  }
+}
+
 function jdPlayNoise(options = {}) {
   const ctx =
     jdEnsureAudio();
@@ -2159,14 +2515,25 @@ function jdPlayNoise(options = {}) {
 }
 
 function jdPlaySound(name) {
-  if (
-    !jdSoundCanPlay(
-      name,
-      name === "receipt_print"
-        ? 0.07
-        : 0.04
-    )
-  ) {
+  jdRequestSoundWarmup();
+
+  const configuredCooldown =
+    JD_SOUND_FILE_CONFIG.cooldowns[name];
+
+  const cooldown =
+    Number.isFinite(configuredCooldown)
+      ? configuredCooldown
+      : (
+          name === "receipt_print"
+            ? 0.07
+            : 0.04
+        );
+
+  if (!jdSoundCanPlay(name, cooldown)) {
+    return;
+  }
+
+  if (jdPlayBufferedSound(name)) {
     return;
   }
 
@@ -2475,6 +2842,7 @@ function jdPlaySound(name) {
       break;
   }
 }
+
 
 
 
@@ -3297,6 +3665,11 @@ function jdResetAll() {
   JD.floatTexts = [];
   JD.placedFoods = [];
   JD.debugMode = JD.webOptions ? !!JD.webOptions.debugDefault : false;
+
+  // アプリを開いて最初のシフトだけ、バイト本人の独白を表示する。
+  // 再プレイでは繰り返さず、ページ再読み込み時にだけ戻る。
+  JD.openingMonologueSeen = false;
+
   JD.activePointerId = null;
   JD.lastTrail = null;
   JD.currentTrail = null;
@@ -3367,55 +3740,55 @@ function jdInitTables() {
       menuName: { jp: "チェリーメロンソーダ", en: "Cherry Melon Soda" },
       posterTop: { jp: "チェリー", en: "CHERRY" },
       posterMain: { jp: "メロンソーダ", en: "MELON SODA" },
-      description: { jp: "赤い実をひとつ沈めた、喫茶店の定番。", en: "A café classic with one bright cherry sinking slowly in." }
+      description: { jp: "赤い実をひとつ沈めた、喫茶店の定番。", en: "A café classic crowned with a bright cherry." }
     },
     SUGAR_COFFEE: {
       menuName: { jp: "シュガーコーヒー", en: "Sugar Coffee" },
       posterTop: { jp: "シュガー", en: "SUGAR" },
       posterMain: { jp: "コーヒー", en: "COFFEE" },
-      description: { jp: "ひとさじの甘さでほどける、深煎りの一杯。", en: "A dark-roast cup softened by a single spoonful of sweetness." }
+      description: { jp: "ひとさじの甘さでほどける、深煎りの一杯。", en: "Dark roast softened by one spoonful of sugar." }
     },
     STRAWBERRY_CAKE: {
       menuName: { jp: "いちごショートケーキ", en: "Strawberry Shortcake" },
       posterTop: { jp: "いちご", en: "STRAWBERRY" },
       posterMain: { jp: "ショートケーキ", en: "SHORTCAKE" },
-      description: { jp: "いちごが主役の、やわらかな喫茶店の定番。", en: "A soft café classic where the strawberry takes the lead." }
+      description: { jp: "いちごが主役の、やわらかな喫茶店の定番。", en: "Soft shortcake with strawberry center stage." }
     },
     CHERRY_COFFEE: {
       menuName: { jp: "チェリーコーヒー", en: "Cherry Coffee" },
       posterTop: { jp: "チェリー", en: "CHERRY" },
       posterMain: { jp: "コーヒー", en: "COFFEE" },
-      description: { jp: "甘酸っぱい余韻を残す、夜更けのコーヒー。", en: "A late-night coffee with a lightly tart aftertaste." }
+      description: { jp: "甘酸っぱい余韻を残す、夜更けのコーヒー。", en: "Late-night coffee with a tart cherry finish." }
     },
     CHERRY_CAKE: {
       menuName: { jp: "チェリーショートケーキ", en: "Cherry Shortcake" },
       posterTop: { jp: "チェリー", en: "CHERRY" },
       posterMain: { jp: "ショートケーキ", en: "SHORTCAKE" },
-      description: { jp: "赤い実を添えた、午後のショートケーキ。", en: "A shortcake brightened with a cherry for the afternoon." }
+      description: { jp: "赤い実を添えた、午後のショートケーキ。", en: "Cherry brightens a soft afternoon shortcake." }
     },
     SUGAR_MELON_SODA: {
       menuName: { jp: "シュガーメロンソーダ", en: "Sugar Melon Soda" },
       posterTop: { jp: "シュガー", en: "SUGAR" },
       posterMain: { jp: "メロンソーダ", en: "MELON SODA" },
-      description: { jp: "ひとさじの甘さを重ねた、緑のソーダ。", en: "A green soda with an extra spoonful of sweetness." }
+      description: { jp: "ひとさじの甘さを重ねた、緑のソーダ。", en: "Green soda with an extra spoonful of sugar." }
     },
     SUGAR_CAKE: {
       menuName: { jp: "シュガーショートケーキ", en: "Sugar Shortcake" },
       posterTop: { jp: "シュガー", en: "SUGAR" },
       posterMain: { jp: "ショートケーキ", en: "SHORTCAKE" },
-      description: { jp: "角砂糖の食感が楽しい、気まぐれケーキ。", en: "A whimsical cake with a playful sugar-cube crunch." }
+      description: { jp: "角砂糖の食感が楽しい、気まぐれケーキ。", en: "A whimsical cake with a sugar-cube crunch." }
     },
     STRAWBERRY_COFFEE: {
       menuName: { jp: "いちごコーヒー", en: "Strawberry Coffee" },
       posterTop: { jp: "いちご", en: "STRAWBERRY" },
       posterMain: { jp: "コーヒー", en: "COFFEE" },
-      description: { jp: "ほのかな甘酸っぱさを添えた、夜のコーヒー。", en: "A night coffee touched with a hint of berry sweetness." }
+      description: { jp: "ほのかな甘酸っぱさを添えた、夜のコーヒー。", en: "Night coffee with a hint of berry sweetness." }
     },
     STRAWBERRY_MELON_SODA: {
       menuName: { jp: "いちごメロンソーダ", en: "Strawberry Melon Soda" },
       posterTop: { jp: "いちご", en: "STRAWBERRY" },
       posterMain: { jp: "メロンソーダ", en: "MELON SODA" },
-      description: { jp: "赤と緑がきらめく、夏のクリームソーダ。", en: "A summer cream soda where red and green sparkle together." }
+      description: { jp: "赤と緑がきらめく、夏のクリームソーダ。", en: "Red and green sparkle in summer cream soda." }
     }
   };
 
@@ -3554,6 +3927,10 @@ function jdResetShift() {
 
   JD.shiftStartTimer = 0.35;
 
+  // 初回独白のページ状態。seenはシフトをまたいで維持する。
+  JD.openingMonologuePage = 0;
+  JD.openingMonologueTimer = 0;
+
   // 素材札の登場演出
   JD.itemTicketTimer = 0;
 
@@ -3657,7 +4034,9 @@ function jdStartPlay() {
     STATE_PLAY;
 
   jdSetGamePhase(
-    PHASE_SHIFT_START
+    JD.openingMonologueSeen
+      ? PHASE_SHIFT_START
+      : PHASE_OPENING_MONOLOGUE
   );
 
   // ==================================================
@@ -3792,6 +4171,415 @@ function jdStartPlay() {
 function jdSetGamePhase(phase) {
   JD.gamePhase = phase;
 }
+
+function jdGetOpeningMonologuePages() {
+  if (jdIsEnglish()) {
+    return [
+      {
+        lines: [
+          "A strange café that opens only after midnight.",
+          "",
+          "I've only been working here for a few days.",
+          "The manager gave me just one instruction."
+        ],
+        size: 13.2,
+        lineGap: 25,
+        weight: "regular"
+      },
+      {
+        lines: [
+          "“Launch the toppings. Make them land.”"
+        ],
+        size: 16,
+        lineGap: 26,
+        weight: "bold"
+      },
+      {
+        lines: [
+          "...I don't really understand it.",
+          "But apparently, if they land right,",
+          "they become something we can sell."
+        ],
+        size: 13.2,
+        lineGap: 24,
+        weight: "regular"
+      },
+      {
+        lines: [
+          "Well then. Shall we get started?"
+        ],
+        size: 16,
+        lineGap: 26,
+        weight: "regular"
+      }
+    ];
+  }
+
+  return [
+    {
+      lines: [
+        "深夜だけ開く、不思議な喫茶店。",
+        "",
+        "ここでバイトを始めて、まだ数日。",
+        "店長に言われた仕事は、ひとつ。"
+      ],
+      size: 15,
+      lineGap: 27,
+      weight: "regular"
+    },
+    {
+      lines: [
+        "「トッピングは飛ばして乗せろ」"
+      ],
+      size: 18,
+      lineGap: 28,
+      weight: "bold"
+    },
+    {
+      lines: [
+        "……意味は、よく分からない。",
+        "でも、うまく乗れば商品になるらしい。"
+      ],
+      size: 15,
+      lineGap: 28,
+      weight: "regular"
+    },
+    {
+      lines: [
+        "さて、今日もはじめますか。"
+      ],
+      size: 17,
+      lineGap: 28,
+      weight: "regular"
+    }
+  ];
+}
+
+function jdOpeningMonologueDuration(pageIndex) {
+  return JD_OPENING_MONOLOGUE_DURATIONS[pageIndex] || 2.8;
+}
+
+function jdAdvanceOpeningMonologuePage() {
+  const pages = jdGetOpeningMonologuePages();
+
+  const pageIndex =
+    Number.isInteger(JD.openingMonologuePage)
+      ? JD.openingMonologuePage
+      : 0;
+
+  if (
+    pageIndex >=
+    pages.length - 1
+  ) {
+    JD.openingMonologueSeen = true;
+    JD.openingMonologuePage = 0;
+    JD.openingMonologueTimer = 0;
+
+    jdSetGamePhase(
+      PHASE_SHIFT_START
+    );
+
+    JD.shiftStartTimer =
+      Number.isFinite(
+        JD.shiftStartDuration
+      )
+        ? JD.shiftStartDuration
+        : 7.4;
+
+    JD.shiftFadeInTimer =
+      Number.isFinite(
+        JD.shiftFadeInDuration
+      )
+        ? JD.shiftFadeInDuration
+        : 0.68;
+
+    return;
+  }
+
+  JD.openingMonologuePage =
+    pageIndex + 1;
+
+  JD.openingMonologueTimer = 0;
+}
+
+function jdUpdateOpeningMonologue(dt) {
+  const pageIndex =
+    Number.isInteger(JD.openingMonologuePage)
+      ? JD.openingMonologuePage
+      : 0;
+
+  const duration =
+    jdOpeningMonologueDuration(
+      pageIndex
+    );
+
+  JD.openingMonologueTimer =
+    (
+      Number.isFinite(
+        JD.openingMonologueTimer
+      )
+        ? JD.openingMonologueTimer
+        : 0
+    ) +
+    dt;
+
+  if (
+    JD.openingMonologueTimer >=
+    duration
+  ) {
+    jdAdvanceOpeningMonologuePage();
+  }
+}
+
+function jdTapOpeningMonologue() {
+  const pageIndex =
+    Number.isInteger(JD.openingMonologuePage)
+      ? JD.openingMonologuePage
+      : 0;
+
+  const duration =
+    jdOpeningMonologueDuration(
+      pageIndex
+    );
+
+  const fadeOutStart =
+    Math.max(
+      JD_OPENING_MONOLOGUE_FADE_IN,
+      duration -
+        JD_OPENING_MONOLOGUE_FADE_OUT
+    );
+
+  const timer =
+    Number.isFinite(
+      JD.openingMonologueTimer
+    )
+      ? JD.openingMonologueTimer
+      : 0;
+
+  // フェードイン中の最初のタップは、文章を完全表示する。
+  if (
+    timer <
+    JD_OPENING_MONOLOGUE_FADE_IN
+  ) {
+    JD.openingMonologueTimer =
+      JD_OPENING_MONOLOGUE_FADE_IN;
+
+    return;
+  }
+
+  // 完全表示中のタップは、急に切らずフェードアウトへ送る。
+  if (
+    timer <
+    fadeOutStart
+  ) {
+    JD.openingMonologueTimer =
+      fadeOutStart;
+
+    return;
+  }
+
+  // すでに消え始めている時は、次のページへすぐ進める。
+  jdAdvanceOpeningMonologuePage();
+}
+
+function jdDrawOpeningMonologue() {
+  const W = JD.LOGICAL_W;
+  const H = JD.LOGICAL_H;
+
+  const pages =
+    jdGetOpeningMonologuePages();
+
+  const pageIndex =
+    jdClamp(
+      Number.isInteger(
+        JD.openingMonologuePage
+      )
+        ? JD.openingMonologuePage
+        : 0,
+      0,
+      pages.length - 1
+    );
+
+  const page =
+    pages[pageIndex];
+
+  const duration =
+    jdOpeningMonologueDuration(
+      pageIndex
+    );
+
+  const timer =
+    jdClamp(
+      Number.isFinite(
+        JD.openingMonologueTimer
+      )
+        ? JD.openingMonologueTimer
+        : 0,
+      0,
+      duration
+    );
+
+  const fadeInRaw =
+    jdClamp(
+      timer /
+        JD_OPENING_MONOLOGUE_FADE_IN,
+      0,
+      1
+    );
+
+  const fadeOutRaw =
+    jdClamp(
+      (
+        duration -
+        timer
+      ) /
+        JD_OPENING_MONOLOGUE_FADE_OUT,
+      0,
+      1
+    );
+
+  const fadeIn =
+    fadeInRaw *
+    fadeInRaw *
+    (
+      3 -
+      2 * fadeInRaw
+    );
+
+  const fadeOut =
+    fadeOutRaw *
+    fadeOutRaw *
+    (
+      3 -
+      2 * fadeOutRaw
+    );
+
+  const textAlpha =
+    Math.min(
+      fadeIn,
+      fadeOut
+    );
+
+  rectMode(CORNER);
+  noStroke();
+
+  // 店内はかすかに残し、文字だけが静かに入れ替わる暗幕。
+  fill(
+    18,
+    13,
+    13,
+    242
+  );
+
+  rect(
+    -40,
+    -40,
+    W + 80,
+    H + 80
+  );
+
+  textAlign(CENTER);
+
+  jdFontForLanguage(
+    page.weight ||
+    "regular"
+  );
+
+  fontSize(
+    page.size ||
+    15
+  );
+
+  const lines =
+    Array.isArray(page.lines)
+      ? page.lines
+      : [];
+
+  const lineGap =
+    Number.isFinite(
+      page.lineGap
+    )
+      ? page.lineGap
+      : 27;
+
+  const centerY = 344;
+
+  const startY =
+    centerY +
+    Math.max(
+      0,
+      lines.length - 1
+    ) *
+    lineGap /
+    2;
+
+  fill(
+    244,
+    229,
+    198,
+    255 * textAlpha
+  );
+
+  for (
+    let i = 0;
+    i < lines.length;
+    i += 1
+  ) {
+    if (!lines[i]) continue;
+
+    text(
+      lines[i],
+      W / 2,
+      startY -
+        i *
+        lineGap
+    );
+  }
+
+  // ボタンにはせず、読了後だけ小さな点でタップ可能と知らせる。
+  const fadeOutStart =
+    duration -
+    JD_OPENING_MONOLOGUE_FADE_OUT;
+
+  if (
+    timer >=
+      JD_OPENING_MONOLOGUE_FADE_IN &&
+    timer <
+      fadeOutStart
+  ) {
+    const pulse =
+      0.5 +
+      0.5 *
+      Math.sin(
+        ElapsedTime *
+        2.4
+      );
+
+    fill(
+      244,
+      229,
+      198,
+      (
+        48 +
+        42 *
+        pulse
+      ) *
+      textAlpha
+    );
+
+    ellipse(
+      W / 2,
+      72,
+      3.8,
+      3.8
+    );
+  }
+
+  rectMode(CORNER);
+  textAlign(CENTER);
+  noStroke();
+}
+
 
 function jdExpectedGamePhase() {
   if (JD.state !== STATE_PLAY) return "-";
@@ -4138,6 +4926,15 @@ function jdAppUpdate(dt) {
     JD.state ===
     STATE_PLAY
   ) {
+    if (
+      JD.gamePhase ===
+      PHASE_OPENING_MONOLOGUE
+    ) {
+      jdUpdateOpeningMonologue(dt);
+
+      return;
+    }
+
     if (
       JD.gamePhase ===
       PHASE_SHIFT_START
@@ -4616,11 +5413,29 @@ function jdGetRecipeEntry(result) {
 }
 
 function jdGetRecipeText(result, field, fallback = "") {
+  return jdGetRecipeTextForLanguage(
+    result,
+    field,
+    JD.lang,
+    fallback
+  );
+}
+
+function jdGetRecipeTextForLanguage(
+  result,
+  field,
+  language,
+  fallback = ""
+) {
   const recipe = jdGetRecipeEntry(result);
   const value = recipe && recipe[field];
+  const lang = jdNormalizeLanguage(language);
+
+  if (typeof value === "string") {
+    return value;
+  }
 
   if (value && typeof value === "object") {
-    const lang = jdIsEnglish() ? "en" : "jp";
     if (typeof value[lang] === "string") return value[lang];
     if (typeof value.jp === "string") return value.jp;
     if (typeof value.en === "string") return value.en;
@@ -4628,6 +5443,7 @@ function jdGetRecipeText(result, field, fallback = "") {
 
   return fallback;
 }
+
 
 function jdGetRecipeMenuName(result, fallback = "") {
   return jdGetRecipeText(
@@ -4820,8 +5636,19 @@ function jdGetProductBaseName(targetKind) {
 }
 
 function jdGetIngredientMenuName(item) {
+  return jdGetIngredientMenuNameForLanguage(
+    item,
+    JD.lang
+  );
+}
+
+function jdGetIngredientMenuNameForLanguage(
+  item,
+  language
+) {
   const code = String(item || "").trim().toUpperCase();
-  const names = jdIsEnglish()
+  const isEnglish = jdNormalizeLanguage(language) === "en";
+  const names = isEnglish
     ? {
         CHERRY: "Cherry",
         SUGAR: "Sugar",
@@ -4835,6 +5662,7 @@ function jdGetIngredientMenuName(item) {
 
   return names[code] || code;
 }
+
 
 function jdGetCompletedProductMenuName(product, fallback = "") {
   const toppings = jdGetProductToppings(product);
@@ -6304,17 +7132,106 @@ function jdDrawOutResultEffect() {
   textAlign(CENTER);
 }
 
-function jdDrawTitleDiveLogoPlaceholder(
+// 支給された daivu_text.svg（viewBox 247 x 106）の輪郭を、
+// 1px単位の矩形へ変換してコード内へ保持する。
+// 外部画像の読み込みを使わないため、sketch.js 単体で同じロゴを描ける。
+// 配列は x, y, width, height の繰り返し。
+const JD_TITLE_DIVE_LOGO_RECTS = [
+  71, 3, 8, 1, 84, 3, 9, 1, 70, 4, 10, 2, 83, 4, 10, 2, 70, 6, 9, 3, 83, 6, 9, 5, 222, 6, 9, 3, 235, 6, 9, 2,
+  234, 8, 10, 1, 69, 9, 10, 1, 221, 9, 9, 4, 234, 9, 9, 5, 69, 10, 9, 4, 82, 11, 9, 3, 24, 12, 22, 3, 220, 13, 10, 2,
+  68, 14, 10, 1, 80, 14, 11, 3, 137, 14, 20, 1, 193, 14, 19, 1, 233, 14, 10, 1, 23, 15, 23, 1, 66, 15, 12, 1, 136, 15, 21, 3,
+  193, 15, 20, 1, 220, 15, 9, 1, 233, 15, 9, 2, 24, 16, 21, 5, 66, 16, 11, 1, 192, 16, 21, 1, 219, 16, 10, 2, 67, 17, 10, 1,
+  80, 17, 10, 1, 193, 17, 19, 2, 232, 17, 10, 3, 136, 18, 20, 2, 218, 18, 11, 2, 192, 19, 20, 1, 135, 20, 21, 3, 193, 20, 19, 7,
+  219, 20, 9, 1, 232, 20, 9, 1, 23, 21, 21, 1, 23, 22, 22, 1, 23, 23, 57, 1, 134, 23, 21, 2, 23, 24, 59, 1, 22, 25, 60, 2,
+  133, 25, 22, 1, 133, 26, 21, 1, 22, 27, 59, 3, 132, 27, 22, 2, 192, 27, 20, 2, 224, 28, 2, 1, 131, 29, 22, 2, 170, 29, 66, 1,
+  21, 30, 60, 2, 169, 30, 67, 8, 130, 31, 23, 1, 21, 32, 21, 2, 58, 32, 23, 1, 130, 32, 22, 1, 58, 33, 22, 5, 129, 33, 23, 1,
+  20, 34, 22, 2, 129, 34, 22, 1, 128, 35, 23, 1, 20, 36, 21, 2, 127, 36, 23, 2, 19, 38, 22, 2, 58, 38, 21, 1, 126, 38, 23, 1,
+  169, 38, 20, 4, 215, 38, 21, 1, 57, 39, 22, 4, 125, 39, 24, 1, 215, 39, 20, 5, 19, 40, 21, 2, 124, 40, 24, 1, 124, 41, 23, 1,
+  18, 42, 22, 1, 123, 42, 24, 1, 170, 42, 19, 7, 18, 43, 21, 2, 56, 43, 22, 5, 122, 43, 24, 1, 121, 44, 24, 1, 214, 44, 21, 3,
+  17, 45, 22, 1, 120, 45, 24, 1, 16, 46, 22, 3, 118, 46, 24, 1, 117, 47, 24, 1, 215, 47, 20, 3, 55, 48, 22, 3, 116, 48, 25, 1,
+  15, 49, 22, 1, 115, 49, 26, 1, 169, 49, 20, 12, 14, 50, 22, 1, 113, 50, 28, 1, 214, 50, 21, 3, 13, 51, 23, 1, 54, 51, 23, 2,
+  112, 51, 29, 1, 7, 52, 29, 1, 110, 52, 31, 1, 7, 53, 28, 1, 38, 53, 7, 1, 54, 53, 22, 2, 108, 53, 33, 1, 214, 53, 20, 6,
+  6, 54, 28, 2, 37, 54, 14, 1, 106, 54, 34, 1, 37, 55, 39, 2, 103, 55, 37, 1, 6, 56, 27, 1, 98, 56, 42, 1, 6, 57, 25, 1,
+  36, 57, 39, 2, 93, 57, 47, 1, 5, 58, 25, 1, 92, 58, 48, 5, 5, 59, 23, 1, 35, 59, 40, 1, 213, 59, 21, 1, 5, 60, 20, 1,
+  35, 60, 39, 2, 213, 60, 20, 3, 6, 61, 13, 1, 168, 61, 21, 2, 41, 62, 33, 1, 47, 63, 26, 1, 91, 63, 25, 1, 120, 63, 20, 9,
+  168, 63, 20, 1, 212, 63, 21, 3, 51, 64, 22, 2, 91, 64, 22, 1, 91, 65, 14, 1, 50, 66, 23, 1, 212, 66, 20, 2, 50, 67, 22, 2,
+  211, 68, 21, 2, 49, 69, 23, 1, 49, 70, 22, 2, 211, 70, 20, 2, 48, 72, 22, 1, 120, 72, 19, 6, 210, 72, 21, 1, 48, 73, 21, 1,
+  210, 73, 20, 2, 47, 74, 22, 2, 209, 75, 21, 1, 46, 76, 23, 2, 209, 76, 20, 2, 45, 78, 23, 2, 119, 78, 20, 15, 208, 78, 21, 1,
+  208, 79, 20, 1, 44, 80, 23, 2, 207, 80, 21, 2, 43, 82, 23, 2, 206, 82, 21, 2, 42, 84, 23, 1, 205, 84, 21, 1, 41, 85, 24, 1,
+  204, 85, 22, 1, 40, 86, 24, 1, 204, 86, 21, 1, 39, 87, 23, 2, 203, 87, 21, 1, 202, 88, 22, 1, 38, 89, 23, 1, 201, 89, 21, 1,
+  37, 90, 24, 1, 199, 90, 22, 1, 35, 91, 26, 1, 198, 91, 23, 1, 34, 92, 26, 1, 197, 92, 23, 1, 33, 93, 26, 1, 118, 93, 21, 6,
+  195, 93, 24, 1, 31, 94, 27, 1, 193, 94, 25, 1, 29, 95, 27, 1, 191, 95, 26, 1, 27, 96, 29, 1, 186, 96, 30, 1, 24, 97, 29, 1,
+  176, 97, 39, 1, 5, 98, 4, 1, 19, 98, 34, 1, 175, 98, 37, 1, 5, 99, 47, 1, 117, 99, 22, 2, 175, 99, 36, 1, 4, 100, 45, 1,
+  176, 100, 33, 1, 4, 101, 44, 1, 117, 101, 21, 1, 175, 101, 32, 1, 4, 102, 42, 1, 175, 102, 27, 1, 4, 103, 40, 1, 174, 103, 27, 1,
+  4, 104, 37, 1, 174, 104, 24, 1, 3, 105, 36, 1, 174, 105, 19, 1,
+];
+
+function jdDrawTitleDiveLogoMask(
+  signX,
+  signY,
+  red,
+  green,
+  blue,
+  alpha
+) {
+  const logoScale = 0.43;
+  const logoCenterX = 123.5;
+  const logoCenterY = 53;
+  const logoCenterScreenY =
+    signY - 23;
+  const overlap = 0.035;
+
+  rectMode(CORNER);
+  noStroke();
+  fill(
+    red,
+    green,
+    blue,
+    alpha
+  );
+
+  for (
+    let i = 0;
+    i < JD_TITLE_DIVE_LOGO_RECTS.length;
+    i += 4
+  ) {
+    const x =
+      JD_TITLE_DIVE_LOGO_RECTS[i];
+    const y =
+      JD_TITLE_DIVE_LOGO_RECTS[i + 1];
+    const w =
+      JD_TITLE_DIVE_LOGO_RECTS[i + 2];
+    const h =
+      JD_TITLE_DIVE_LOGO_RECTS[i + 3];
+
+    // 分割境界に極細の隙間が出ないよう、同色同士をわずかに重ねる。
+    rect(
+      signX +
+        (x - logoCenterX) *
+          logoScale -
+        overlap,
+      logoCenterScreenY +
+        (logoCenterY - y - h) *
+          logoScale -
+        overlap,
+      w * logoScale +
+        overlap * 2,
+      h * logoScale +
+        overlap * 2
+    );
+  }
+
+  rectMode(CENTER);
+}
+
+function jdDrawTitleDiveLogo(
   signX,
   signY,
   signGlow,
   titleAlpha = 1
 ) {
   // ==================================================
-  // 自作「ダイヴ」ロゴ差し替え口
-  //
-  // 看板ローカル座標で呼び出す。
-  // 最終ロゴ完成後は、この関数だけを置き換えればよい。
+  // 支給ロゴを看板ローカル座標で描く。
   // 推奨領域：x = -54 ～ +54 / y = -57 ～ +43
   // ==================================================
 
@@ -6369,38 +7286,119 @@ function jdDrawTitleDiveLogoPlaceholder(
     4
   );
 
-  // 看板の「ダイヴ」。
-  // 光る文字ではなく、発光面へ刷られた濃い赤茶として扱う。
-  jdTitleFont("bold");
-  fontSize(jdIsEnglish() ? 31 : 37);
+  if (jdIsEnglish()) {
+    // 英語表示は、言語切り替え後も意味がすぐ伝わる DIVE を維持する。
+    jdTitleFont("bold");
+    fontSize(31);
 
-  fill(
-    122,
-    49,
-    35,
-    255 * alpha
-  );
+    fill(
+      122,
+      49,
+      35,
+      255 * alpha
+    );
 
-  text(
-    jdT("title.brandBottom", "DIVE"),
-    signX,
-    signY - 23
-  );
+    const diveTitle =
+      jdT("title.brandBottom", "DIVE");
 
-  // 点灯時だけ、文字の周囲へ気づかない程度の暖色を重ねる。
-  fill(
-    198,
-    99,
-    57,
-    (4 + signGlow * 5) * alpha
-  );
+    // 現在の太字へごく薄い横方向の重ね描きを加え、
+    // サイズや中央位置を変えずにDIVEだけ一段太く見せる。
+    text(
+      diveTitle,
+      signX - 0.35,
+      signY - 23
+    );
 
-  text(
-    jdT("title.brandBottom", "DIVE"),
-    signX + 0.5,
-    signY - 22.5
-  );
+    text(
+      diveTitle,
+      signX + 0.35,
+      signY - 23
+    );
+
+    text(
+      diveTitle,
+      signX,
+      signY - 23
+    );
+
+    fill(
+      198,
+      99,
+      57,
+      (4 + signGlow * 5) * alpha
+    );
+
+    text(
+      jdT("title.brandBottom", "DIVE"),
+      signX + 0.5,
+      signY - 22.5
+    );
+
+  } else {
+    // 日本語表示は、支給された「ダイヴ」の字形をそのまま使う。
+    // 点灯時だけ、ごく薄い暖色の版ずれを下へ重ねる。
+    jdDrawTitleDiveLogoMask(
+      signX + 0.5,
+      signY + 0.5,
+      198,
+      99,
+      57,
+      (4 + signGlow * 5) * alpha
+    );
+
+    jdDrawTitleDiveLogoMask(
+      signX,
+      signY,
+      124,
+      56,
+      38,
+      255 * alpha
+    );
+  }
+
+  rectMode(CENTER);
+  textAlign(CENTER);
+  noStroke();
 }
+
+function jdDrawPosterDiveLogo(
+  x,
+  y,
+  alpha = 1
+) {
+  const safeAlpha =
+    jdClamp(alpha, 0, 1);
+
+  const posterScale = 0.42;
+
+  pushMatrix();
+
+  translate(x, y);
+
+  scale(
+    posterScale,
+    posterScale
+  );
+
+  // タイトル看板全体ではなく、
+  // 支給された「ダイヴ」の字形だけを描く。
+  jdDrawTitleDiveLogoMask(
+    0,
+    0,
+    124,
+    56,
+    38,
+    255 * safeAlpha
+  );
+
+  popMatrix();
+
+  rectMode(CORNER);
+  textAlign(LEFT);
+  noStroke();
+}
+
+
 
 
 function jdDrawTitle() {
@@ -7510,12 +8508,12 @@ function jdDrawTitle() {
 
   // --------------------------------------------------
   // 看板文字。
-  // 自作ロゴ完成後は、描画関数だけを差し替える。
+  // 支給ロゴも看板と同じ変形・フェードへ追従させる。
   // --------------------------------------------------
 
   // 看板文字は場面が切り替わる最後まで残す。
   // 文字だけが先に消える演出は行わず、画面全体のフェードへ委ねる。
-  jdDrawTitleDiveLogoPlaceholder(
+  jdDrawTitleDiveLogo(
     0,
     0,
     jdClamp(
@@ -7697,6 +8695,15 @@ function jdDrawPlay() {
   // 店内全体へ印刷物の質感を重ねる。
   // UI文字の可読性は落とさないよう、UIより先に描く。
   jdDrawPosterPrintFinish();
+
+  if (
+    JD.gamePhase ===
+    PHASE_OPENING_MONOLOGUE
+  ) {
+    jdDrawOpeningMonologue();
+
+    return;
+  }
 
   jdDrawPlayUI();
   jdDrawShotMeter();
@@ -15449,6 +16456,65 @@ function jdDrawPosterDoubleFrame(
   noStroke();
 }
 
+function jdDrawPosterReceiptCut(
+  y,
+  alpha = 255
+) {
+  const left =
+    -JD_SCREEN_BLEED;
+
+  const width =
+    JD.LOGICAL_W +
+    JD_SCREEN_BLEED * 2;
+
+  const right =
+    left + width;
+
+  const toothW = 10;
+  const diamondSize = 7.2;
+  const safeAlpha =
+    jdClamp(alpha, 0, 255);
+
+  noStroke();
+
+  fill(
+    JD_POSTER_INFO_PAPER[0],
+    JD_POSTER_INFO_PAPER[1],
+    JD_POSTER_INFO_PAPER[2],
+    safeAlpha
+  );
+
+  rectMode(CENTER);
+
+  for (
+    let px = left + toothW / 2;
+    px < right;
+    px += toothW
+  ) {
+    pushMatrix();
+
+    translate(
+      px,
+      y - 0.2
+    );
+
+    rotate(
+      Math.PI / 4
+    );
+
+    rect(
+      0,
+      0,
+      diamondSize,
+      diamondSize
+    );
+
+    popMatrix();
+  }
+
+  rectMode(CORNER);
+}
+
 function jdDrawPosterBackgroundWipe() {
   const W = JD.LOGICAL_W;
   const H = JD.LOGICAL_H;
@@ -15570,7 +16636,12 @@ function jdDrawPosterBackgroundWipe() {
     jdPosterLerp(infoStartX, infoEndX, snappedInfoT)
   );
 
-  fill(248, 232, 197, 255);
+  fill(
+    JD_POSTER_INFO_PAPER[0],
+    JD_POSTER_INFO_PAPER[1],
+    JD_POSTER_INFO_PAPER[2],
+    255
+  );
   rect(
     infoX,
     -edgeBleed,
@@ -15599,13 +16670,24 @@ function jdDrawPosterBackgroundWipe() {
     bandH + edgeBleed
   );
 
-  // 境界線も帯と同じX・幅を共有し、独立した半端な線を作らない。
-  fill(248, 232, 197, 218 * snappedBandT);
+  // 境界線も情報面と同じ紙色でそろえ、
+  // 下の帯だけが別の素材に見えないようにする。
+  fill(
+    JD_POSTER_INFO_PAPER[0],
+    JD_POSTER_INFO_PAPER[1],
+    JD_POSTER_INFO_PAPER[2],
+    218 * snappedBandT
+  );
   rect(
     bandX,
     Math.round(bandH - 2),
     W + edgeBleed * 2,
     2
+  );
+
+  jdDrawPosterReceiptCut(
+    bandH,
+    232 * snappedBandT
   );
 
   // --------------------------------------------------
@@ -15728,48 +16810,36 @@ function jdDrawPosterBackgroundWipe() {
     fill(248, 232, 197, JD_POSTER_SPECIAL_ALPHA * textT);
     text(jdT("poster.special", "TODAY'S SPECIAL"), 24, 611);
 
-    jdDrawPosterRetroJapanese(
-      item.titleTop,
-      24,
-      568,
-      item.titleTopSize || 35.5,
-      248,
-      232,
-      197,
-      255 * textT
-    );
-
-    jdDrawPosterRetroJapanese(
-      item.titleMain,
-      24,
-      529,
-      item.titleMainSize || 35.5,
-      248,
-      232,
-      197,
+    jdDrawPosterProductTitles(
+      item,
       255 * textT
     );
 
     textAlign(LEFT);
     jdFontForLanguage();
-    fontSize(jdIsEnglish() ? 7.1 : 11);
+    fontSize(jdFitPosterDescriptionSize(item.description));
     fill(70, 40, 31, 225 * textT);
-    text(item.description, 24, 89);
+    text(item.description, 24, 104);
 
-    jdReceiptFont("bold");
-    fontSize(JD_POSTER_BRAND_SIZE);
-    fill(126, 67, 51, JD_POSTER_BRAND_ALPHA * textT);
-    text("JUNKISSA DIVE", 24, 72);
+    jdDrawPosterDiveLogo(
+      46,
+      88,
+      textT
+    );
 
     textAlign(RIGHT);
     jdReceiptFont("bold");
     fontSize(25);
     fill(151, 48, 42, 255 * textT);
-    text(`¥${item.price}`, 332, 101);
+    text(`¥${item.price}`, 336, 74);
 
     textAlign(CENTER);
     jdFontForLanguage("bold");
-    fontSize(jdIsEnglish() ? 12 : 15);
+    fontSize(
+      jdIsEnglish()
+        ? JD_POSTER_VIEW_RECEIPT_SIZE_EN
+        : JD_POSTER_VIEW_RECEIPT_SIZE_JP
+    );
     fill(248, 232, 197, 255 * textT);
     text(jdT("poster.viewReceipt", "VIEW RECEIPT"), W / 2, bandY + 27);
   }
@@ -16040,7 +17110,12 @@ function jdDrawCompletionPosterLayout(options = {}) {
   // 撤収前半では固定し、下部朱色帯だけを画面下へ戻す。
   // --------------------------------------------------
 
-  fill(248, 232, 197, 255);
+  fill(
+    JD_POSTER_INFO_PAPER[0],
+    JD_POSTER_INFO_PAPER[1],
+    JD_POSTER_INFO_PAPER[2],
+    255
+  );
   rect(
     -posterBleed + infoOffsetX,
     -posterBleed,
@@ -16066,12 +17141,22 @@ function jdDrawCompletionPosterLayout(options = {}) {
     bandH + posterBleed
   );
 
-  fill(248, 232, 197, 218);
+  fill(
+    JD_POSTER_INFO_PAPER[0],
+    JD_POSTER_INFO_PAPER[1],
+    JD_POSTER_INFO_PAPER[2],
+    218
+  );
   rect(
     -posterBleed,
     bandY + bandH - 2,
     W + posterBleed * 2,
     2
+  );
+
+  jdDrawPosterReceiptCut(
+    bandY + bandH,
+    232
   );
 
   // --------------------------------------------------
@@ -16110,25 +17195,8 @@ function jdDrawCompletionPosterLayout(options = {}) {
     );
     text(jdT("poster.special", "TODAY'S SPECIAL"), 24, 611);
 
-    jdDrawPosterRetroJapanese(
-      item.titleTop,
-      24,
-      568,
-      item.titleTopSize || 35.5,
-      248,
-      232,
-      197,
-      255 * textAlpha
-    );
-
-    jdDrawPosterRetroJapanese(
-      item.titleMain,
-      24,
-      529,
-      item.titleMainSize || 35.5,
-      248,
-      232,
-      197,
+    jdDrawPosterProductTitles(
+      item,
       255 * textAlpha
     );
   }
@@ -16204,25 +17272,21 @@ function jdDrawCompletionPosterLayout(options = {}) {
   if (textAlpha > 0.001) {
     textAlign(LEFT);
     jdFontForLanguage();
-    fontSize(jdIsEnglish() ? 7.1 : 11);
+    fontSize(jdFitPosterDescriptionSize(item.description));
     fill(70, 40, 31, 225 * textAlpha);
-    text(item.description, 24, 89);
+    text(item.description, 24, 104);
 
-    jdReceiptFont("bold");
-    fontSize(JD_POSTER_BRAND_SIZE);
-    fill(
-      126,
-      67,
-      51,
-      JD_POSTER_BRAND_ALPHA * textAlpha
+    jdDrawPosterDiveLogo(
+      46,
+      88,
+      textAlpha
     );
-    text("JUNKISSA DIVE", 24, 72);
 
     textAlign(RIGHT);
     jdReceiptFont("bold");
     fontSize(25);
     fill(151, 48, 42, 255 * textAlpha);
-    text(`¥${item.price}`, 332, 101);
+    text(`¥${item.price}`, 336, 74);
   }
 
   // --------------------------------------------------
@@ -16232,7 +17296,11 @@ function jdDrawCompletionPosterLayout(options = {}) {
   if (bandTextAlpha > 0.001) {
     textAlign(CENTER);
     jdFontForLanguage("bold");
-    fontSize(jdIsEnglish() ? 12 : 15);
+    fontSize(
+      jdIsEnglish()
+        ? JD_POSTER_VIEW_RECEIPT_SIZE_EN
+        : JD_POSTER_VIEW_RECEIPT_SIZE_JP
+    );
     fill(248, 232, 197, 255 * bandTextAlpha);
     text(jdT("poster.viewReceipt", "VIEW RECEIPT"), W / 2, bandY + 27);
   }
@@ -16371,6 +17439,18 @@ function jdGetPosterTargetTypeFromResult(result) {
 
 
 function jdGetPosterIngredientTitle(result) {
+  return jdGetPosterIngredientTitleForLanguage(
+    result,
+    JD.lang
+  );
+}
+
+function jdGetPosterIngredientTitleForLanguage(
+  result,
+  language
+) {
+  const lang = jdNormalizeLanguage(language);
+  const isEnglish = lang === "en";
   const toppings = jdGetProductToppings(result);
 
   if (toppings.length > 1) {
@@ -16379,13 +17459,16 @@ function jdGetPosterIngredientTitle(result) {
     );
 
     if (uniqueItems.length > 1) {
-      return jdIsEnglish() ? "MIXED" : "ミックス";
+      return isEnglish ? "MIXED" : "ミックス";
     }
 
-    const ingredient = jdGetIngredientMenuName(uniqueItems[0]);
+    const ingredient = jdGetIngredientMenuNameForLanguage(
+      uniqueItems[0],
+      lang
+    );
     const count = toppings.length;
 
-    if (jdIsEnglish()) {
+    if (isEnglish) {
       const countName = count === 2
         ? "DOUBLE"
         : count === 3
@@ -16399,12 +17482,14 @@ function jdGetPosterIngredientTitle(result) {
       : count === 3
         ? "トリプル"
         : `${count}連`;
+
     return `${countName}${ingredient}`;
   }
 
-  const recipeTitle = jdGetRecipeText(
+  const recipeTitle = jdGetRecipeTextForLanguage(
     result,
-    "posterTop"
+    "posterTop",
+    lang
   );
 
   if (recipeTitle) return recipeTitle;
@@ -16415,30 +17500,38 @@ function jdGetPosterIngredientTitle(result) {
       : ""
   ).trim().toUpperCase();
 
-  return (
-    jdT(
-      `food.${itemName}`,
-      ""
-    ) ||
-    (
-      result && result.itemJp
-        ? result.itemJp
-        : itemName
-    )
+  return jdGetIngredientMenuNameForLanguage(
+    itemName,
+    lang
   );
 }
 
 
+
 function jdGetPosterProductTitle(result, targetType) {
-  const recipeTitle = jdGetRecipeText(
+  return jdGetPosterProductTitleForLanguage(
     result,
-    "posterMain"
+    targetType,
+    JD.lang
+  );
+}
+
+function jdGetPosterProductTitleForLanguage(
+  result,
+  targetType,
+  language
+) {
+  const lang = jdNormalizeLanguage(language);
+
+  const recipeTitle = jdGetRecipeTextForLanguage(
+    result,
+    "posterMain",
+    lang
   );
 
   if (recipeTitle) return recipeTitle;
 
-  // 組み合わせ表がない復元データでも、選択中の言語へ揃える。
-  const titles = jdIsEnglish()
+  const titles = lang === "en"
     ? {
         melon: "MELON SODA",
         cake: "SHORTCAKE",
@@ -16454,9 +17547,62 @@ function jdGetPosterProductTitle(result, targetType) {
 }
 
 
+
+// Zen Kaku Gothic Newの英字幅を、未確認のtextWidth APIへ依存せず
+// 文字種別から概算する。現在の説明文は同じ最大幅でそろえる。
+function jdMeasurePosterBodyWidth(value, size) {
+  const safeSize = Number.isFinite(size)
+    ? Math.max(0, size)
+    : 0;
+
+  let units = 0;
+
+  for (const char of Array.from(String(value || ""))) {
+    if (/\s/.test(char)) {
+      units += 0.30;
+    } else if (/[ilI1|.,'`:;!]/.test(char)) {
+      units += 0.28;
+    } else if (/[MW@%&]/.test(char)) {
+      units += 0.86;
+    } else if (/[A-Z0-9]/.test(char)) {
+      units += 0.62;
+    } else if (char.charCodeAt(0) > 0x02ff) {
+      units += 0.95;
+    } else {
+      units += 0.52;
+    }
+  }
+
+  return units * safeSize;
+}
+
+
+function jdFitPosterDescriptionSize(value) {
+  if (!jdIsEnglish()) {
+    return JD_POSTER_DESCRIPTION_SIZE_JP;
+  }
+
+  let size = JD_POSTER_DESCRIPTION_SIZE_EN_MAX;
+
+  while (
+    size > JD_POSTER_DESCRIPTION_SIZE_EN_MIN &&
+    jdMeasurePosterBodyWidth(value, size) >
+      JD_POSTER_DESCRIPTION_MAX_WIDTH
+  ) {
+    size = Math.max(
+      JD_POSTER_DESCRIPTION_SIZE_EN_MIN,
+      size - 0.25
+    );
+  }
+
+  return size;
+}
+
+
 function jdMeasurePosterRetroJapaneseWidth(
   value,
-  size
+  size,
+  language = null
 ) {
   const chars = Array.from(
     String(value || "")
@@ -16469,12 +17615,15 @@ function jdMeasurePosterRetroJapaneseWidth(
       ? Math.max(0, size)
       : 0;
 
-  // jdDrawPosterRetroJapanese() と同じ字送り・横倍率から、
-  // 先頭文字の左端から末尾文字の右端までを算出する。
-  const glyphWidth = jdIsEnglish()
+  const isEnglishText = language === null
+    ? jdIsEnglish()
+    : jdNormalizeLanguage(language) === "en";
+
+  const glyphWidth = isEnglishText
     ? safeSize * 0.58
     : safeSize;
-  const scaleX = jdIsEnglish()
+
+  const scaleX = isEnglishText
     ? 1
     : JD_POSTER_TITLE_SCALE_X;
 
@@ -16488,13 +17637,14 @@ function jdMeasurePosterRetroJapaneseWidth(
 }
 
 
-function jdFitPosterTitleSize(value) {
+
+function jdFitPosterTitleSize(
+  value,
+  language = null
+) {
   const maxSize = 35.5;
   const minSize = 12;
   const sizeStep = 0.5;
-
-  // 完成済みの「ショートケーキ」33.5pxが収まる幅を基準にする。
-  // 既存3商品の見た目を変えず、それより長い文字だけを縮小する。
   const maxWidth = 273;
 
   let size = maxSize;
@@ -16503,7 +17653,8 @@ function jdFitPosterTitleSize(value) {
     size > minSize &&
     jdMeasurePosterRetroJapaneseWidth(
       value,
-      size
+      size,
+      language
     ) > maxWidth
   ) {
     size = Math.max(
@@ -16514,6 +17665,24 @@ function jdFitPosterTitleSize(value) {
 
   return size;
 }
+
+function jdFitPosterSubtitleSize(value) {
+  let size = JD_POSTER_SUBTITLE_SIZE_MAX;
+
+  while (
+    size > JD_POSTER_SUBTITLE_SIZE_MIN &&
+    jdMeasurePosterBodyWidth(value, size) >
+      JD_POSTER_SUBTITLE_MAX_WIDTH
+  ) {
+    size = Math.max(
+      JD_POSTER_SUBTITLE_SIZE_MIN,
+      size - 0.25
+    );
+  }
+
+  return size;
+}
+
 
 function jdNormalizePosterToppingOffset(value) {
   return Number.isFinite(value)
@@ -16609,8 +17778,6 @@ function jdBuildFailurePosterItem(results = JD.results) {
     ? results
     : [];
 
-  // 全結果がFLOOR / OUTで揃った時だけ、失敗ポスターへ切り替える。
-  // 成功や未確定値が混ざる状態では、専用ポスターを作らない。
   if (
     source.length === 0 ||
     !source.every((result) => jdIsPosterFailureResult(result))
@@ -16621,8 +17788,12 @@ function jdBuildFailurePosterItem(results = JD.results) {
   const lastFailureIndex = source.length - 1;
   const lastFailure = source[lastFailureIndex];
 
-  const titleTop = jdT("poster.failureTop", "EMPTY");
-  const titleMain = jdT("poster.failureMain", "PLATE");
+  const titleTopJp = "からっぽ";
+  const titleMainJp = "プレート";
+  const titleTopEn = "EMPTY";
+  const titleMainEn = "PLATE";
+  const titleEnglish =
+    `${titleTopEn} ${titleMainEn}`;
 
   return {
     targetType: "failure",
@@ -16632,22 +17803,52 @@ function jdBuildFailurePosterItem(results = JD.results) {
     toppingPose: "center",
     resultType: lastFailure.type,
     resultIndex: lastFailureIndex,
-    titleTop,
-    titleMain,
-    titleTopSize: jdFitPosterTitleSize(titleTop),
-    titleMainSize: jdFitPosterTitleSize(titleMain),
+
+    titleTop:
+      jdIsEnglish()
+        ? titleTopEn
+        : titleTopJp,
+
+    titleMain:
+      jdIsEnglish()
+        ? titleMainEn
+        : titleMainJp,
+
+    titleTopJp,
+    titleMainJp,
+    titleTopEn,
+    titleMainEn,
+    titleEnglish,
+
+    titleTopSize:
+      jdFitPosterTitleSize(
+        titleTopJp,
+        "jp"
+      ),
+
+    titleMainSize:
+      jdFitPosterTitleSize(
+        titleMainJp,
+        "jp"
+      ),
+
+    titleEnglishSize:
+      jdFitPosterSubtitleSize(
+        titleEnglish
+      ),
+
     description: jdT(
       "poster.failureDescription",
       "AT LEAST THE PLATE WAS READY."
     ),
+
     price: 0
   };
 }
 
 
+
 function jdBuildPosterItem(bestResult, results = JD.results) {
-  // 全投失敗の日は専用の空皿ポスターを作る。
-  // 結果自体がないデバッグ状態だけ、固定プレビューへ戻す。
   if (!jdIsPosterSuccessResult(bestResult)) {
     return (
       jdBuildFailurePosterItem(results) ||
@@ -16660,76 +17861,138 @@ function jdBuildPosterItem(bestResult, results = JD.results) {
       bestResult
     );
 
-  const titleTop =
-    jdGetPosterIngredientTitle(
-      bestResult
+  const titleTopJp =
+    jdGetPosterIngredientTitleForLanguage(
+      bestResult,
+      "jp"
     );
 
-  const titleMain =
-    jdGetPosterProductTitle(
+  const titleMainJp =
+    jdGetPosterProductTitleForLanguage(
       bestResult,
-      targetType
+      targetType,
+      "jp"
+    );
+
+  const titleTopEn =
+    jdGetPosterIngredientTitleForLanguage(
+      bestResult,
+      "en"
+    );
+
+  const titleMainEn =
+    jdGetPosterProductTitleForLanguage(
+      bestResult,
+      targetType,
+      "en"
     );
 
   if (
     !targetType ||
-    !titleTop ||
-    !titleMain
+    !titleTopJp ||
+    !titleMainJp ||
+    !titleTopEn ||
+    !titleMainEn
   ) {
     return jdMakePosterMockItem();
   }
 
-  const toppings = jdGetProductToppings(bestResult);
+  const toppings =
+    jdGetProductToppings(bestResult);
+
   const firstTopping = toppings[0] || {
     item: bestResult.item,
     toppingPose: bestResult.posterToppingPose
   };
 
+  const titleEnglish =
+    `${titleTopEn} ${titleMainEn}`;
+
   return {
     targetType,
     heroType: targetType,
-    productKey: jdGetCompletedProductKey(bestResult),
-    item: firstTopping.item || bestResult.item,
+    productKey:
+      jdGetCompletedProductKey(bestResult),
+
+    item:
+      firstTopping.item ||
+      bestResult.item,
+
     toppings,
-    toppingPose: jdNormalizePosterToppingPose(
-      firstTopping.toppingPose ||
-      bestResult.posterToppingPose
-    ),
-    posterToppingOffsetX: jdNormalizePosterToppingOffset(
-      firstTopping.posterToppingOffsetX
-    ),
-    posterToppingOffsetY: jdNormalizePosterToppingOffset(
-      firstTopping.posterToppingOffsetY
-    ),
-    resultIndices: Array.isArray(bestResult.resultIndices)
-      ? bestResult.resultIndices.slice()
-      : Number.isInteger(bestResult.resultIndex)
-        ? [bestResult.resultIndex]
-        : [],
+
+    toppingPose:
+      jdNormalizePosterToppingPose(
+        firstTopping.toppingPose ||
+        bestResult.posterToppingPose
+      ),
+
+    posterToppingOffsetX:
+      jdNormalizePosterToppingOffset(
+        firstTopping.posterToppingOffsetX
+      ),
+
+    posterToppingOffsetY:
+      jdNormalizePosterToppingOffset(
+        firstTopping.posterToppingOffsetY
+      ),
+
+    resultIndices:
+      Array.isArray(bestResult.resultIndices)
+        ? bestResult.resultIndices.slice()
+        : Number.isInteger(bestResult.resultIndex)
+          ? [bestResult.resultIndex]
+          : [],
+
     resultIndex:
       Number.isInteger(
         bestResult.resultIndex
       )
         ? bestResult.resultIndex
         : -1,
-    titleTop,
-    titleMain,
+
+    titleTop:
+      jdIsEnglish()
+        ? titleTopEn
+        : titleTopJp,
+
+    titleMain:
+      jdIsEnglish()
+        ? titleMainEn
+        : titleMainJp,
+
+    titleTopJp,
+    titleMainJp,
+    titleTopEn,
+    titleMainEn,
+    titleEnglish,
+
     titleTopSize:
       jdFitPosterTitleSize(
-        titleTop
+        titleTopJp,
+        "jp"
       ),
+
     titleMainSize:
       jdFitPosterTitleSize(
-        titleMain
+        titleMainJp,
+        "jp"
       ),
-    description: jdGetCompletedProductDescription(
-      bestResult,
-      String(
-        bestResult.comment ||
-        bestResult.name ||
-        ""
-      )
-    ),
+
+    titleEnglishSize:
+      jdFitPosterSubtitleSize(
+        titleEnglish
+      ),
+
+    description:
+      jdGetCompletedProductDescription(
+        bestResult,
+        String(
+          bestResult.comment ||
+          bestResult.name ||
+          ""
+        )
+      ),
+
     price:
       Number.isFinite(bestResult.price)
         ? bestResult.price
@@ -16738,56 +18001,105 @@ function jdBuildPosterItem(bestResult, results = JD.results) {
 }
 
 
+
 function jdMakePosterMockItem() {
   const isEnglish = jdIsEnglish();
+
+  const makeItem = (spec) => {
+    const titleEnglish =
+      `${spec.titleTopEn} ${spec.titleMainEn}`;
+
+    return {
+      targetType: spec.targetType,
+      heroType: spec.targetType,
+      item: spec.item,
+      toppingPose: "center",
+      resultIndex: -1,
+
+      titleTop:
+        isEnglish
+          ? spec.titleTopEn
+          : spec.titleTopJp,
+
+      titleMain:
+        isEnglish
+          ? spec.titleMainEn
+          : spec.titleMainJp,
+
+      titleTopJp: spec.titleTopJp,
+      titleMainJp: spec.titleMainJp,
+      titleTopEn: spec.titleTopEn,
+      titleMainEn: spec.titleMainEn,
+      titleEnglish,
+
+      titleTopSize:
+        jdFitPosterTitleSize(
+          spec.titleTopJp,
+          "jp"
+        ),
+
+      titleMainSize:
+        jdFitPosterTitleSize(
+          spec.titleMainJp,
+          "jp"
+        ),
+
+      titleEnglishSize:
+        jdFitPosterSubtitleSize(
+          titleEnglish
+        ),
+
+      description:
+        isEnglish
+          ? spec.descriptionEn
+          : spec.descriptionJp,
+
+      price: spec.price
+    };
+  };
+
   const items = {
-    melon: {
+    melon: makeItem({
       targetType: "melon",
-      heroType: "melon",
       item: "CHERRY",
-      toppingPose: "center",
-      resultIndex: -1,
-      titleTop: isEnglish ? "CHERRY" : "チェリー",
-      titleMain: isEnglish ? "MELON SODA" : "メロンソーダ",
-      titleTopSize: 35.5,
-      titleMainSize: 35.5,
-      description: isEnglish
-        ? "A quiet reward, colored just for tonight."
-        : "きょうだけの色を添えた、静かな夜のごほうび。",
+      titleTopJp: "チェリー",
+      titleMainJp: "メロンソーダ",
+      titleTopEn: "CHERRY",
+      titleMainEn: "MELON SODA",
+      descriptionJp:
+        "きょうだけの色を添えた、静かな夜のごほうび。",
+      descriptionEn:
+        "A quiet reward in tonight's special color.",
       price: 600
-    },
+    }),
 
-    cake: {
+    cake: makeItem({
       targetType: "cake",
-      heroType: "cake",
       item: "STRAWBERRY",
-      toppingPose: "center",
-      resultIndex: -1,
-      titleTop: isEnglish ? "STRAWBERRY" : "いちご",
-      titleMain: isEnglish ? "SHORTCAKE" : "ショートケーキ",
-      titleTopSize: 35.5,
-      titleMainSize: 33.5,
-      description: isEnglish
-        ? "A small late-night reward with a red berry."
-        : "赤い実を添えた、夜更けの小さなごほうび。",
+      titleTopJp: "いちご",
+      titleMainJp: "ショートケーキ",
+      titleTopEn: "STRAWBERRY",
+      titleMainEn: "SHORTCAKE",
+      descriptionJp:
+        "赤い実を添えた、夜更けの小さなごほうび。",
+      descriptionEn:
+        "A small late-night reward with a red berry.",
       price: 650
-    },
+    }),
 
-    coffee: {
+    coffee: makeItem({
       targetType: "coffee",
-      heroType: "coffee",
       item: "SUGAR",
-      toppingPose: "center",
-      resultIndex: -1,
-      titleTop: isEnglish ? "SUGAR" : "シュガー",
-      titleMain: isEnglish ? "COFFEE" : "コーヒー",
-      titleTopSize: 35.5,
-      titleMainSize: 35.5,
-      description: isEnglish
-        ? "A deep cup softened by one spoonful of sugar."
-        : "ひとさじの甘さを落とした、夜の深い一杯。",
+      titleTopJp: "シュガー",
+      titleMainJp: "コーヒー",
+      titleTopEn: "SUGAR",
+      titleMainEn: "COFFEE",
+      descriptionJp:
+        "ひとさじの甘さを落とした、夜の深い一杯。",
+      descriptionEn:
+        "A deep cup softened by one spoonful of sugar.",
       price: 500
-    }
+    })
   };
 
   return (
@@ -16795,6 +18107,7 @@ function jdMakePosterMockItem() {
     items.melon
   );
 }
+
 
 
 function jdGetPosterItem() {
@@ -16939,41 +18252,42 @@ function jdGetPosterPalette(itemOrKind) {
   const kind = jdResolvePosterKind(itemOrKind);
 
   const palettes = {
+    // モック画像の抽出色を基準にした、柔らかなコーラルレッド。
     melon: {
-      bg: [197, 76, 63],
-      accent: [229, 113, 86],
-      decorLight: [229, 105, 80],
-      decorDark: [130, 47, 44]
+      bg: [213, 89, 90],
+      accent: [232, 125, 123],
+      decorLight: [224, 112, 110],
+      decorDark: [145, 56, 58]
     },
 
-    // いちごの赤が沈まず、クリームやスポンジとも相性の良い
-    // くすんだピスタチオグリーン。
+    // 黄色みを強め、赤い果実と対比する明るいピスタチオグリーン。
     cake: {
-      bg: [118, 140, 118],
-      accent: [176, 198, 177],
-      decorLight: [150, 170, 149],
-      decorDark: [82, 100, 83]
+      bg: [158, 190, 109],
+      accent: [198, 219, 154],
+      decorLight: [181, 204, 132],
+      decorDark: [111, 136, 71]
     },
 
+    // 現行より暗く、赤みを抑えたビターな焦げ茶色。
     coffee: {
-      bg: [97, 69, 58],
-      accent: [149, 122, 103],
-      decorLight: [126, 94, 81],
-      decorDark: [58, 39, 32]
+      bg: [74, 53, 45],
+      accent: [116, 89, 77],
+      decorLight: [97, 72, 62],
+      decorDark: [43, 29, 24]
     },
 
-    // 閉店後の黒板を思わせる、静かなくすみ青緑。
-    // 空皿と生成りのカトラリーが沈まない明度に保つ。
+    // 青みを強めた、閉店後の黒板を思わせる深い青緑。
     failure: {
-      bg: [58, 84, 78],
-      accent: [104, 130, 120],
-      decorLight: [91, 119, 110],
-      decorDark: [35, 57, 53]
+      bg: [42, 85, 74],
+      accent: [84, 128, 116],
+      decorLight: [67, 108, 97],
+      decorDark: [24, 49, 42]
     }
   };
 
   return palettes[kind] || palettes.melon;
 }
+
 
 
 function jdGetPosterHeroSpec(item) {
@@ -17426,13 +18740,37 @@ function jdDrawPosterRetroJapanese(
   r,
   g,
   b,
-  alpha = 255
+  alpha = 255,
+  language = null
 ) {
-  const chars = Array.from(String(value || ""));
-  const tracking = JD_POSTER_TITLE_TRACKING;
-  const glyphSize = jdIsEnglish() ? size * 0.76 : size;
-  const advance = (jdIsEnglish() ? glyphSize * 0.76 : glyphSize) + tracking;
-  const scaleX = jdIsEnglish() ? 1 : JD_POSTER_TITLE_SCALE_X;
+  const chars =
+    Array.from(String(value || ""));
+
+  const tracking =
+    JD_POSTER_TITLE_TRACKING;
+
+  const isEnglishText =
+    language === null
+      ? jdIsEnglish()
+      : jdNormalizeLanguage(language) === "en";
+
+  const glyphSize =
+    isEnglishText
+      ? size * 0.76
+      : size;
+
+  const advance =
+    (
+      isEnglishText
+        ? glyphSize * 0.76
+        : glyphSize
+    ) +
+    tracking;
+
+  const scaleX =
+    isEnglishText
+      ? 1
+      : JD_POSTER_TITLE_SCALE_X;
 
   pushMatrix();
   translate(x, y);
@@ -17442,15 +18780,26 @@ function jdDrawPosterRetroJapanese(
   jdTitleFont("bold");
   fontSize(glyphSize);
 
-  for (let i = 0; i < chars.length; i += 1) {
-    const cx = i * advance;
+  for (
+    let i = 0;
+    i < chars.length;
+    i += 1
+  ) {
+    const cx =
+      i * advance;
 
-    if (jdIsEnglish()) {
+    if (isEnglishText) {
       fill(r, g, b, alpha);
       text(chars[i], cx, 0);
+
     } else {
-      // 版をわずかに重ね、極太にせず印刷文字らしい厚みを作る。
-      fill(r, g, b, alpha * 0.34);
+      fill(
+        r,
+        g,
+        b,
+        alpha * 0.34
+      );
+
       text(chars[i], cx - 1.15, 0);
       text(chars[i], cx + 1.15, 0);
       text(chars[i], cx, -0.45);
@@ -17463,6 +18812,91 @@ function jdDrawPosterRetroJapanese(
 
   popMatrix();
 }
+
+function jdDrawPosterProductTitles(
+  item,
+  alpha = 255
+) {
+  const titleTopJp = String(
+    item.titleTopJp ||
+    item.titleTop ||
+    ""
+  );
+
+  const titleMainJp = String(
+    item.titleMainJp ||
+    item.titleMain ||
+    ""
+  );
+
+  const titleEnglish = String(
+    item.titleEnglish ||
+    [
+      item.titleTopEn,
+      item.titleMainEn
+    ]
+      .filter(Boolean)
+      .join(" ")
+  ).toUpperCase();
+
+  jdDrawPosterRetroJapanese(
+    titleTopJp,
+    24,
+    568,
+    item.titleTopSize ||
+      jdFitPosterTitleSize(
+        titleTopJp,
+        "jp"
+      ),
+    248,
+    232,
+    197,
+    alpha,
+    "jp"
+  );
+
+  jdDrawPosterRetroJapanese(
+    titleMainJp,
+    24,
+    529,
+    item.titleMainSize ||
+      jdFitPosterTitleSize(
+        titleMainJp,
+        "jp"
+      ),
+    248,
+    232,
+    197,
+    alpha,
+    "jp"
+  );
+
+  if (titleEnglish) {
+    textAlign(LEFT);
+    jdPrimaryFont("bold");
+
+    fontSize(
+      item.titleEnglishSize ||
+      jdFitPosterSubtitleSize(
+        titleEnglish
+      )
+    );
+
+    fill(
+      248,
+      232,
+      197,
+      alpha * 0.90
+    );
+
+    text(
+      titleEnglish,
+      28,
+      JD_POSTER_SUBTITLE_Y
+    );
+  }
+}
+
 
 
 function jdPosterLerp(
