@@ -3,7 +3,78 @@
 // Goal: improve motif recognition while keeping gameplay and hit logic intact.
 
 const JD = {};
-const JD_WEB_PORT_VERSION = "Title Logo v1";
+const JD_WEB_PORT_VERSION = "Buddy + Fortune Clean MP3 v1";
+
+/*
+ * Plausible の読込失敗や広告ブロックがあっても、
+ * ゲーム本体へ例外を伝播させない共通計測入口。
+ *
+ * コンソール確認が必要な時だけ、起動後に
+ * window.__JUNKISSA_DIVE_ANALYTICS_DEBUG__ = true
+ * を設定する。
+ */
+function trackJunkissaDiveEvent(
+  name,
+  props
+) {
+  try {
+    if (
+      typeof window === "undefined" ||
+      typeof window.plausible !== "function"
+    ) {
+      if (
+        typeof window !== "undefined" &&
+        window.__JUNKISSA_DIVE_ANALYTICS_DEBUG__
+      ) {
+        console.info(
+          "[Junkissa Dive analytics skipped]",
+          name,
+          props || {}
+        );
+      }
+
+      return false;
+    }
+
+    const options =
+      props &&
+      typeof props === "object"
+        ? {
+            props: props
+          }
+        : undefined;
+
+    window.plausible(
+      name,
+      options
+    );
+
+    if (
+      window.__JUNKISSA_DIVE_ANALYTICS_DEBUG__
+    ) {
+      console.info(
+        "[Junkissa Dive analytics sent]",
+        name,
+        props || {}
+      );
+    }
+
+    return true;
+  } catch (error) {
+    if (
+      typeof window !== "undefined" &&
+      window.__JUNKISSA_DIVE_ANALYTICS_DEBUG__
+    ) {
+      console.warn(
+        "[Junkissa Dive analytics error]",
+        name,
+        error
+      );
+    }
+
+    return false;
+  }
+}
 
 // 端末内蔵フォントへ依存せず、PCとスマートフォンで同じ字形を使う。
 // 真夜中コーラと同じ三層構成にそろえ、役割ごとの個性を保つ。
@@ -88,7 +159,7 @@ const PHASE_FORTUNE = "FORTUNE";
 
 const JD_OPENING_MONOLOGUE_FADE_IN = 0.48;
 const JD_OPENING_MONOLOGUE_FADE_OUT = 0.42;
-const JD_OPENING_MONOLOGUE_DURATIONS = [4.2, 2.8, 3.8, 2.7];
+const JD_OPENING_MONOLOGUE_DURATIONS = [8.0, 8.0, 3.2, 4.8, 3.2];
 const PHASE_AIM = "AIM";
 const PHASE_AIMING = "AIMING";
 const PHASE_FLYING = "FLYING";
@@ -420,8 +491,14 @@ function touched(touch) {
         jdLanguageToggleVisible() &&
         jdLanguageToggleHit(p.x, p.y)
       ) {
-        if (jdToggleLanguage()) {
-          jdPlaySound("button_ready");
+        if (jdHandleLanguageToggleTouch(p.x, p.y)) {
+          jdPlaySound("route_switch", {
+            volume: 0.20,
+            playbackRate:
+              JD.lang === "en"
+                ? 1.05
+                : 0.96
+          });
         }
         return;
       }
@@ -534,7 +611,16 @@ function touched(touch) {
           touch.state ===
           ENDED
         ) {
-          jdTapOpeningMonologue();
+          if (
+            p.x >=
+              JD.LOGICAL_W - 92 &&
+            p.y <= 74
+          ) {
+            jdSkipOpeningMonologue();
+
+          } else {
+            jdTapOpeningMonologue();
+          }
         }
 
         return;
@@ -1666,7 +1752,7 @@ function jdInstallWebFonts() {
       ),
       document.fonts.load(
         '700 16px "Zen Kaku Gothic New"',
-        "レシートを見る"
+        "▶ レシートを見る ◀"
       ),
       document.fonts.load(
         '400 16px "Courier Prime"',
@@ -2106,78 +2192,181 @@ const JD_SOUND_FILE_CONFIG = {
     open: "sfx_start.ogg",
     fortune_in: "sfx_fortune_in.ogg",
     fortune_pick: "sfx_fortune_pick.ogg",
+    fortune_tick: "sfx_fortune_tick.ogg",
     ticket: "sfx_material_popup.ogg",
+    intro_open_card: "sfx_intro_open_card.ogg",
+    intro_order_sheet: "sfx_intro_order_sheet.ogg",
+    intro_count_stamp: "sfx_intro_count_stamp.ogg",
     launch: "sfx_launcher_release.ogg",
     hit_coffee: "sfx_land_coffee.ogg",
     hit_cake: "sfx_land_cake.ogg",
     hit_melon: "sfx_land_soda.ogg",
     hit_stab: "sfx_hit_stab.ogg",
+    result_dive: "sfx_result_dive.ogg",
+    result_nokkari: "sfx_result_nokkari.ogg",
+    result_kantsu: "sfx_result_kantsu.ogg",
+    perfect_center: "sfx_perfect_center.ogg",
+    bounce_bonus: "sfx_bounce_bonus.ogg",
     drop: "sfx_bounce_soft.ogg",
     out: "sfx_out.ogg",
     receipt_drop: "sfx_delivery_setdown.ogg",
+    receipt_feed_start: "sfx_receipt_feed_start.ogg",
+    receipt_settle: "sfx_receipt_settle.ogg",
     receipt_print: "sfx_receipt_print.ogg",
+    receipt_rank: "sfx_receipt_rank.ogg",
+    receipt_rank_badge: "sfx_receipt_rank_badge.ogg",
+    manager_memo: "sfx_manager_memo.ogg",
     receipt_finish: "sfx_finish_chime.ogg",
     poster_ink: "sfx_poster_print.ogg",
     poster_stamp: "sfx_label_paste.ogg",
     poster_ready: "sfx_poster_reveal.ogg",
     poster_turn: "sfx_paper_swish.ogg",
-    button_ready: "sfx_button_ready.ogg"
+    button_ready: "sfx_button_ready.ogg",
+    route_switch: "sfx_route_switch.ogg",
+    ambience_cafe: "ambience_cafe_loop.mp3",
+    bgm_cafe: "bgm_cafe_loop.mp3"
   },
   volumes: {
     open: 0.52,
-    fortune_in: 0.40,
-    fortune_pick: 0.42,
+    fortune_in: 0.32,
+    fortune_pick: 0.34,
+    fortune_tick: 0.12,
     ticket: 0.30,
+    intro_open_card: 0.22,
+    intro_order_sheet: 0.24,
+    intro_count_stamp: 0.20,
     launch: 0.50,
     hit_coffee: 0.38,
     hit_cake: 0.36,
     hit_melon: 0.38,
     hit_stab: 0.34,
+    result_dive: 0.20,
+    result_nokkari: 0.18,
+    result_kantsu: 0.22,
+    perfect_center: 0.24,
+    bounce_bonus: 0.18,
     drop: 0.36,
     out: 0.34,
     receipt_drop: 0.34,
+    receipt_feed_start: 0.22,
+    receipt_settle: 0.20,
     receipt_print: 0.24,
+    receipt_rank: 0.26,
+    receipt_rank_badge: 0.28,
+    manager_memo: 0.22,
     receipt_finish: 0.42,
     poster_ink: 0.22,
     poster_stamp: 0.34,
     poster_ready: 0.40,
     poster_turn: 0.30,
-    button_ready: 0.32
+    button_ready: 0.32,
+    route_switch: 0.38,
+    ambience_cafe: 0.055,
+    bgm_cafe: 0.115
   },
   cooldowns: {
     open: 0.08,
-    fortune_in: 0.10,
-    fortune_pick: 0.10,
+    fortune_in: 0.18,
+    fortune_pick: 0.18,
+    fortune_tick: 0.055,
     ticket: 0.08,
+    intro_open_card: 0.20,
+    intro_order_sheet: 0.20,
+    intro_count_stamp: 0.20,
     launch: 0.08,
     hit_coffee: 0.10,
     hit_cake: 0.10,
     hit_melon: 0.10,
     hit_stab: 0.08,
+    result_dive: 0.12,
+    result_nokkari: 0.12,
+    result_kantsu: 0.12,
+    perfect_center: 0.22,
+    bounce_bonus: 0.18,
     drop: 0.10,
     out: 0.12,
     receipt_drop: 0.18,
+    receipt_feed_start: 0.18,
+    receipt_settle: 0.20,
     receipt_print: 0.07,
+    receipt_rank: 0.11,
+    receipt_rank_badge: 0.18,
+    manager_memo: 0.12,
     receipt_finish: 0.14,
     poster_ink: 0.08,
     poster_stamp: 0.12,
     poster_ready: 0.14,
     poster_turn: 0.10,
-    button_ready: 0.08
+    button_ready: 0.08,
+    route_switch: 0.20,
+    ambience_cafe: 0.50,
+    bgm_cafe: 0.50
   },
   warmupIds: [
     "open",
+    "fortune_in",
+    "fortune_pick",
+    "fortune_tick",
     "launch",
     "ticket",
+    "intro_open_card",
+    "intro_order_sheet",
+    "intro_count_stamp",
     "hit_coffee",
     "hit_cake",
     "hit_melon",
+    "hit_stab",
+    "result_dive",
+    "result_nokkari",
+    "result_kantsu",
+    "perfect_center",
+    "bounce_bonus",
+    "receipt_feed_start",
+    "receipt_drop",
+    "receipt_settle",
     "receipt_print",
+    "receipt_rank",
+    "receipt_rank_badge",
+    "manager_memo",
     "receipt_finish",
     "poster_turn",
-    "button_ready"
+    "button_ready",
+    "route_switch",
+    "ambience_cafe",
+    "bgm_cafe"
   ]
 };
+
+/*
+ * 最初の開店音だけは、タイトル表示中の静かな時間に先読みする。
+ * sfx_start.ogg が置かれている場合、初回タップで合成フォールバックへ落ちるのを防ぐ。
+ */
+const JD_SOUND_BOOT_IDS = [
+  "open"
+];
+
+function jdRequestBootSoundWarmup() {
+  const state = jdInitSoundFileState();
+
+  if (state.bootRequested) {
+    return;
+  }
+
+  state.bootRequested = true;
+
+  setTimeout(function() {
+    for (
+      let index = 0;
+      index < JD_SOUND_BOOT_IDS.length;
+      index += 1
+    ) {
+      jdPrepareSoundFile(
+        JD_SOUND_BOOT_IDS[index]
+      );
+    }
+  }, 220);
+}
+
 
 function jdInitSoundFileState() {
   if (JD.soundFileState) {
@@ -2188,6 +2377,10 @@ function jdInitSoundFileState() {
     buffers: {},
     loading: {},
     failed: {},
+    loopSources: {},
+    loopGains: {},
+    loopTargets: {},
+    bootRequested: false,
     warmupRequested: false,
     warmupQueue: [],
     warmupTimer: null,
@@ -2419,6 +2612,301 @@ function jdPlayBufferedSound(name, options = {}) {
   }
 }
 
+
+function jdGetLoopConfiguredVolume(name) {
+  const configuredVolume =
+    JD_SOUND_FILE_CONFIG &&
+    JD_SOUND_FILE_CONFIG.volumes
+      ? JD_SOUND_FILE_CONFIG.volumes[name]
+      : null;
+
+  return Number.isFinite(configuredVolume)
+    ? Math.max(0, configuredVolume)
+    : 0.04;
+}
+
+function jdStartBufferedLoop(name, volume) {
+  const state = jdInitSoundFileState();
+  const buffer = state.buffers[name];
+
+  if (!buffer || state.loopSources[name]) {
+    return false;
+  }
+
+  const ctx = jdEnsureAudio();
+
+  if (!ctx || !JD.audioMaster) {
+    return false;
+  }
+
+  try {
+    const source = ctx.createBufferSource();
+    const gain = ctx.createGain();
+
+    source.buffer = buffer;
+    source.loop = true;
+
+    gain.gain.value = 0.0001;
+
+    source.connect(gain);
+    gain.connect(JD.audioMaster);
+
+    source.start(ctx.currentTime);
+
+    state.loopSources[name] = source;
+    state.loopGains[name] = gain;
+    state.loopTargets[name] = 0;
+
+    source.onended = function() {
+      if (state.loopSources[name] === source) {
+        delete state.loopSources[name];
+        delete state.loopGains[name];
+        delete state.loopTargets[name];
+      }
+    };
+
+    jdSetSoundLoopVolume(
+      name,
+      Number.isFinite(volume)
+        ? volume
+        : jdGetLoopConfiguredVolume(name),
+      0.42
+    );
+
+    return true;
+  } catch (error) {
+    state.debugLastError = String(
+      error && error.message
+        ? error.message
+        : error
+    );
+    return false;
+  }
+}
+
+function jdEnsureSoundLoop(name, volume) {
+  jdRequestSoundWarmup();
+
+  const state = jdInitSoundFileState();
+
+  if (state.loopSources[name]) {
+    jdSetSoundLoopVolume(
+      name,
+      Number.isFinite(volume)
+        ? volume
+        : jdGetLoopConfiguredVolume(name),
+      0.42
+    );
+
+    return true;
+  }
+
+  if (state.buffers[name]) {
+    return jdStartBufferedLoop(name, volume);
+  }
+
+  if (
+    !state.loading[name] &&
+    !state.failed[name]
+  ) {
+    jdPrepareSoundFile(name).then(function(buffer) {
+      if (
+        buffer &&
+        JD &&
+        JD.state !== STATE_TITLE
+      ) {
+        jdStartBufferedLoop(name, volume);
+      }
+    });
+  }
+
+  return false;
+}
+
+function jdSetSoundLoopVolume(name, volume, duration = 0.32) {
+  const state = jdInitSoundFileState();
+  const gain = state.loopGains[name];
+
+  if (!gain) {
+    return;
+  }
+
+  const ctx = jdEnsureAudio();
+
+  if (!ctx) {
+    return;
+  }
+
+  const target =
+    Math.max(
+      0.0001,
+      Number.isFinite(volume)
+        ? volume
+        : 0
+    );
+
+  const now = ctx.currentTime;
+
+  try {
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(
+      Math.max(0.0001, gain.gain.value || 0.0001),
+      now
+    );
+    gain.gain.linearRampToValueAtTime(
+      target,
+      now + Math.max(0.02, duration)
+    );
+  } catch (_error) {
+    gain.gain.value = target;
+  }
+
+  state.loopTargets[name] = volume;
+}
+
+function jdStopSoundLoop(name, duration = 0.38) {
+  const state = jdInitSoundFileState();
+  const source = state.loopSources[name];
+  const gain = state.loopGains[name];
+
+  if (!source || !gain) {
+    return;
+  }
+
+  const ctx = jdEnsureAudio();
+
+  if (!ctx) {
+    return;
+  }
+
+  const now = ctx.currentTime;
+
+  try {
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(
+      Math.max(0.0001, gain.gain.value || 0.0001),
+      now
+    );
+    gain.gain.linearRampToValueAtTime(
+      0.0001,
+      now + Math.max(0.03, duration)
+    );
+
+    source.stop(
+      now + Math.max(0.04, duration) + 0.04
+    );
+  } catch (_error) {
+    try {
+      source.stop();
+    } catch (__error) {
+      // 停止済みでも無視
+    }
+  }
+
+  delete state.loopSources[name];
+  delete state.loopGains[name];
+  delete state.loopTargets[name];
+}
+
+function jdStopAllSoundLoops(duration = 0.38) {
+  const state = jdInitSoundFileState();
+  const names = Object.keys(
+    state.loopSources || {}
+  );
+
+  for (const name of names) {
+    jdStopSoundLoop(name, duration);
+  }
+}
+
+function jdPlaySyntheticCafeAmbiencePulse() {
+  const ctx = jdEnsureAudio();
+
+  if (!ctx || !JD.audioMaster) {
+    return;
+  }
+
+  const state = jdInitSoundFileState();
+  const nowMs = jdNowMs();
+
+  if (
+    state.syntheticAmbienceLastMs &&
+    nowMs - state.syntheticAmbienceLastMs < 2600
+  ) {
+    return;
+  }
+
+  state.syntheticAmbienceLastMs = nowMs;
+
+  jdPlayNoise({
+    duration: 0.22,
+    frequency: 520,
+    q: 0.26,
+    volume: 0.0038,
+    filterType: "lowpass"
+  });
+
+  jdPlayTone({
+    frequency: 92,
+    endFrequency: 88,
+    duration: 0.30,
+    volume: 0.0028,
+    delay: 0.03,
+    type: "sine"
+  });
+}
+
+function jdShouldRunCafeAudioBed() {
+  if (!JD || JD.soundMuted === true) {
+    return false;
+  }
+
+  return (
+    JD.state === STATE_PLAY ||
+    JD.state === STATE_POSTER_TRANSITION ||
+    JD.state === STATE_POSTER_REVEAL ||
+    JD.state === STATE_POSTER_HOLD ||
+    JD.state === STATE_POSTER_PEEL ||
+    JD.state === STATE_POSTER_CAFE_HOLD ||
+    JD.state === STATE_RECEIPT
+  );
+}
+
+function jdUpdateCafeAudioBed() {
+  if (
+    !JD ||
+    JD.audioBedDisabled === true
+  ) {
+    jdStopAllSoundLoops(0.45);
+    return;
+  }
+
+  if (!jdShouldRunCafeAudioBed()) {
+    jdStopSoundLoop("bgm_cafe", 0.55);
+    jdStopSoundLoop("ambience_cafe", 0.55);
+    return;
+  }
+
+  const hasBgm =
+    jdEnsureSoundLoop(
+      "bgm_cafe",
+      jdGetLoopConfiguredVolume("bgm_cafe")
+    );
+
+  const hasAmbience =
+    jdEnsureSoundLoop(
+      "ambience_cafe",
+      jdGetLoopConfiguredVolume("ambience_cafe")
+    );
+
+  // BGMファイルは任意。未配置でも喫茶店の空気だけは薄く残す。
+  if (!hasAmbience) {
+    jdPlaySyntheticCafeAmbiencePulse();
+  }
+
+  return hasBgm || hasAmbience;
+}
+
 function jdPlayNoise(options = {}) {
   const ctx =
     jdEnsureAudio();
@@ -2514,7 +3002,7 @@ function jdPlayNoise(options = {}) {
   );
 }
 
-function jdPlaySound(name) {
+function jdPlaySound(name, options = {}) {
   jdRequestSoundWarmup();
 
   const configuredCooldown =
@@ -2533,10 +3021,47 @@ function jdPlaySound(name) {
     return;
   }
 
-  if (jdPlayBufferedSound(name)) {
+  if (jdPlayBufferedSound(name, options)) {
     return;
   }
 
+  const mappedSoundFile =
+    JD_SOUND_FILE_CONFIG.sources[name];
+
+  /*
+   * ファイルが登録されていて、まだ失敗扱いになっていない音は
+   * fetch / decode の完了を待つ。
+   * ここで即フォールバックを鳴らすと、ogg配置済みでも初回だけ合成音になる。
+   */
+  if (mappedSoundFile) {
+    const fileState =
+      jdInitSoundFileState();
+
+    if (!fileState.failed[name]) {
+      jdPrepareSoundFile(name).then(function(buffer) {
+        if (buffer) {
+          jdPlayBufferedSound(
+            name,
+            options
+          );
+          return;
+        }
+
+        jdPlaySyntheticSoundFallback(
+          name
+        );
+      });
+
+      return;
+    }
+  }
+
+  jdPlaySyntheticSoundFallback(
+    name
+  );
+}
+
+function jdPlaySyntheticSoundFallback(name) {
   switch (name) {
     // タイトル・開店
     case "open":
@@ -2558,39 +3083,58 @@ function jdPlaySound(name) {
       });
       break;
 
-    // Fortune登場
+    // Fortune登場。札がせり出す低い気配を少し控えめに。
     case "fortune_in":
       jdPlayTone({
-        frequency: 145,
-        endFrequency: 205,
-        duration: 0.18,
-        volume: 0.055,
+        frequency: 140,
+        endFrequency: 190,
+        duration: 0.16,
+        volume: 0.040,
         type: "triangle"
       });
 
       jdPlayNoise({
-        duration: 0.08,
-        frequency: 540,
-        volume: 0.022
+        duration: 0.065,
+        frequency: 620,
+        q: 0.55,
+        volume: 0.014
       });
       break;
 
-    // Fortune確定
+    // Fortune抽選中。名前が切り替わるたび、ごく薄く刻む。
+    case "fortune_tick":
+      jdPlayTone({
+        frequency: 940,
+        endFrequency: 860,
+        duration: 0.020,
+        volume: 0.010,
+        type: "square"
+      });
+
+      jdPlayNoise({
+        duration: 0.014,
+        frequency: 1900,
+        q: 0.70,
+        volume: 0.004
+      });
+      break;
+
+    // Fortune確定。素材札の音と重なりすぎないよう短めに。
     case "fortune_pick":
       jdPlayTone({
         frequency: 520,
-        endFrequency: 520,
-        duration: 0.07,
-        volume: 0.065,
+        endFrequency: 540,
+        duration: 0.055,
+        volume: 0.046,
         type: "square"
       });
 
       jdPlayTone({
         frequency: 780,
         endFrequency: 720,
-        duration: 0.13,
-        volume: 0.042,
-        delay: 0.055,
+        duration: 0.095,
+        volume: 0.028,
+        delay: 0.048,
         type: "triangle"
       });
       break;
@@ -2602,6 +3146,63 @@ function jdPlaySound(name) {
         frequency: 1750,
         q: 0.55,
         volume: 0.028
+      });
+      break;
+
+    // 開店札。勤務票が小さく出る紙音。
+    case "intro_open_card":
+      jdPlayNoise({
+        duration: 0.060,
+        frequency: 1500,
+        q: 0.55,
+        volume: 0.012
+      });
+
+      jdPlayTone({
+        frequency: 360,
+        endFrequency: 310,
+        duration: 0.048,
+        volume: 0.010,
+        delay: 0.018,
+        type: "triangle"
+      });
+      break;
+
+    // 本日の注文票。少し大きい紙が置かれる音。
+    case "intro_order_sheet":
+      jdPlayNoise({
+        duration: 0.090,
+        frequency: 1200,
+        q: 0.48,
+        volume: 0.016
+      });
+
+      jdPlayTone({
+        frequency: 230,
+        endFrequency: 180,
+        duration: 0.070,
+        volume: 0.012,
+        delay: 0.044,
+        type: "triangle"
+      });
+      break;
+
+    // 全5回の小さな押印。説明を押しつけず、区切りだけつける。
+    case "intro_count_stamp":
+      jdPlayTone({
+        frequency: 520,
+        endFrequency: 430,
+        duration: 0.038,
+        volume: 0.014,
+        type: "square"
+      });
+
+      jdPlayNoise({
+        duration: 0.028,
+        frequency: 1800,
+        q: 0.62,
+        volume: 0.008,
+        delay: 0.012
       });
       break;
 
@@ -2687,6 +3288,120 @@ function jdPlaySound(name) {
       });
       break;
 
+    // DIVE。液体に入った後の、短い泡の余韻。
+    case "result_dive":
+      jdPlayNoise({
+        duration: 0.080,
+        frequency: 1850,
+        q: 0.52,
+        volume: 0.014
+      });
+
+      jdPlayTone({
+        frequency: 420,
+        endFrequency: 520,
+        duration: 0.055,
+        volume: 0.012,
+        delay: 0.028,
+        type: "sine"
+      });
+      break;
+
+    // NOKKARI。皿やケーキ上に、軽く乗った感じ。
+    case "result_nokkari":
+      jdPlayTone({
+        frequency: 660,
+        endFrequency: 540,
+        duration: 0.046,
+        volume: 0.016,
+        type: "triangle"
+      });
+
+      jdPlayNoise({
+        duration: 0.030,
+        frequency: 1400,
+        q: 0.70,
+        volume: 0.010,
+        delay: 0.018
+      });
+      break;
+
+    // KANTSU。刺さりのあとに、小さく硬い決まり音。
+    case "result_kantsu":
+      jdPlayTone({
+        frequency: 980,
+        endFrequency: 720,
+        duration: 0.048,
+        volume: 0.018,
+        type: "square"
+      });
+
+      jdPlayTone({
+        frequency: 1320,
+        endFrequency: 1180,
+        duration: 0.040,
+        volume: 0.011,
+        delay: 0.035,
+        type: "triangle"
+      });
+      break;
+
+    // PERFECT CENTER。通常成功に重ねる、ごく短い高音のご褒美。
+    case "perfect_center":
+      jdPlayTone({
+        frequency: 1320,
+        endFrequency: 1760,
+        duration: 0.060,
+        volume: 0.018,
+        type: "sine"
+      });
+
+      jdPlayTone({
+        frequency: 1980,
+        endFrequency: 1640,
+        duration: 0.070,
+        volume: 0.012,
+        delay: 0.045,
+        type: "triangle"
+      });
+
+      jdPlayNoise({
+        duration: 0.024,
+        frequency: 3100,
+        q: 0.82,
+        volume: 0.006,
+        delay: 0.020
+      });
+      break;
+
+    // バウンドボーナス。跳ねた手応えを、得点成立時だけ控えめに知らせる。
+    case "bounce_bonus":
+      jdPlayTone({
+        frequency: 760,
+        endFrequency: 1040,
+        duration: 0.050,
+        volume: 0.014,
+        type: "triangle"
+      });
+
+      jdPlayTone({
+        frequency: 1040,
+        endFrequency: 860,
+        duration: 0.045,
+        volume: 0.010,
+        delay: 0.040,
+        type: "sine"
+      });
+
+      jdPlayNoise({
+        duration: 0.020,
+        frequency: 2200,
+        q: 0.70,
+        volume: 0.006,
+        delay: 0.018
+      });
+      break;
+
     // テーブル落下
     case "drop":
       jdPlayTone({
@@ -2728,6 +3443,43 @@ function jdPlaySound(name) {
       });
       break;
 
+    // レシートが画面へ送り出され始める、薄い紙送り音。
+    case "receipt_feed_start":
+      jdPlayNoise({
+        duration: 0.18,
+        frequency: 1750,
+        q: 0.48,
+        volume: 0.018
+      });
+
+      jdPlayNoise({
+        duration: 0.11,
+        frequency: 900,
+        q: 0.38,
+        volume: 0.010,
+        delay: 0.055
+      });
+      break;
+
+    // レシートが定位置に収まったあとの、ごく小さな紙の止まり。
+    case "receipt_settle":
+      jdPlayNoise({
+        duration: 0.060,
+        frequency: 1250,
+        q: 0.55,
+        volume: 0.012
+      });
+
+      jdPlayTone({
+        frequency: 210,
+        endFrequency: 170,
+        duration: 0.055,
+        volume: 0.014,
+        delay: 0.028,
+        type: "triangle"
+      });
+      break;
+
     // 印字
     case "receipt_print":
       jdPlayTone({
@@ -2742,6 +3494,90 @@ function jdPlaySound(name) {
         duration: 0.028,
         frequency: 2100,
         volume: 0.013
+      });
+      break;
+
+    // ランク印字。通常の明細より少し硬く、評価欄の存在だけを立てる。
+    case "receipt_rank":
+      jdPlayTone({
+        frequency: 1040,
+        endFrequency: 760,
+        duration: 0.042,
+        volume: 0.024,
+        type: "square"
+      });
+
+      jdPlayNoise({
+        duration: 0.030,
+        frequency: 2350,
+        q: 0.72,
+        volume: 0.012
+      });
+
+      jdPlayTone({
+        frequency: 520,
+        endFrequency: 565,
+        duration: 0.052,
+        volume: 0.014,
+        delay: 0.034,
+        type: "triangle"
+      });
+      break;
+
+    // ランク名が見えた直後の小さな評価音。
+    // ファンファーレではなく、レジ横の小さなベルくらいに抑える。
+    case "receipt_rank_badge":
+      jdPlayTone({
+        frequency: 880,
+        endFrequency: 990,
+        duration: 0.060,
+        volume: 0.020,
+        type: "sine"
+      });
+
+      jdPlayTone({
+        frequency: 1320,
+        endFrequency: 1180,
+        duration: 0.070,
+        volume: 0.014,
+        delay: 0.040,
+        type: "triangle"
+      });
+
+      jdPlayNoise({
+        duration: 0.022,
+        frequency: 2600,
+        q: 0.80,
+        volume: 0.006,
+        delay: 0.018
+      });
+      break;
+
+    // 店長メモ印字。少し低く、紙に一言が置かれる感じ。
+    case "manager_memo":
+      jdPlayNoise({
+        duration: 0.038,
+        frequency: 1600,
+        q: 0.65,
+        volume: 0.013
+      });
+
+      jdPlayTone({
+        frequency: 470,
+        endFrequency: 360,
+        duration: 0.070,
+        volume: 0.018,
+        delay: 0.014,
+        type: "triangle"
+      });
+
+      jdPlayTone({
+        frequency: 840,
+        endFrequency: 720,
+        duration: 0.030,
+        volume: 0.010,
+        delay: 0.062,
+        type: "square"
       });
       break;
 
@@ -2830,6 +3666,34 @@ function jdPlaySound(name) {
       });
       break;
 
+    // 言語切替・小さな真鍮プレートのスイッチ音
+    case "route_switch":
+      jdPlayTone({
+        frequency: 620,
+        endFrequency: 840,
+        duration: 0.045,
+        volume: 0.026,
+        type: "triangle"
+      });
+
+      jdPlayTone({
+        frequency: 340,
+        endFrequency: 280,
+        duration: 0.055,
+        volume: 0.018,
+        delay: 0.028,
+        type: "square"
+      });
+
+      jdPlayNoise({
+        duration: 0.026,
+        frequency: 1700,
+        q: 0.75,
+        volume: 0.010,
+        delay: 0.008
+      });
+      break;
+
     // 再シフトボタン
     case "button_ready":
       jdPlayTone({
@@ -2846,6 +3710,14 @@ function jdPlaySound(name) {
 
 
 
+
+
+
+/*
+ * 起動時の一斉 preload ではなく、タイトルの idle 時間で
+ * 最初の開店音だけ準備する。
+ */
+jdRequestBootSoundWarmup();
 
 
 function jdReadWebOptions() {
@@ -2922,7 +3794,7 @@ function jdInitText() {
       dragging: { jp: "はなして発射", en: "RELEASE TO SHOOT" },
       fortuneSpin: { jp: "喫茶フォーチュン回転中", en: "KISSA FORTUNE IS SPINNING" },
       workTicket: { jp: "勤務票", en: "WORK TICKET" },
-      choosing: { jp: "本日の素材を選んでいます", en: "CHOOSING TODAY'S INGREDIENT" }
+      choosing: { jp: "", en: "CHOOSING TODAY'S INGREDIENT" }
     },
     intro: {
       open: { jp: "開店", en: "OPEN" },
@@ -2959,17 +3831,18 @@ function jdInitText() {
       thanks: { jp: "ありがとうございました", en: "THANK YOU" }
     },
     rank: {
-      great: { jp: "喫茶の星", en: "CAFE STAR" },
-      good: { jp: "優秀なバイト", en: "TOP BARISTA" },
-      mid: { jp: "なかなかバイト", en: "SOLID SHIFT" },
-      low: { jp: "見習いバイト", en: "APPRENTICE" },
-      bad: { jp: "クビ寸前", en: "ON THIN ICE" }
+      legendary: { jp: "伝説級", en: "LEGENDARY" },
+      excellent: { jp: "絶好調", en: "ON FIRE" },
+      good: { jp: "好調", en: "GOOD NIGHT" },
+      fair: { jp: "まずまず", en: "NOT BAD" },
+      oneJob: { jp: "一仕事", en: "ONE GOOD JOB" },
+      tomorrow: { jp: "また明日", en: "TRY AGAIN TOMORROW" }
     },
     manager: {
-      diveMaster: { jp: "あんた、もうダイブ職人", en: "YOU'RE A DIVE CRAFTSPERSON NOW." },
-      floorHeavy: { jp: "まずはテーブルを拭くところから", en: "START WITH WIPING THE TABLES." },
-      sold: { jp: "店は守った", en: "YOU KEPT THE CAFE OPEN." },
-      default: { jp: "何が起きたかは聞かない", en: "I WON'T ASK WHAT HAPPENED." }
+      diveMaster: { jp: "やるじゃん。店が回ってきたぞ。", en: "Nice. The place is starting to run." },
+      floorHeavy: { jp: "おいおい…。まぁ、売れたから良いか。", en: "Come on... Well, it sold, so fine." },
+      sold: { jp: "まあ、店は回ったな。そういう日も大事だ。", en: "The café ran. Days like that matter." },
+      default: { jp: "こういう日もあるな。さあ、片づけるか。", en: "Days like this happen. Let’s clean up." }
     },
     target: {
       coffee: { jp: "コーヒー", en: "COFFEE" },
@@ -3128,8 +4001,18 @@ function jdRefreshLocalizedPosterItem() {
 }
 
 function jdLanguageToggleBounds() {
-  // タイトルの左上だけに置く。ゲーム開始後は誤操作を避けるため非表示。
-  return { x: 14, y: 592, w: 64, h: 24 };
+  // 真夜中コーラと同じ、右上の76×24真鍮プレート。
+  // 論理画面360×640に対して上下左右8pxの余白を取る。
+  const width = 76;
+  const height = 24;
+  const margin = 8;
+
+  return {
+    x: margin,
+    y: JD.LOGICAL_H - margin - height,
+    w: width,
+    h: height
+  };
 }
 
 function jdLanguageToggleVisible() {
@@ -3146,43 +4029,178 @@ function jdLanguageToggleHit(x, y) {
   );
 }
 
+function jdHandleLanguageToggleTouch(x, y) {
+  if (!jdLanguageToggleVisible()) return false;
+
+  const bounds = jdLanguageToggleBounds();
+  if (!jdLanguageToggleHit(x, y)) return false;
+
+  const nextLanguage =
+    x < bounds.x + bounds.w * 0.5
+      ? "jp"
+      : "en";
+
+  return jdSetLanguage(nextLanguage);
+}
+
 function jdDrawLanguageToggle() {
   if (!jdLanguageToggleVisible()) return;
 
-  const bounds = jdLanguageToggleBounds();
-  const isEnglish = JD.lang === "en";
-  const amber = [205, 152, 82];
+  const button = jdLanguageToggleBounds();
+  const selectedLanguage =
+    JD.lang === "en"
+      ? "en"
+      : "jp";
 
+  const halfWidth =
+    button.w * 0.5;
+
+  const activePulse =
+    0.5 +
+    Math.sin(
+      (typeof ElapsedTime === "number" ? ElapsedTime : 0) *
+      2.6
+    ) * 0.5;
+
+  // 真夜中コーラと同じ、暗い真鍮プレート。
   rectMode(CORNER);
-  textAlign(CENTER);
   noStroke();
 
-  fill(28, 20, 18, 165);
-  rect(bounds.x, bounds.y, bounds.w, bounds.h, 6);
-
-  noFill();
-  stroke(amber[0], amber[1], amber[2], 210);
-  strokeWidth(1.2);
-  rect(bounds.x + 0.6, bounds.y + 0.6, bounds.w - 1.2, bounds.h - 1.2, 5.4);
-  stroke(amber[0], amber[1], amber[2], 125);
-  strokeWidth(1);
-  line(bounds.x + bounds.w / 2, bounds.y + 4, bounds.x + bounds.w / 2, bounds.y + bounds.h - 4);
-  noStroke();
-
-  fill(amber[0], amber[1], amber[2], 235);
-  ellipse(
-    bounds.x + (isEnglish ? 40 : 8),
-    bounds.y + bounds.h / 2,
-    4.4,
-    4.4
+  fill(
+    50,
+    34,
+    25,
+    232
   );
 
-  jdPrimaryFont();
-  fontSize(10);
-  fill(244, 223, 183, isEnglish ? 132 : 238);
-  text("JP", bounds.x + 21, bounds.y + 10.5);
-  fill(244, 223, 183, isEnglish ? 238 : 132);
-  text("EN", bounds.x + 52, bounds.y + 10.5);
+  rect(
+    button.x,
+    button.y,
+    button.w,
+    button.h,
+    5
+  );
+
+  noFill();
+
+  stroke(
+    173,
+    126,
+    69,
+    218
+  );
+
+  strokeWidth(1.15);
+
+  rect(
+    button.x + 0.5,
+    button.y + 0.5,
+    button.w - 1,
+    button.h - 1,
+    5
+  );
+
+  // 中央の仕切り。
+  stroke(
+    125,
+    83,
+    48,
+    205
+  );
+
+  line(
+    button.x + halfWidth,
+    button.y + 3,
+    button.x + halfWidth,
+    button.y + button.h - 3
+  );
+
+  noStroke();
+
+  function drawLanguagePlateHalf(
+    language,
+    label,
+    x
+  ) {
+    const active =
+      selectedLanguage === language;
+
+    if (active) {
+      // 選択側だけ、薄い琥珀色が呼吸する。
+      fill(
+        232,
+        167,
+        73,
+        25 + activePulse * 17
+      );
+
+      rect(
+        x + 2,
+        button.y + 2,
+        halfWidth - 4,
+        button.h - 4,
+        3
+      );
+
+      fill(
+        244,
+        161,
+        65,
+        180 + activePulse * 50
+      );
+
+      ellipse(
+        x + 8,
+        button.y + button.h * 0.5,
+        4.2,
+        4.2
+      );
+    } else {
+      fill(
+        95,
+        69,
+        50,
+        120
+      );
+
+      ellipse(
+        x + 8,
+        button.y + button.h * 0.5,
+        3.2,
+        3.2
+      );
+    }
+
+    jdPrimaryFont();
+
+    fill(
+      active ? 244 : 220,
+      active ? 198 : 202,
+      active ? 133 : 180,
+      active ? 248 : 155
+    );
+
+    fontSize(10);
+    textAlign(CENTER);
+
+    text(
+      label,
+      x + halfWidth * 0.60,
+      button.y + button.h * 0.5 - 0.5
+    );
+  }
+
+  drawLanguagePlateHalf(
+    "jp",
+    "JP",
+    button.x
+  );
+
+  drawLanguagePlateHalf(
+    "en",
+    "EN",
+    button.x + halfWidth
+  );
 
   rectMode(CORNER);
   textAlign(CENTER);
@@ -3597,6 +4615,23 @@ async function jdSavePosterImage() {
         title: jdT("receipt.shop", "JUNKISSA DIVE")
       });
 
+      trackJunkissaDiveEvent(
+        "Result Save",
+        {
+          method: "share",
+          language:
+            JD.lang === "en"
+              ? "en"
+              : "jp",
+          poster_type: String(
+            (
+              jdGetPosterItem() &&
+              jdGetPosterItem().targetType
+            ) || "failure"
+          )
+        }
+      );
+
       jdSetPosterSaveStatus("saved");
       return;
     }
@@ -3629,6 +4664,23 @@ async function jdSavePosterImage() {
     link.click();
     link.remove();
 
+    trackJunkissaDiveEvent(
+      "Result Save",
+      {
+        method: "download",
+        language:
+          JD.lang === "en"
+            ? "en"
+            : "jp",
+        poster_type: String(
+          (
+            jdGetPosterItem() &&
+            jdGetPosterItem().targetType
+          ) || "failure"
+        )
+      }
+    );
+
     setTimeout(function() {
       URL.revokeObjectURL(objectUrl);
     }, 1200);
@@ -3640,6 +4692,8 @@ async function jdSavePosterImage() {
 }
 
 function jdResetAll() {
+  jdStopAllSoundLoops(0.25);
+
   JD.state = STATE_TITLE;
   JD.gamePhase = PHASE_SHIFT_START;
 
@@ -3946,6 +5000,7 @@ function jdResetShift() {
   JD.pendingFood = null;
   JD.fortuneSpinning = false;
   JD.fortuneTimer = 0;
+  JD.fortuneLastTickIndex = -1;
   JD.fortuneDuration = 0;
   JD.fortuneSelected = null;
   JD.fortuneDisplayName = null;
@@ -4028,10 +5083,25 @@ function jdShuffleArray(a) {
 }
 
 function jdStartPlay() {
+  const previousState =
+    JD.state;
+
   jdResetShift();
 
   JD.state =
     STATE_PLAY;
+
+  trackJunkissaDiveEvent(
+    previousState === STATE_RECEIPT
+      ? "Replay Start"
+      : "Game Start",
+    {
+      language:
+        JD.lang === "en"
+          ? "en"
+          : "jp"
+    }
+  );
 
   jdSetGamePhase(
     JD.openingMonologueSeen
@@ -4173,17 +5243,31 @@ function jdSetGamePhase(phase) {
 }
 
 function jdGetOpeningMonologuePages() {
+  // BUDDYテーマ：
+  // 長い付き合いの相手が始めた深夜喫茶を、主人公が静かに手伝っている。
+  // 日本語と英語は直訳で揃えず、それぞれ自然に読める長さとリズムを優先する。
   if (jdIsEnglish()) {
     return [
       {
         lines: [
-          "A strange café that opens only after midnight.",
+          "We've known each other a long time.",
           "",
-          "I've only been working here for a few days.",
-          "The manager gave me just one instruction."
+          "We've done all sorts of things together.",
+          "I just never expected a café to be one of them."
         ],
         size: 13.2,
-        lineGap: 25,
+        lineGap: 24,
+        weight: "regular"
+      },
+      {
+        lines: [
+          "A little café that opens after midnight.",
+          "",
+          "I've only been helping out for a few days.",
+          "There's just one rule I was taught."
+        ],
+        size: 13.2,
+        lineGap: 24,
         weight: "regular"
       },
       {
@@ -4196,9 +5280,9 @@ function jdGetOpeningMonologuePages() {
       },
       {
         lines: [
-          "...I don't really understand it.",
-          "But apparently, if they land right,",
-          "they become something we can sell."
+          "...I don't really get it.",
+          "But if they land right,",
+          "apparently we can serve them."
         ],
         size: 13.2,
         lineGap: 24,
@@ -4206,7 +5290,7 @@ function jdGetOpeningMonologuePages() {
       },
       {
         lines: [
-          "Well then. Shall we get started?"
+          "Well, time to get started."
         ],
         size: 16,
         lineGap: 26,
@@ -4218,18 +5302,29 @@ function jdGetOpeningMonologuePages() {
   return [
     {
       lines: [
-        "深夜だけ開く、不思議な喫茶店。",
+        "あの人とは、ずいぶん長い付き合いになる。",
         "",
-        "ここでバイトを始めて、まだ数日。",
-        "店長に言われた仕事は、ひとつ。"
+        "いろんなことを一緒にやってきたけど、",
+        "まさか喫茶店まで始めるとは思わなかった。"
       ],
-      size: 15,
-      lineGap: 27,
+      size: 14.5,
+      lineGap: 26,
       weight: "regular"
     },
     {
       lines: [
-        "「トッピングは飛ばして乗せろ」"
+        "深夜だけ開く、小さな喫茶店。",
+        "",
+        "ここで手伝いを始めて、まだ数日。",
+        "最初に教えられた仕事はひとつだけ。"
+      ],
+      size: 14.5,
+      lineGap: 26,
+      weight: "regular"
+    },
+    {
+      lines: [
+        "「トッピングは飛ばして乗せて」"
       ],
       size: 18,
       lineGap: 28,
@@ -4237,16 +5332,16 @@ function jdGetOpeningMonologuePages() {
     },
     {
       lines: [
-        "……意味は、よく分からない。",
-        "でも、うまく乗れば商品になるらしい。"
+        "……なんだかよく分からないけど、",
+        "うまく乗れば商品になるらしい。"
       ],
-      size: 15,
+      size: 14.5,
       lineGap: 28,
       weight: "regular"
     },
     {
       lines: [
-        "さて、今日もはじめますか。"
+        "まぁ、今日もはじめますか。"
       ],
       size: 17,
       lineGap: 28,
@@ -4329,6 +5424,31 @@ function jdUpdateOpeningMonologue(dt) {
   ) {
     jdAdvanceOpeningMonologuePage();
   }
+}
+
+
+function jdSkipOpeningMonologue() {
+  JD.openingMonologueSeen = true;
+  JD.openingMonologuePage = 0;
+  JD.openingMonologueTimer = 0;
+
+  jdSetGamePhase(
+    PHASE_SHIFT_START
+  );
+
+  JD.shiftStartTimer =
+    Number.isFinite(
+      JD.shiftStartDuration
+    )
+      ? JD.shiftStartDuration
+      : 7.4;
+
+  JD.shiftFadeInTimer =
+    Number.isFinite(
+      JD.shiftFadeInDuration
+    )
+      ? JD.shiftFadeInDuration
+      : 0.68;
 }
 
 function jdTapOpeningMonologue() {
@@ -4575,6 +5695,25 @@ function jdDrawOpeningMonologue() {
     );
   }
 
+  // 初回導入は読ませつつ、再プレイや急いでいる時には静かに飛ばせる。
+  // 右下へ小さく置き、本文より目立たせない。
+  textAlign(RIGHT);
+  jdReceiptFont();
+  fontSize(9.5);
+
+  fill(
+    244,
+    229,
+    198,
+    118
+  );
+
+  text(
+    "SKIP",
+    W - 22,
+    44
+  );
+
   rectMode(CORNER);
   textAlign(CENTER);
   noStroke();
@@ -4638,6 +5777,34 @@ function jdNextFood() {
       JD.posterItem && JD.posterItem.targetType
         ? JD.posterItem.targetType
         : "melon";
+
+    const successfulOrders =
+      Array.isArray(JD.results)
+        ? JD.results.filter(
+            (result) =>
+              result &&
+              Number(result.price) > 0
+          ).length
+        : 0;
+
+    trackJunkissaDiveEvent(
+      "Shift Complete",
+      {
+        language:
+          JD.lang === "en"
+            ? "en"
+            : "jp",
+        total_sales: String(
+          Math.round(JD.totalSales || 0)
+        ),
+        successful_orders: String(
+          successfulOrders
+        ),
+        poster_type: String(
+          JD.posterFocusKind || "failure"
+        )
+      }
+    );
 
     // 最後の投球位置ではなく、選出した代表商品の店内位置へ
     // 既存の成功ズームと同じ商品別倍率で穏やかに寄せる。
@@ -4727,6 +5894,7 @@ function jdStartFortuneSpin(selectedFood) {
       : "CHERRY";
 
   JD.fortunePickedTimer = 0;
+  JD.fortuneLastTickIndex = -1;
 
   jdPlaySound(
     "fortune_in"
@@ -4886,9 +6054,19 @@ function jdUpdateFortune(dt) {
   if (JD.fortuneTimer > 0.24) {
     const spinRate = 20;
     const index = Math.floor((JD.fortuneDuration - JD.fortuneTimer) * spinRate) % names.length;
+
+    if (
+      index !== JD.fortuneLastTickIndex &&
+      JD.fortuneLastTickIndex >= 0
+    ) {
+      jdPlaySound("fortune_tick");
+    }
+
+    JD.fortuneLastTickIndex = index;
     JD.fortuneDisplayName = names[index];
   } else if (JD.pendingFood) {
     JD.fortuneDisplayName = JD.pendingFood.name;
+    JD.fortuneLastTickIndex = -1;
   }
 
   if (JD.fortuneTimer <= 0) {
@@ -4897,7 +6075,20 @@ function jdUpdateFortune(dt) {
   return true;
 }
 
+
+function jdPlayShiftStartCueIfCrossed(previousElapsed, currentElapsed, moment, soundId) {
+  if (
+    previousElapsed < moment &&
+    currentElapsed >= moment
+  ) {
+    jdPlaySound(soundId);
+  }
+}
+
+
 function jdAppUpdate(dt) {
+  jdUpdateCafeAudioBed();
+
   if (
     JD.state ===
     STATE_TITLE
@@ -4957,8 +6148,42 @@ function jdAppUpdate(dt) {
           JD.shiftStartDuration;
       }
 
+      const previousShiftElapsed =
+        JD.shiftStartDuration -
+        JD.shiftStartTimer;
+
       JD.shiftStartTimer -=
         dt;
+
+      const currentShiftElapsed =
+        JD.shiftStartDuration -
+        Math.max(
+          0,
+          JD.shiftStartTimer
+        );
+
+      // 開店導入の紙ものに、ごく小さな節目音を置く。
+      // 表示の主役はあくまで紙札なので、音は薄く短くする。
+      jdPlayShiftStartCueIfCrossed(
+        previousShiftElapsed,
+        currentShiftElapsed,
+        0.14,
+        "intro_open_card"
+      );
+
+      jdPlayShiftStartCueIfCrossed(
+        previousShiftElapsed,
+        currentShiftElapsed,
+        1.45,
+        "intro_order_sheet"
+      );
+
+      jdPlayShiftStartCueIfCrossed(
+        previousShiftElapsed,
+        currentShiftElapsed,
+        1.92,
+        "intro_count_stamp"
+      );
 
       if (
         JD.shiftStartTimer <=
@@ -6056,6 +7281,24 @@ function jdResolve(t, missType) {
     jdPlaySound("hit_melon");
   }
 
+  // 器ごとの命中音に加えて、結果タイプの短いアクセントを重ねる。
+  // DIVE / NOKKARI / KANTSU の違いを、結果文字と同じ手触りで伝える。
+  jdPlayResultTypeAccent(res.type);
+
+  // PERFECT CENTERだけ、通常成功のあとに小さな高音を足す。
+  if (res.perfect === true) {
+    jdPlaySound("perfect_center");
+  }
+
+  // 得点対象のバウンドがあった成功時だけ、短いボーナス音を足す。
+  // 物理バウンドのたびに鳴らすと騒がしいため、結果確定時に一度だけ鳴らす。
+  if (
+    Number.isFinite(res.scoredBounceCount) &&
+    res.scoredBounceCount > 0
+  ) {
+    jdPlaySound("bounce_bonus");
+  }
+
   JD.results.push(res);
   f.resultType = res.type;
   JD.totalSales += res.price;
@@ -6121,6 +7364,24 @@ function jdSnapFood(t) {
       JD.tableY + 46,
       JD.tableY + 126
     );
+  }
+}
+
+
+
+function jdPlayResultTypeAccent(resultType) {
+  if (resultType === "DIVE") {
+    jdPlaySound("result_dive");
+    return;
+  }
+
+  if (resultType === "LAND") {
+    jdPlaySound("result_nokkari");
+    return;
+  }
+
+  if (resultType === "STAB") {
+    jdPlaySound("result_kantsu");
   }
 }
 
@@ -9135,6 +10396,37 @@ function jdDrawPlay() {
 
 
 
+
+function jdGetCafeTimeParts() {
+  let minute = 0;
+  let second = 0;
+  let millisecond = 0;
+
+  try {
+    const now = new Date();
+
+    minute =
+      now.getMinutes();
+
+    second =
+      now.getSeconds();
+
+    millisecond =
+      now.getMilliseconds();
+
+  } catch (_error) {
+    // 取得できない場合は00分にフォールバック
+  }
+
+  return {
+    hour: 1,
+    minute,
+    second,
+    millisecond
+  };
+}
+
+
 function jdDrawCafeWideBackdrop() {
   rectMode(CORNER);
   ellipseMode(CENTER);
@@ -9499,32 +10791,22 @@ function jdDrawCafeWideBackdrop() {
     74
   );
 
-  // 現在時刻を使うため、タイトルから結果画面まで
-  // 同じ店の時間が途切れずに進む。
-  let clockHour = 10;
-  let clockMinute = 8;
-  let clockSecond = 0;
-  let clockMillis = 0;
+  // 純喫茶ダイヴは深夜営業。
+  // 時だけ01時に固定し、分・秒だけ現実の時計と同期する。
+  const cafeTime =
+    jdGetCafeTimeParts();
 
-  try {
-    const clockNow =
-      new Date();
+  const clockHour =
+    cafeTime.hour;
 
-    clockHour =
-      clockNow.getHours() % 12;
+  const clockMinute =
+    cafeTime.minute;
 
-    clockMinute =
-      clockNow.getMinutes();
+  const clockSecond =
+    cafeTime.second;
 
-    clockSecond =
-      clockNow.getSeconds();
-
-    clockMillis =
-      clockNow.getMilliseconds();
-
-  } catch (_error) {
-    // 時刻取得に失敗した場合は初期値を使用
-  }
+  const clockMillis =
+    cafeTime.millisecond;
 
   const smoothSecond =
     clockSecond +
@@ -15365,10 +16647,28 @@ function jdDrawPlayUI() {
   noStroke();
   textAlign(CENTER);
 
+  const currentThrowActive =
+    JD.throwIndex > 0 &&
+    JD.throwIndex <= JD.queue.length &&
+    (
+      JD.gamePhase === PHASE_FORTUNE ||
+      JD.pendingFood ||
+      (
+        JD.food &&
+        !JD.food.resolved
+      )
+    );
+
   let rest =
-    JD.queue.length -
-    JD.throwIndex +
-    1;
+    JD.throwIndex <= 0
+      ? JD.queue.length
+      : JD.queue.length -
+        JD.throwIndex +
+        (
+          currentThrowActive
+            ? 1
+            : 0
+        );
 
   if (rest < 0) {
     rest = 0;
@@ -16833,15 +18133,11 @@ function jdDrawPosterBackgroundWipe() {
     fill(151, 48, 42, 255 * textT);
     text(`¥${item.price}`, 336, 74);
 
-    textAlign(CENTER);
-    jdFontForLanguage("bold");
-    fontSize(
-      jdIsEnglish()
-        ? JD_POSTER_VIEW_RECEIPT_SIZE_EN
-        : JD_POSTER_VIEW_RECEIPT_SIZE_JP
+    jdDrawPosterReceiptHint(
+      W / 2,
+      bandY + 27,
+      textT
     );
-    fill(248, 232, 197, 255 * textT);
-    text(jdT("poster.viewReceipt", "VIEW RECEIPT"), W / 2, bandY + 27);
   }
 
   noStroke();
@@ -16957,6 +18253,137 @@ function jdDrawCompletionPosterDismiss() {
 
 // 完成時と撤収中で同じ面構造を共有する。
 // 撤収側は文字・帯・枠に加え、背景面・情報面・商品の値を変える。
+
+function jdDrawPosterReceiptHint(centerX, y, alpha = 1) {
+  const label =
+    jdT(
+      "poster.viewReceipt",
+      "VIEW RECEIPT"
+    );
+
+  const baseAlpha =
+    jdClamp(
+      Number.isFinite(alpha)
+        ? alpha
+        : 1,
+      0,
+      1
+    );
+
+  if (baseAlpha <= 0.001) {
+    return;
+  }
+
+  const size =
+    jdIsEnglish()
+      ? JD_POSTER_VIEW_RECEIPT_SIZE_EN
+      : JD_POSTER_VIEW_RECEIPT_SIZE_JP;
+
+  textAlign(CENTER);
+  jdFontForLanguage("bold");
+  fontSize(size);
+
+  const holdAge =
+    JD.state === STATE_POSTER_HOLD &&
+    Number.isFinite(JD.posterTimer)
+      ? Math.max(0, JD.posterTimer)
+      : 0;
+
+  const activeT =
+    jdClamp(
+      (holdAge - 0.80) / 0.48,
+      0,
+      1
+    );
+
+  // 点滅ではなく、呼吸くらいの弱い明滅。
+  const breath =
+    0.5 -
+    0.5 *
+    Math.cos(
+      ElapsedTime *
+      Math.PI *
+      2 /
+      1.62
+    );
+
+  const labelAlpha =
+    baseAlpha *
+    (
+      0.86 +
+      0.14 *
+      breath *
+      activeT
+    );
+
+  const arrowAlpha =
+    baseAlpha *
+    (
+      0.72 +
+      0.28 *
+      breath *
+      activeT
+    );
+
+  const labelW =
+    typeof textWidth === "function"
+      ? textWidth(label)
+      : label.length * size * 0.72;
+
+  const baseGap =
+    Math.max(
+      jdIsEnglish() ? 25 : 27,
+      size * 1.55
+    );
+
+  const baseArrowOffset =
+    labelW / 2 +
+    baseGap;
+
+  // 左右の矢印だけが、文字へ少し寄って戻る。
+  // 最大4pxに抑え、催促感を出しすぎない。
+  const inward =
+    activeT *
+    breath *
+    4.0;
+
+  fill(
+    248,
+    232,
+    197,
+    255 * labelAlpha
+  );
+
+  text(
+    label,
+    centerX,
+    y
+  );
+
+  fill(
+    248,
+    232,
+    197,
+    255 * arrowAlpha
+  );
+
+  text(
+    "▶",
+    centerX -
+      baseArrowOffset +
+      inward,
+    y
+  );
+
+  text(
+    "◀",
+    centerX +
+      baseArrowOffset -
+      inward,
+    y
+  );
+}
+
 function jdDrawCompletionPosterLayout(options = {}) {
   const W = JD.LOGICAL_W;
   const H = JD.LOGICAL_H;
@@ -17294,15 +18721,11 @@ function jdDrawCompletionPosterLayout(options = {}) {
   // --------------------------------------------------
 
   if (bandTextAlpha > 0.001) {
-    textAlign(CENTER);
-    jdFontForLanguage("bold");
-    fontSize(
-      jdIsEnglish()
-        ? JD_POSTER_VIEW_RECEIPT_SIZE_EN
-        : JD_POSTER_VIEW_RECEIPT_SIZE_JP
+    jdDrawPosterReceiptHint(
+      W / 2,
+      bandY + 27,
+      bandTextAlpha
     );
-    fill(248, 232, 197, 255 * bandTextAlpha);
-    text(jdT("poster.viewReceipt", "VIEW RECEIPT"), W / 2, bandY + 27);
   }
 
   noStroke();
@@ -19842,6 +21265,84 @@ function jdDrawPosterCafeHold() {
 }
 
 
+
+function jdSplitReceiptMemoText(text) {
+  const memo =
+    String(text || "");
+
+  // 以前より少し広めに取り、句点だけが二行目に残るのを避ける。
+  const maxChars =
+    jdIsEnglish()
+      ? 34
+      : 20;
+
+  if (
+    memo.length <= maxChars
+  ) {
+    return [
+      memo,
+      ""
+    ];
+  }
+
+  let breakAt =
+    maxChars;
+
+  const lineStartAvoid =
+    "。、，．！？!?）」』】》〉）]";
+
+  while (
+    breakAt < memo.length &&
+    breakAt < maxChars + 4 &&
+    lineStartAvoid.indexOf(
+      memo.charAt(breakAt)
+    ) >= 0
+  ) {
+    breakAt += 1;
+  }
+
+  const restLength =
+    memo.length -
+    breakAt;
+
+  if (
+    restLength > 0 &&
+    restLength <= 2 &&
+    memo.length <= maxChars + 4
+  ) {
+    return [
+      memo,
+      ""
+    ];
+  }
+
+  const line1 =
+    memo.slice(
+      0,
+      breakAt
+    );
+
+  const line2 =
+    memo.slice(
+      breakAt
+    );
+
+  if (
+    /^[。、，．！？!?]+$/.test(line2)
+  ) {
+    return [
+      memo,
+      ""
+    ];
+  }
+
+  return [
+    line1,
+    line2
+  ];
+}
+
+
 // 商品数・失敗記録・店長メモの行数から、レシートの下端を決める。
 // 上端を固定することで、落下演出とヘッダーの視線位置は変えない。
 function jdGetReceiptPaperMetrics(
@@ -19871,10 +21372,14 @@ function jdGetReceiptPaperMetrics(
     : listBottomY - 28;
 
   const memoLineY = rankLineY - 25;
-  const memo = jdManagerCommentShort() || "-";
-  const maxChars = jdIsEnglish() ? 30 : 17;
-  const memoLine1 = memo.slice(0, maxChars);
-  const memoLine2 = memo.slice(maxChars);
+  const memoLines =
+    jdSplitReceiptMemoText(
+      jdManagerCommentShort() || "-"
+    );
+  const memoLine1 =
+    memoLines[0] || "";
+  const memoLine2 =
+    memoLines[1] || "";
 
   // 二行メモの時だけ一行分を追加し、余白だけが残らないようにする。
   const footerDashY =
@@ -20289,9 +21794,12 @@ function jdDrawReceipt() {
         "0"
       );
 
+    const cafeTime =
+      jdGetCafeTimeParts();
+
     const hh =
       String(
-        now.getHours()
+        cafeTime.hour
       ).padStart(
         2,
         "0"
@@ -20299,7 +21807,7 @@ function jdDrawReceipt() {
 
     const min =
       String(
-        now.getMinutes()
+        cafeTime.minute
       ).padStart(
         2,
         "0"
@@ -21119,6 +22627,19 @@ function jdUpdateReceipt(dt) {
   const resultCount = receiptLayout.menuEntries.length;
   const receiptMotion = jdGetReceiptMotionTiming();
 
+  // レシートが出始める瞬間。
+  // ポスターめくり音とは別に、紙が送られる気配だけを薄く足す。
+  const feedStartAt = 0.055;
+
+  if (
+    previous < feedStartAt &&
+    JD.receiptTimer >= feedStartAt
+  ) {
+    jdPlaySound(
+      "receipt_feed_start"
+    );
+  }
+
   // レシートが着地する瞬間
   const dropAt = receiptMotion.dropAt;
 
@@ -21128,6 +22649,21 @@ function jdUpdateReceipt(dt) {
   ) {
     jdPlaySound(
       "receipt_drop"
+    );
+  }
+
+  // レシートが定位置に収まる余韻。
+  // drop音と重ねすぎないよう、少しだけ後ろに置く。
+  const settleAt =
+    dropAt +
+    0.13;
+
+  if (
+    previous < settleAt &&
+    JD.receiptTimer >= settleAt
+  ) {
+    jdPlaySound(
+      "receipt_settle"
     );
   }
 
@@ -21179,25 +22715,45 @@ function jdUpdateReceipt(dt) {
     thankYouAt +
     buttonDelay;
 
-  // 合計・ランク・メモも同じ印字音
-  const printMoments = [
-    totalAt,
-    rankAt,
-    memoAt
-  ];
-
-  for (
-    const moment of
-    printMoments
+  // 合計は通常印字、ランクと店長メモは少しだけ音色を分ける。
+  if (
+    previous < totalAt &&
+    JD.receiptTimer >= totalAt
   ) {
-    if (
-      previous < moment &&
-      JD.receiptTimer >= moment
-    ) {
-      jdPlaySound(
-        "receipt_print"
-      );
-    }
+    jdPlaySound(
+      "receipt_print"
+    );
+  }
+
+  if (
+    previous < rankAt &&
+    JD.receiptTimer >= rankAt
+  ) {
+    jdPlaySound(
+      "receipt_rank"
+    );
+  }
+
+  const rankBadgeAt =
+    rankAt +
+    0.13;
+
+  if (
+    previous < rankBadgeAt &&
+    JD.receiptTimer >= rankBadgeAt
+  ) {
+    jdPlaySound(
+      "receipt_rank_badge"
+    );
+  }
+
+  if (
+    previous < memoAt &&
+    JD.receiptTimer >= memoAt
+  ) {
+    jdPlaySound(
+      "manager_memo"
+    );
   }
 
   if (
@@ -21271,24 +22827,421 @@ function jdMakeReceiptLines() {
 }
 
 function jdRankName() {
-  if (JD.totalSales >= jdScoreRankThreshold("great", 2800)) return jdT("rank.great");
-  if (JD.totalSales >= jdScoreRankThreshold("good", 2200)) return jdT("rank.good");
-  if (JD.totalSales >= jdScoreRankThreshold("mid", 1400)) return jdT("rank.mid");
-  if (JD.totalSales >= jdScoreRankThreshold("low", 600)) return jdT("rank.low");
-  return jdT("rank.bad");
+  let successCount = 0;
+
+  for (const r of JD.results) {
+    if (jdIsScoredCompletion(r)) {
+      successCount += 1;
+    }
+  }
+
+  if (successCount >= 5) {
+    return jdT("rank.legendary");
+  }
+
+  if (successCount === 4) {
+    return jdT("rank.excellent");
+  }
+
+  if (successCount === 3) {
+    return jdT("rank.good");
+  }
+
+  if (successCount === 2) {
+    return jdT("rank.fair");
+  }
+
+  if (successCount === 1) {
+    return jdT("rank.oneJob");
+  }
+
+  return jdT("rank.tomorrow");
+}
+
+const JD_MANAGER_MEMO_POOLS = {
+  perfect: [
+    { jp: "今日は完全にブレない日だな。", en: "Nothing wavered today." },
+    { jp: "迷いがない。そんな日はだいたい強い。", en: "No hesitation. Days like that are strong." },
+    { jp: "ど真ん中に来る日ってあるんだな。", en: "Some days land right in the middle." },
+    { jp: "今日は狙ったところに届く日だな。", en: "Today reached where it aimed." },
+    { jp: "今日はバシッと決まってるな。", en: "That locked in nicely today." },
+    { jp: "今日は芯を食ってたな。", en: "Today hit the core." }
+  ],
+
+  bounce: [
+    { jp: "一度跳ねたものが、あとで効いてくる。", en: "One bounce can matter later." },
+    { jp: "まっすぐじゃなくても、届く時は届くんだな。", en: "Straight is not the only way to land." },
+    { jp: "遠回りしたわりに、いい場所へ行ったな。", en: "That detour found a good spot." },
+    { jp: "跳ねた分だけ、味が出たってことにしとくか。", en: "Let’s call that bounce extra flavor." },
+    { jp: "予定外のほうが、案外良い日もある。", en: "Unplanned can turn out fine." },
+    { jp: "一回ぶつかってからが本番だったな。", en: "It really started after the bump." }
+  ],
+
+  dive: [
+    { jp: "飛び込んでみるってのも、いいもんだな。", en: "Diving in is not so bad." },
+    { jp: "深く入ったな。今日はそれで正解だった。", en: "It went deep. Today, that was right." },
+    { jp: "迷う前に飛び込む日もある。", en: "Some days, you dive before thinking." },
+    { jp: "沈んだように見えて、良い感じだな。", en: "Looked like it sank. Worked out fine." },
+    { jp: "飛び込んだ先に、案外いいもんがあるんだな。", en: "There was something good where it dove." },
+    { jp: "今日は浅く考えない方が良さそうだな。", en: "Better not stay shallow today." }
+  ],
+
+  nokkari: [
+    { jp: "今日は乗っかったもの勝ちだったな。", en: "Today belonged to what stayed on." },
+    { jp: "しがみついたやつが残る日だ。", en: "The one that held on remained." },
+    { jp: "うまく乗ったな。", en: "That settled on nicely." },
+    { jp: "派手じゃないが、ちゃんとそこにいる。", en: "Not flashy, but it is there." },
+    { jp: "今日は流れに乗るくらいで良いな。", en: "Today, riding the flow is enough." },
+    { jp: "無理に決めなくても残る日がある。", en: "Some days stay without forcing it." }
+  ],
+
+  kantsu: [
+    { jp: "まっすぐ刺さるものがある日だな。", en: "Some things go straight in today." },
+    { jp: "遠慮なく刺さったな。その勢い、嫌いじゃない。", en: "That did not hold back. I like that." },
+    { jp: "今日は言葉もトッピングも、まっすぐ刺さる日だな。", en: "Words and toppings land sharp today." },
+    { jp: "変に曲げない方が届く日だ。", en: "Today, straight reaches better." },
+    { jp: "刺さる時は、あっさり刺さるもんだな。", en: "When it sticks, it sticks fast." },
+    { jp: "今日は一点突破でいい。そういう日だ。", en: "One clean push is enough today." }
+  ],
+
+  success5: [
+    { jp: "……全部売れたな。こんな夜もあるんだな。", en: "...Everything sold. Nights like this really happen." },
+    { jp: "全部いったのか。ちょっと出来すぎじゃないか？", en: "All five? That went almost too well." },
+    { jp: "今日は何やってもうまくいく日だったな。", en: "Today, everything seemed to work." },
+    { jp: "五つ全部か。しばらく自慢していいぞ。", en: "All five. You can brag about that for a while." },
+    { jp: "完売だな。こんな日は覚えておいた方がいい。", en: "Sold out. Remember a night like this." },
+    { jp: "参ったな。今日は俺よりうまいんじゃないか？", en: "You got me. Maybe you were better than me tonight." },
+    { jp: "これはもう、明日も同じように頼むわ。", en: "At this point, do the same again tomorrow." },
+    { jp: "全部売れた。今日は文句なしだな。", en: "Everything sold. No complaints tonight." }
+  ],
+
+  success4: [
+    { jp: "やるじゃん。今日はかなり助かった。", en: "Nice. You really helped tonight." },
+    { jp: "四つか。もう十分すぎるくらいだな。", en: "Four. That is more than enough." },
+    { jp: "今日はずいぶん店が回ったな。", en: "The café really moved tonight." },
+    { jp: "いい夜だったな。こういう日が増えると助かる。", en: "Good night. More of these would help." },
+    { jp: "ほとんど売れたな。大したもんだ。", en: "Almost everything sold. That is something." },
+    { jp: "この調子なら、安心して任せられそうだな。", en: "At this rate, I can leave it to you." },
+    { jp: "今日は胸張って帰っていいぞ。", en: "You can head home proud tonight." },
+    { jp: "ここまで来ると、もう慣れたもんだな。", en: "At this point, you are getting used to it." }
+  ],
+
+  success3: [
+    { jp: "いいじゃん。今日はだいぶ店が回ったな。", en: "Nice. The café really got moving tonight." },
+    { jp: "三つ売れたか。上出来じゃないか。", en: "Three sold. That is a solid night." },
+    { jp: "今日はちゃんと仕事したって感じだな。", en: "Feels like we really worked tonight." },
+    { jp: "半分以上いったな。十分すごいぞ。", en: "More than half. That is plenty good." },
+    { jp: "いい調子だな。忙しい夜ほど助かる。", en: "Good rhythm. Busy nights need that." },
+    { jp: "だいぶ店の感じが分かってきたんじゃないか。", en: "You are getting the feel of the place." },
+    { jp: "三つ並ぶと、ちゃんと店っぽくなるな。", en: "Three on the board makes this feel like a real café." },
+    { jp: "今日はなかなか良い夜だったな。", en: "That was a pretty good night." }
+  ],
+
+  success2: [
+    { jp: "ちゃんと売れてる。悪くない夜だ。", en: "It sold. Not a bad night." },
+    { jp: "二つ出たな。十分十分。", en: "Two made it. Plenty." },
+    { jp: "まあ、店は回ったな。そういう日も大事だ。", en: "The café ran. Days like that matter." },
+    { jp: "派手じゃないけど、ちゃんと売れた。悪くない。", en: "Not flashy, but it sold. Not bad." },
+    { jp: "二つあれば、今日の店としては上出来だ。", en: "Two is a good night for this place." },
+    { jp: "なんだかんだで、ちゃんと形になったな。", en: "Somehow, it came together." },
+    { jp: "今日はこれくらいがちょうど良かったのかもな。", en: "Maybe this was just the right amount tonight." },
+    { jp: "売れたものが二つある。それで十分だ。", en: "Two things sold. That is enough." }
+  ],
+
+  success1: [
+    { jp: "ひとつ決まったな。十分十分。", en: "One landed. Plenty." },
+    { jp: "一個出たじゃん。悪くないぞ。", en: "One made it. Not bad at all." },
+    { jp: "ひとつ売れれば、ちゃんと店だ。", en: "If one sells, it is still a café." },
+    { jp: "今日はこれが看板商品ってことにしとくか。", en: "Let’s call this today’s signature item." },
+    { jp: "一個でも決まると、ちょっと嬉しいもんだな。", en: "Even one good landing feels nice." },
+    { jp: "ちゃんとひとつ残ったな。それでいい。", en: "One stayed. That is enough." },
+    { jp: "ひとつ売れた。今日はそれを覚えとこう。", en: "One sold. Let’s remember that tonight." },
+    { jp: "ゼロじゃない。それって結構大事だぞ。", en: "Not zero. That matters more than you think." }
+  ],
+
+  success0: [
+    { jp: "こういう日もあるな。さあ、片づけるか。", en: "Days like this happen. Let’s clean up." },
+    { jp: "今日は片づけの練習ということだ。", en: "Today was cleanup practice." },
+    { jp: "まあ、店が壊れなかっただけ良しとするか。", en: "At least the café is still standing." },
+    { jp: "今日は仕込み直しだな。コーヒーでも飲むか？", en: "We prep again. Want coffee?" },
+    { jp: "何もない夜もある。明かりは消すなよ。", en: "Some nights give nothing. Keep the lights on." },
+    { jp: "まあ、飛ばしただけでも今日は前進だ。", en: "Hey, launching it was progress today." },
+    { jp: "店を開けた。今日はそれでいい。", en: "We opened the café. That is enough today." },
+    { jp: "売れない日も、そりゃあるよな。", en: "Some days just do not sell." }
+  ]
+};
+
+function jdManagerMemoAddPool(candidates, poolName) {
+  const pool =
+    JD_MANAGER_MEMO_POOLS[poolName];
+
+  if (!Array.isArray(pool)) {
+    return;
+  }
+
+  for (const memo of pool) {
+    candidates.push(memo);
+  }
+}
+
+function jdManagerMemoStringScore(value) {
+  const text =
+    String(value || "");
+
+  let score = 0;
+
+  for (
+    let i = 0;
+    i < text.length;
+    i += 1
+  ) {
+    score +=
+      text.charCodeAt(i) *
+      (i + 3);
+  }
+
+  return score;
+}
+
+function jdManagerMemoSeed(results, successCount) {
+  let seed =
+    1741 +
+    successCount * 97 +
+    Math.floor(
+      Number.isFinite(JD.totalSales)
+        ? JD.totalSales
+        : 0
+    ) * 5;
+
+  for (
+    let i = 0;
+    i < results.length;
+    i += 1
+  ) {
+    const r =
+      results[i] || {};
+
+    seed +=
+      (i + 1) *
+      (
+        31 +
+        jdManagerMemoStringScore(r.type) +
+        jdManagerMemoStringScore(r.item) +
+        jdManagerMemoStringScore(r.targetKind) +
+        Math.floor(
+          Number.isFinite(r.price)
+            ? r.price
+            : 0
+        ) +
+        (
+          r.perfect === true
+            ? 271
+            : 0
+        ) +
+        (
+          Number.isFinite(r.scoredBounceCount)
+            ? r.scoredBounceCount * 113
+            : 0
+        )
+      );
+  }
+
+  return Math.abs(
+    Math.floor(seed)
+  );
+}
+
+function jdChooseManagerMemo(candidates, seed) {
+  if (
+    !Array.isArray(candidates) ||
+    candidates.length <= 0
+  ) {
+    return null;
+  }
+
+  const index =
+    seed %
+    candidates.length;
+
+  return candidates[index];
+}
+
+function jdManagerMemoText(memo) {
+  if (!memo) {
+    return "";
+  }
+
+  if (jdIsEnglish()) {
+    return memo.en || memo.jp || "";
+  }
+
+  return memo.jp || memo.en || "";
 }
 
 function jdManagerCommentShort() {
-  let diveCount = 0;
-  let floorCount = 0;
-  for (const r of JD.results) {
-    if (r.type === "DIVE") diveCount++;
-    if (r.type === "FLOOR" || r.type === "OUT") floorCount++;
+  const results =
+    Array.isArray(JD.results)
+      ? JD.results
+      : [];
+
+  let successCount = 0;
+  let hasPerfect = false;
+  let hasBounceBonus = false;
+  let hasDive = false;
+  let hasNokkari = false;
+  let hasKantsu = false;
+
+  for (const r of results) {
+    if (!jdIsScoredCompletion(r)) {
+      continue;
+    }
+
+    successCount += 1;
+
+    if (r.perfect === true) {
+      hasPerfect = true;
+    }
+
+    if (
+      Number.isFinite(r.scoredBounceCount) &&
+      r.scoredBounceCount > 0
+    ) {
+      hasBounceBonus = true;
+    }
+
+    if (r.type === "DIVE") {
+      hasDive = true;
+
+    } else if (r.type === "LAND") {
+      hasNokkari = true;
+
+    } else if (r.type === "STAB") {
+      hasKantsu = true;
+    }
   }
-  if (diveCount >= 4) return jdT("manager.diveMaster");
-  if (floorCount >= 3) return jdT("manager.floorHeavy");
-  if (JD.totalSales >= jdScoreRankThreshold("good", 2200)) return jdT("manager.sold");
-  return jdT("manager.default");
+
+  const seed =
+    jdManagerMemoSeed(
+      results,
+      successCount
+    );
+
+  // 5/5は奇跡枠。
+  // 4回に3回は専用コメントを出し、残りだけ特殊結果コメントへ回す。
+  if (successCount >= 5) {
+    const miraclePool =
+      JD_MANAGER_MEMO_POOLS.success5;
+
+    const specialCandidates = [];
+
+    if (hasPerfect) {
+      jdManagerMemoAddPool(
+        specialCandidates,
+        "perfect"
+      );
+    }
+
+    if (hasBounceBonus) {
+      jdManagerMemoAddPool(
+        specialCandidates,
+        "bounce"
+      );
+    }
+
+    if (hasDive) {
+      jdManagerMemoAddPool(
+        specialCandidates,
+        "dive"
+      );
+    }
+
+    if (hasNokkari) {
+      jdManagerMemoAddPool(
+        specialCandidates,
+        "nokkari"
+      );
+    }
+
+    if (hasKantsu) {
+      jdManagerMemoAddPool(
+        specialCandidates,
+        "kantsu"
+      );
+    }
+
+    const useMiracle =
+      seed % 4 !== 0 ||
+      specialCandidates.length <= 0;
+
+    const memo =
+      useMiracle
+        ? jdChooseManagerMemo(
+            miraclePool,
+            seed
+          )
+        : jdChooseManagerMemo(
+            specialCandidates,
+            seed
+          );
+
+    return (
+      jdManagerMemoText(memo) ||
+      jdT("manager.default")
+    );
+  }
+
+  const candidates = [];
+
+  if (hasPerfect) {
+    jdManagerMemoAddPool(
+      candidates,
+      "perfect"
+    );
+  }
+
+  if (hasBounceBonus) {
+    jdManagerMemoAddPool(
+      candidates,
+      "bounce"
+    );
+  }
+
+  if (hasDive) {
+    jdManagerMemoAddPool(
+      candidates,
+      "dive"
+    );
+  }
+
+  if (hasNokkari) {
+    jdManagerMemoAddPool(
+      candidates,
+      "nokkari"
+    );
+  }
+
+  if (hasKantsu) {
+    jdManagerMemoAddPool(
+      candidates,
+      "kantsu"
+    );
+  }
+
+  jdManagerMemoAddPool(
+    candidates,
+    `success${successCount}`
+  );
+
+  const memo =
+    jdChooseManagerMemo(
+      candidates,
+      seed
+    );
+
+  return (
+    jdManagerMemoText(memo) ||
+    jdT("manager.default")
+  );
 }
 
 function jdDrawHitZone(t) {
